@@ -3,21 +3,22 @@ set -eu
 
 BASE="https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload"
 OUT="/tmp/iptosatpro.ipk"
-B64="/tmp/iptosatpro-r50.b64"
-EXPECTED_SIZE="257272"
-EXPECTED_SHA256="4075565523af8edcde764827550c659b825c47dd470eff37f5e836c960db6410"
+B64="/tmp/iptosatpro-r51.b64"
+EXPECTED_SIZE="257954"
+EXPECTED_SHA256="ec9c1e5b71f5dbd7377d0220802890a693fa2c532cce14072a9a1e71145a513e"
 
-rm -f "$OUT" "$B64" /tmp/r50.part*.b64
+rm -f "$OUT" "$B64" /tmp/r51.part*.b64
 
 i=1
 while [ "$i" -le 10 ]; do
     p=$(printf "%02d" "$i")
-    url="$BASE/r50.part$p.b64"
-    file="/tmp/r50.part$p.b64"
-    echo "Downloading IPToSat Pro r50 part $p/10..."
+    url="$BASE/r51.part$p.b64"
+    file="/tmp/r51.part$p.b64"
+    echo "Downloading IPToSat Pro r51 part $p/10..."
     wget -q -O "$file" "$url"
     test -s "$file"
     cat "$file" >> "$B64"
+    printf '\n' >> "$B64"
     i=$((i + 1))
 done
 
@@ -50,8 +51,8 @@ if command -v sha256sum >/dev/null 2>&1; then
     fi
 fi
 
-rm -f "$B64" /tmp/r50.part*.b64
+rm -f "$B64" /tmp/r51.part*.b64
 echo "OK: $OUT"
-echo "Version: 1.0.46-r50"
+echo "Version: 1.0.46-r51"
 echo "Size: $SIZE bytes"
 echo "SHA256: $EXPECTED_SHA256"
