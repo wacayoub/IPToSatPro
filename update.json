@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r54",
-  "size": 250876,
-  "sha256": "e0ea99a9935fd1e696cd4f8469e260688c80f447cbc355c8a539a77c123380c3",
-  "notes": "r54 fixes CRYPTED ONLY false positives: lowercase lamedb c: entries are cached PIDs, not CAIDs. Only uppercase C:<nonzero CAID> is now accepted as lamedb encryption proof; full lamedb/lamedb5 satellite coverage from r53 is preserved and FTA/unknown services stay excluded.",
+  "version": "1.0.46-r55",
+  "size": 249140,
+  "sha256": "c17c429dd23d4b7c67cc6e7f388576caa63d19b26f55f7dd42485d7600909f4d",
+  "notes": "r55 aligns Preview Browser Pro FULL candidates with Manual Mapping: same all-server ranking engine, provider-aware aliases restored, locked source stays first, and cached quality/open-speed evidence no longer overrides identity/safety order. r54 CRYPTED ONLY fix remains.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r54.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r55.b64"
   ]
 }
