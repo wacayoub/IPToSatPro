@@ -1,14 +1,14 @@
 #!/bin/sh
 set -eu
 
-URL="https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r53.b64"
+URL="https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r54.b64"
 OUT="/tmp/iptosatpro.ipk"
-B64="/tmp/iptosatpro-r53.b64"
-EXPECTED_SIZE="250464"
-EXPECTED_SHA256="eccd860926741eaa7455955f0bb37e178729563b254ebf6f42320dc9072d907a"
+B64="/tmp/iptosatpro-r54.b64"
+EXPECTED_SIZE="250876"
+EXPECTED_SHA256="e0ea99a9935fd1e696cd4f8469e260688c80f447cbc355c8a539a77c123380c3"
 
 rm -f "$OUT" "$B64"
-echo "Downloading IPToSat Pro r53..."
+echo "Downloading IPToSat Pro r54..."
 wget -q -O "$B64" "$URL"
 test -s "$B64"
 
@@ -43,6 +43,6 @@ fi
 
 rm -f "$B64"
 echo "OK: $OUT"
-echo "Version: 1.0.46-r53"
+echo "Version: 1.0.46-r54"
 echo "Size: $SIZE bytes"
 echo "SHA256: $EXPECTED_SHA256"
