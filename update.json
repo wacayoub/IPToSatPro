@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r60",
-  "size": 258816,
-  "sha256": "fd97c9792dcea63174f412816e5522e3b9b899130bbdb47e40970b6f4bf608b1",
-  "notes": "r60 fixes the OpenATV 8 modal crash seen when ALL SOURCES is pressed from Preview after CH+/- changed the SAT row. Preview -> All Sources now switches the existing Manual Mapping screen in-place on the next GUI turn instead of close()+session.open() inside StartEnigma.processDelay. Direct Live-TV Preview -> All Sources and Preview callback MessageBoxes are also deferred to avoid the same modal guard. r59 non-blocking zap, r58 CONTAINS search and r57 TOD audio-safe playback remain.",
+  "version": "1.0.46-r61",
+  "size": 260550,
+  "sha256": "430b3ab1b0bfbb4410253b0c1b0e65d3a968903b10d8a86853d05451f7ac266f",
+  "notes": "r61 restores fast locked-channel opening while preserving r60/r59/r57 safety fixes. MANUAL_LOCK TS streams are asynchronously pre-warmed during the unchanged OpenATV PAT/PMT safety window, native locked playback uses a low-latency relay startup profile, read chunk is reduced to 128 KiB for faster first data, and failed native locked playback rescues around 1.15 s (1.45 s UHD) instead of waiting the r46 3.0/4.2 s FHD/UHD ceilings. Automatic/unlocked channels keep the stable r46 ceilings. Target is about 1-2 s for healthy locked channels on responsive providers; remote server/network latency can still exceed this.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r60.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r61.b64"
   ]
 }
