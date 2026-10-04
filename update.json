@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r59",
-  "size": 257482,
-  "sha256": "d03d1b42422389921c12b53295b6d7df1471e63ed38786e898d17b2592260dca",
-  "notes": "r59 fixes CH+/CH- receiver freezes: broad/fuzzy SmartMatch no longer runs in Enigma2 GUI callbacks, ambiguous live matching runs in background with stale-zap cancellation, explicit manual locks reuse persisted sat_crypted instead of rescanning lamedb, and live fast ranking is bounded to 144 candidates while Preview/Manual Mapping stay broad. Native PAT/PMT safety and TOD Event Sports audio-safe playback remain.",
+  "version": "1.0.46-r60",
+  "size": 258816,
+  "sha256": "fd97c9792dcea63174f412816e5522e3b9b899130bbdb47e40970b6f4bf608b1",
+  "notes": "r60 fixes the OpenATV 8 modal crash seen when ALL SOURCES is pressed from Preview after CH+/- changed the SAT row. Preview -> All Sources now switches the existing Manual Mapping screen in-place on the next GUI turn instead of close()+session.open() inside StartEnigma.processDelay. Direct Live-TV Preview -> All Sources and Preview callback MessageBoxes are also deferred to avoid the same modal guard. r59 non-blocking zap, r58 CONTAINS search and r57 TOD audio-safe playback remain.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r59.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r60.b64"
   ]
 }
