@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r56",
-  "size": 252206,
-  "sha256": "c9423926d0cc4bc3144d79f773cf444b6ee50169932ad0d931fb1815bc009f36",
-  "notes": "r56 keeps candidate accuracy from r55 but restores speed: Preview Browser Pro is capped at 36 best candidates (12 per P/B1/B2), Manual Mapping stays deeper at 60 (20 per server), and deferred ranking now scores an adaptive bounded nomination pool instead of a fixed minimum of 360 rows. r54 CRYPTED ONLY fix remains.",
+  "version": "1.0.46-r57",
+  "size": 255070,
+  "sha256": "9606d714f3ac197fc22b5f5665d3efc155ec565f88a43f84913abe5677dbb893",
+  "notes": "r57 audits Preview Browser and All Sources for quality/speed and fixes matched-playback audio loss. Preview keeps 36 best candidates, All Sources uses 48 balanced rows, safety/provider identity leads ordering, stale Preview indexes self-heal via sliced rebuild, and TOD Event Sports 1-14 / native video-with-zero-audio switch to canonical ServiceApp playback while preserving SAT metadata through the shadow.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r56.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r57.b64"
   ]
 }
