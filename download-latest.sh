@@ -21,7 +21,18 @@ while [ "$i" -le 10 ]; do
     i=$((i + 1))
 done
 
-base64 -d "$B64" > "$OUT"
+if command -v base64 >/dev/null 2>&1; then
+    base64 -d "$B64" > "$OUT"
+else
+    python3 - "$B64" "$OUT" <<'PY'
+import base64, sys
+src, dst = sys.argv[1], sys.argv[2]
+with open(src, "rb") as f:
+    data = base64.b64decode(f.read())
+with open(dst, "wb") as f:
+    f.write(data)
+PY
+fi
 
 SIZE=$(wc -c < "$OUT" | tr -d ' ')
 if [ "$SIZE" != "$EXPECTED_SIZE" ]; then
