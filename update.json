@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r58",
-  "size": 256000,
-  "sha256": "ebe5a7b03a0115034c46f546d91eefec38a70c23995d9b79d9441686e5ee1dd5",
-  "notes": "r58 changes Manual Mapping YELLOW search to literal CONTAINS first. Searching CINEMA now returns every indexed CINEMA-labelled channel across all loaded servers and distinct quality/source variants, with Arabic/MENA results prioritized in Arabic SAT context. Common searches are index-only and do not probe streams; alias/fuzzy rescue runs only when literal/all-token search finds nothing. r57 Preview/All Sources speed and TOD audio-safe playback fixes remain.",
+  "version": "1.0.46-r59",
+  "size": 257482,
+  "sha256": "d03d1b42422389921c12b53295b6d7df1471e63ed38786e898d17b2592260dca",
+  "notes": "r59 fixes CH+/CH- receiver freezes: broad/fuzzy SmartMatch no longer runs in Enigma2 GUI callbacks, ambiguous live matching runs in background with stale-zap cancellation, explicit manual locks reuse persisted sat_crypted instead of rescanning lamedb, and live fast ranking is bounded to 144 candidates while Preview/Manual Mapping stay broad. Native PAT/PMT safety and TOD Event Sports audio-safe playback remain.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r58.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r59.b64"
   ]
 }
