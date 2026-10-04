@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r53",
-  "size": 250464,
-  "sha256": "eccd860926741eaa7455955f0bb37e178729563b254ebf6f42320dc9072d907a",
-  "notes": "r53 fixes Preview Browser Pro CRYPTED ONLY: it now reads the full Enigma2 DVB service database (lamedb/lamedb5), includes scanned encrypted TV services even when they are not in user bouquets, deduplicates by DVB identity, and shows CRYPTED / total TV with unknown-access count while keeping unknown/FTA services excluded.",
+  "version": "1.0.46-r54",
+  "size": 250876,
+  "sha256": "e0ea99a9935fd1e696cd4f8469e260688c80f447cbc355c8a539a77c123380c3",
+  "notes": "r54 fixes CRYPTED ONLY false positives: lowercase lamedb c: entries are cached PIDs, not CAIDs. Only uppercase C:<nonzero CAID> is now accepted as lamedb encryption proof; full lamedb/lamedb5 satellite coverage from r53 is preserved and FTA/unknown services stay excluded.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r53.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r54.b64"
   ]
 }
