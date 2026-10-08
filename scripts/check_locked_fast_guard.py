@@ -47,25 +47,18 @@ def decode_payload(path):
     return blob
 
 def data_members(ipk):
-    # ar is standard on GitHub Ubuntu runners and on the build host.
-    data = subprocess.run(
-        ["ar", "p", "/dev/stdin", "data.tar.gz"], input=ipk,
-        capture_output=True, check=False,
-    )
-    # /dev/stdin is unsupported on some ar builds; a temporary file is safer.
-    if data.returncode:
-        import tempfile
-        with tempfile.TemporaryDirectory() as tmp:
-            p = Path(tmp) / "package.ipk"
-            p.write_bytes(ipk)
-            data = subprocess.run(
-                ["ar", "p", str(p), "data.tar.gz"],
-                capture_output=True, check=True,
-            )
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        package = Path(tmp) / "package.ipk"
+        package.write_bytes(ipk)
+        data = subprocess.run(
+            ["ar", "p", str(package), "data.tar.gz"],
+            capture_output=True, check=True,
+        )
     with tarfile.open(fileobj=io.BytesIO(data.stdout), mode="r:*") as tf:
         names = tf.getnames()
         def get(suffix):
-            hits = [n for n in names if n.lstrip("./").endswith(suffix)]
+            hits = [n for n in names if n.lstrip("./").endswith(suffix.lstrip("/"))]
             if len(hits) != 1:
                 raise ValueError("Missing or duplicate archive path: " + suffix)
             return tf.extractfile(hits[0]).read()
