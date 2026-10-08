@@ -2,12 +2,20 @@
 
 IPToSat Pro for Enigma2 / OpenATV.
 
-Current package: `enigma2-plugin-extensions-iptosatpro_1.0.46-r49_all.ipk`
+**Latest online version:** 1.0.46-r62 — NEO Dark + Comfortable (8 October 2026).
 
-## Install after cloning
+## Update from IPToSat Pro on the receiver
+
+Open IPToSat Pro → Dashboard → **2 Online Update** → **GREEN Check GitHub** → confirm installation.
+
+The in-plugin updater reads [update.json](update.json), downloads the repository's Base64-encoded IPK, and checks the exact package size and SHA-256 before installing.
+
+## Download verified IPK to /tmp from SSH
 
 ```sh
-opkg install --force-reinstall ./packages/enigma2-plugin-extensions-iptosatpro_1.0.46-r49_all.ipk
+wget -O /tmp/iptosat-get.sh https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/download-latest.sh
+sh /tmp/iptosat-get.sh
+opkg install --force-reinstall /tmp/iptosatpro.ipk
 ```
 
-Repository maintained for online installation and updates.
+This is a UI-only update based on r61: NEO Dark/Comfortable by default, Metrix Fusion and OLED Minimal options. Mapping data, audio, timeshift, SAT playback and the TS bridge are not removed.
