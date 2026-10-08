@@ -1,0 +1,70 @@
+name: Publish IPToSat Pro r63 real-resolution preview
+on:
+  push:
+    paths:
+      - 'scripts/build-r63.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify published r62 base package
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r62.b64 > r62.ipk
+          test "$(wc -c < r62.ipk)" = "270048"
+          echo "633eada879209286b89d61acbfb57a40e39379e722e2ac7961467c1da01681d9  r62.ipk" | sha256sum -c -
+      - name: Build r63 and verify core remains intact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r63.py
+          ar t r63.ipk
+          ar p r63.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r63'
+          test "$(ar p r63.ipk data.tar.gz | tar -tzf - | grep -c '/plugin.py$')" = 1
+      - name: Publish verified payload and version feed
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,textwrap
+          from pathlib import Path
+          raw=Path('r63.ipk').read_bytes()
+          sha=hashlib.sha256(raw).hexdigest()
+          size=len(raw)
+          p=Path('payload/r63.b64')
+          p.write_text('\n'.join(textwrap.wrap(base64.b64encode(raw).decode('ascii'),76))+'\n')
+          check=base64.b64decode(p.read_text())
+          assert check==raw
+          manifest={
+              'version':'1.0.46-r63','size':size,'sha256':sha,
+              'notes':'r63 NEO Preview real-resolution clarity. Shows measured decoder WxH from cached health immediately when selected; removes misleading HINT HD/FHD labels. Unknown resolutions show NON MESUREE until OK preview. No auto stream probe; core, timeshift, mapping, player, picons and relay unchanged from r62.',
+              'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r63.b64']
+          }
+          Path('update.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r63\n')
+          installer=Path('download-latest.sh').read_text()
+          # preserve the known working r62 integrity-check and download implementation
+          import re
+          installer=installer.replace('r62','r63')
+          installer=installer.replace('270048',str(size))
+          installer=installer.replace('633eada879209286b89d61acbfb57a40e39379e722e2ac7961467c1da01681d9',sha)
+          Path('download-latest.sh').write_text(installer)
+          Path('download-r63.sh').write_text(installer)
+          assert str(size) in installer and sha in installer and 'payload/r63.b64' in installer
+          print('R63_UPDATE_READY size=%d sha256=%s' %(size,sha))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r63.b64 update.json latest-version.txt download-latest.sh download-r63.sh
+          git commit -m "Publish r63 real resolution Preview Browser update"
+          git push
