@@ -1,0 +1,64 @@
+name: Publish IPToSat Pro r62 NEO
+on:
+  push:
+    paths:
+      - 'scripts/build-r62.packed'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Reconstruct r62 builder from compressed source
+        run: |
+          python3 - <<'PY'
+          import base64,zlib
+          from pathlib import Path
+          packed=Path('scripts/build-r62.packed').read_text().strip()
+          Path('build-r62.py').write_bytes(zlib.decompress(base64.b64decode(packed)))
+          PY
+      - name: Build r62 from published r61 base
+        run: |
+          base64 -d payload/r61.b64 > r61.ipk
+          test "$(stat -c %s r61.ipk)" = "260550"
+          echo "430b3ab1b0bfbb4410253b0c1b0e65d3a968903b10d8a86853d05451f7ac266f  r61.ipk" | sha256sum -c -
+          python3 build-r62.py
+          ar t IPToSatPro_r62_NEO_Dark_Comfortable.ipk
+          ar p IPToSatPro_r62_NEO_Dark_Comfortable.ipk data.tar.gz | tar -tzf - | grep '/neo_theme.py$'
+          ar p IPToSatPro_r62_NEO_Dark_Comfortable.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r62'
+      - name: Create signed-by-checksum update manifest and installer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json,textwrap
+          ipk=Path('IPToSatPro_r62_NEO_Dark_Comfortable.ipk')
+          raw=ipk.read_bytes()
+          sha=hashlib.sha256(raw).hexdigest()
+          size=len(raw)
+          Path('payload/r62.b64').write_text('\n'.join(textwrap.wrap(base64.b64encode(raw).decode('ascii'),76))+'\n')
+          manifest={'version':'1.0.46-r62','size':size,'sha256':sha,'notes':'r62 NEO Dark Comfortable interface update. Based on r61; playback, mappings, audio, timeshift and TS relay unchanged. Includes Metrix Fusion/OLED Minimal and XML Auto Scan fix. Receiver-side validation recommended.','parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r62.b64']}
+          Path('update.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+          script=f'''#!/bin/sh
+          set -eu
+          wget -q -O /tmp/iptosatpro-r62.b64 https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r62.b64
+          base64 -d /tmp/iptosatpro-r62.b64 > /tmp/iptosatpro-r62.ipk
+          echo "{sha}  /tmp/iptosatpro-r62.ipk" | sha256sum -c -
+          test "$(wc -c < /tmp/iptosatpro-r62.ipk | tr -d ' ')" = "{size}"
+          opkg install --force-reinstall /tmp/iptosatpro-r62.ipk
+          '''
+          Path('download-r62.sh').write_text(textwrap.dedent(script))
+          assert hashlib.sha256(base64.b64decode(Path('payload/r62.b64').read_text())).hexdigest()==sha
+          print('PUBLISHED_PACKAGE_SIZE',size,'SHA256',sha)
+          PY
+          grep -q '1.0.46-r62' update.json
+      - name: Publish payload and online-update manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r62.b64 update.json download-r62.sh
+          git commit -m "Publish r62 NEO Dark online update"
+          git push
