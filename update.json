@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r68-beta",
-  "size": 276082,
-  "sha256": "d2d14f38180807e6060cbbb8927e56fe0d4aa03025ccfff061ea70f1d3f09844",
-  "notes": "BETA Smart Player: learns verified DVB/5002/4097 mode per exact stream; distinguishes first TS data from decoded video; short transport hint after failed player; blocks unknown-quality generic UHD auto fallbacks. Keeps r67 Preview, fast MANUAL LOCK, timeshift and OpenATV safety. Receiver verification required. Rollback via download-r67-beta.sh.",
+  "version": "1.0.46-r69-beta",
+  "size": 276666,
+  "sha256": "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed",
+  "notes": "r69 BETA Quality Guard. Prevent repeated PLAYER_LATE_VIDEO updates; delay possible stale 4K metadata from the outgoing decoder during handover; confirm current service identity before persisting observed size and player mode. r68 Smart Player, fast MANUAL LOCK, timeshift, relay and r67 Preview unchanged. Receiver validation required. Roll back via download-r68-beta.sh.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r68-beta.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r69-beta.b64"
   ]
 }
