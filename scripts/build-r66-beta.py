@@ -55,7 +55,12 @@ known_good_preview='''def _open_preview_sources_direct(session):
 
 
 '''
-preview_file.write_text(preview_src[:p0]+known_good_preview+preview_src[p1:])
+# Remove a second misplaced zero-context insertion from YELLOW shortcut body.
+tail=preview_src[p1:]
+stray='    _startup_log("PREVIEW_COST", "rank=%dms open_total=%dms" % (_preview_rank_ms, int((time.monotonic() - _preview_t0) * 1000)))\n'
+assert tail.count(stray)==1,tail.count(stray)
+tail=tail.replace(stray,"",1)
+preview_file.write_text(preview_src[:p0]+known_good_preview+tail)
 verified={
 "plugin.py":"65ae5e9cdbed1acfd5cd47a741cd5c8e9081c88f300d7158064e95ff3a706ee8",
 "monitor.py":"e9f82f2be33b8db93bc9b75f6d11e7d1c8fa17365092059325f56018316f4a97",
