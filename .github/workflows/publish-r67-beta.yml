@@ -1,0 +1,100 @@
+name: Publish IPToSat Pro r67 BETA Preview Fast
+on:
+  push:
+    paths:
+      - 'scripts/r67-bundle.b64'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify r66 published release and rebuild source
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r66-beta.b64 > r66-beta.ipk
+          test "$(wc -c < r66-beta.ipk)" = "273538"
+          echo "77df0759e41fac9bca979bbed026382d599bf7a0e3aa3806fc8d238c66bba05a  r66-beta.ipk" | sha256sum -c -
+          python3 - <<'PY'
+          import base64,hashlib,json,lzma
+          from pathlib import Path
+          raw=lzma.decompress(base64.b64decode(Path('scripts/r67-bundle.b64').read_text()))
+          d=json.loads(raw)
+          assert set(d)=={'ci_build_r67.py','build_r67_preview.py'}
+          for name,content in d.items():
+              assert name.endswith('.py')
+              Path(name).write_text(content,encoding='utf-8')
+              compile(content,name,'exec')
+          expected='58b1f8a536df306481d78170d61b5d821bc79478f5dd96d3bf644583c3e0f770'
+          actual=hashlib.sha256(Path('build_r67_preview.py').read_bytes()).hexdigest()
+          assert actual==expected,(actual,expected)
+          print('R67_PATCH_SOURCE_VERIFIED')
+          PY
+      - name: Build and test r67 without changing live engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci_build_r67.py
+          ar p r67-beta.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r67-beta'
+          python3 - <<'PY'
+          import ast,io,subprocess,tarfile
+          buf=subprocess.check_output(['ar','p','r67-beta.ipk','data.tar.gz'])
+          with tarfile.open(fileobj=io.BytesIO(buf),mode='r:gz') as tar:
+              files=tar.getnames()
+              assert not any('__pycache__' in s or s.endswith(('.pyc','.pyo')) for s in files)
+              assert len([x for x in files if x.endswith('/plugin.py')])==1
+              src=tar.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/plugin.py').read().decode()
+              tree=ast.parse(src)
+              preview=next(x for x in tree.body if isinstance(x,ast.ClassDef) and x.name=='SatIPTVBridgePreview')
+              init=next(x for x in preview.body if isinstance(x,ast.FunctionDef) and x.name=='__init__')
+              opener=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='_open_preview_sources_direct')
+              assert '_preview_sat_service_rows(' not in ast.unparse(init)
+              assert '_rank_current_instant(' not in ast.unparse(opener)
+              assert 'PREVIEW_RANK_BG' in src and 'candidate_poll_timer' in src
+              assert 'MAX_BROWSER_CANDIDATES = 36' in src
+          print('R67_PREVIEW_NONBLOCKING_STATIC_CHECK_PASS')
+          PY
+      - name: Publish beta online update with rollback to r66
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,textwrap
+          from pathlib import Path
+          raw=Path('r67-beta.ipk').read_bytes()
+          size=len(raw)
+          sha=hashlib.sha256(raw).hexdigest()
+          b64='\n'.join(textwrap.wrap(base64.b64encode(raw).decode('ascii'),76))+'\n'
+          assert base64.b64decode(b64)==raw
+          Path('payload/r67-beta.b64').write_text(b64)
+          manifest={
+           'version':'1.0.46-r67-beta','size':size,'sha256':sha,
+           'notes':'BETA: Preview Browser now paints current SAT row before scanning lamedb, defers SAT roster, removes two synchronous candidate-ranking passes, and computes all 36 PRIMARY/B1/B2 candidates in one background worker. Stale SAT results discarded. r66 fast LOCKED playback, audio, native OpenATV cursor hook and timeshift unchanged. Test on receiver; r66-beta rollback available.',
+           'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r67-beta.b64']
+          }
+          Path('update.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r67-beta\n')
+          installer=Path('download-latest.sh').read_text()
+          replacements={'r66-beta':'r67-beta','273538':str(size),
+                        '77df0759e41fac9bca979bbed026382d599bf7a0e3aa3806fc8d238c66bba05a':sha}
+          for old,new in replacements.items():
+              assert old in installer,old
+              installer=installer.replace(old,new)
+          assert 'payload/r67-beta.b64' in installer and sha in installer and str(size) in installer
+          Path('download-latest.sh').write_text(installer)
+          Path('download-r67-beta.sh').write_text(installer)
+          print('R67_ONLINE_PACKAGE_SIZE',size,'SHA256',sha)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json payload/r67-beta.b64 latest-version.txt download-latest.sh download-r67-beta.sh
+          git commit -m "Publish r67 beta fast Preview Browser online update"
+          git push
