@@ -103,3 +103,5 @@ for kind in ("data","control"):
 if OUT.exists():OUT.unlink()
 subprocess.run(["ar","r",str(OUT),str(WORK/"debian-binary"),str(WORK/"control.tar.gz"),str(WORK/"data.tar.gz")],check=True,stdout=subprocess.PIPE)
 print("R69_PACKAGE",OUT.stat().st_size,hashlib.sha256(OUT.read_bytes()).hexdigest())
+
+# r69 metadata guard release trigger
