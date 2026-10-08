@@ -1,0 +1,82 @@
+name: Publish IPToSat Pro r68 BETA Smart Player
+on:
+  push:
+    paths:
+      - 'scripts/r68-monitor.patch.xz.b64'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify published r67 BETA package
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r67-beta.b64 > r67-beta.ipk
+          test "$(wc -c < r67-beta.ipk | tr -d ' ')" = "274348"
+          echo "f47a170dab971f90bae7053031e2af6a8e32ca4620a083f72794617e5bba889f  r67-beta.ipk" | sha256sum -c -
+      - name: Patch r67 monitor and verify r68 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r68-beta.py
+          ar p r68-beta.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r68-beta'
+          python3 - <<'PY'
+          import ast,io,subprocess,tarfile
+          raw=subprocess.check_output(['ar','p','r68-beta.ipk','data.tar.gz'])
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as tar:
+              names=tar.getnames()
+              assert len([n for n in names if n.endswith('/plugin.py')])==1
+              assert not any('__pycache__' in n or n.endswith(('.pyc','.pyo')) for n in names)
+              source=tar.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/monitor.py').read().decode()
+              tree=ast.parse(source)
+              klass=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='SatFallbackMonitor')
+              methods={n.name for n in klass.body if isinstance(n,ast.FunctionDef)}
+              assert {'_playback_plan','_record_health','_accept_verified_video','_resolution_followup_tick'}<=methods
+              assert 'PLAYER_VERIFIED_REUSE' in source and 'PLAYER_TS_HINT_REUSE' in source
+              assert 'UHD_UNKNOWN_SKIP' in source and 'decoder-video' in source
+              assert 'FAST_LOCK_PREWARM_TIMEOUT_S = 1.45' in source
+          print('R68 SMART PLAYER INTEGRITY PASS')
+          PY
+      - name: Publish r68 BETA online update with r67 rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json,textwrap
+          raw=Path('r68-beta.ipk').read_bytes()
+          size=len(raw);sha=hashlib.sha256(raw).hexdigest()
+          enc='\n'.join(textwrap.wrap(base64.b64encode(raw).decode(),76))+'\n'
+          assert base64.b64decode(enc)==raw
+          Path('payload/r68-beta.b64').write_text(enc)
+          manifest={
+              'version':'1.0.46-r68-beta','size':size,'sha256':sha,
+              'notes':'BETA Smart Player: learns verified DVB/5002/4097 mode per exact stream; distinguishes first TS data from decoded video; short transport hint after failed player; blocks unknown-quality generic UHD auto fallbacks. Keeps r67 Preview, fast MANUAL LOCK, timeshift and OpenATV safety. Receiver verification required. Rollback via download-r67-beta.sh.',
+              'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r68-beta.b64']
+          }
+          Path('update.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r68-beta\n')
+          installer=Path('download-latest.sh').read_text()
+          for old,new in {'r67-beta':'r68-beta','274348':str(size),
+                  'f47a170dab971f90bae7053031e2af6a8e32ca4620a083f72794617e5bba889f':sha}.items():
+              assert old in installer,old
+              installer=installer.replace(old,new)
+          assert 'payload/r68-beta.b64' in installer and str(size) in installer and sha in installer
+          Path('download-latest.sh').write_text(installer)
+          Path('download-r68-beta.sh').write_text(installer)
+          print('R68_PUBLISH',size,sha)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json payload/r68-beta.b64 latest-version.txt download-latest.sh download-r68-beta.sh
+          git commit -m "Publish r68 BETA verified playback mode memory"
+          git push
