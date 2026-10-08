@@ -90,16 +90,24 @@ def main():
     baseline = decode_payload(ROOT / "payload/r64.b64")
     if hashlib.sha256(baseline).hexdigest() != BASE_SHA:
         raise ValueError("Pinned known-good r64 SHA256 mismatch")
-    manifest = json.loads((ROOT / "update.json").read_text())
-    version = manifest["version"]
-    rev = version.rsplit("-r", 1)[-1]
-    # Manifest is assumed to be the current online-release candidate.
-    candidate_path = ROOT / ("payload/r%s.b64" % rev)
-    candidate = decode_payload(candidate_path)
-    size = len(candidate)
-    sha = hashlib.sha256(candidate).hexdigest()
-    if size != manifest["size"] or sha != manifest["sha256"]:
-        raise ValueError("Candidate size / SHA256 mismatch with online manifest")
+    if len(sys.argv) > 1:
+        # Release-build gate: check an IPK *before* it is published.
+        candidate_path = Path(sys.argv[1])
+        candidate = candidate_path.read_bytes()
+        if not candidate.startswith(b"!<arch>\n"):
+            raise ValueError("Invalid candidate IPK ar header")
+        version = candidate_path.name
+    else:
+        # Post-publication check: validate the current online update.
+        manifest = json.loads((ROOT / "update.json").read_text())
+        version = manifest["version"]
+        rev = version.rsplit("-r", 1)[-1]
+        candidate_path = ROOT / ("payload/r%s.b64" % rev)
+        candidate = decode_payload(candidate_path)
+        size = len(candidate)
+        sha = hashlib.sha256(candidate).hexdigest()
+        if size != manifest["size"] or sha != manifest["sha256"]:
+            raise ValueError("Candidate size / SHA256 mismatch with online manifest")
     base_monitor, base_relay, base_init = data_members(baseline)
     cand_monitor, cand_relay, cand_init = data_members(candidate)
     before = protected_ast(base_monitor)
