@@ -1,0 +1,24 @@
+name: Guard proven-fast LOCKED zap
+on:
+  push:
+    paths:
+      - 'payload/*.b64'
+      - 'update.json'
+      - 'scripts/check_locked_fast_guard.py'
+  pull_request:
+    paths:
+      - 'payload/*.b64'
+      - 'update.json'
+      - 'scripts/check_locked_fast_guard.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lock-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check online package against receiver-confirmed r64 LOCKED fast path
+        run: |
+          python3 scripts/check_locked_fast_guard.py
