@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r63",
-  "size": 269602,
-  "sha256": "05b5440707e307ddceebac160a8f93cd47da3edef88ff5949bfa9b5bf1aec63a",
-  "notes": "r63 NEO Preview real-resolution clarity. Shows measured decoder WxH from cached health immediately when selected; removes misleading HINT HD/FHD labels. Unknown resolutions show NON MESUREE until OK preview. No auto stream probe; core, timeshift, mapping, player, picons and relay unchanged from r62.",
+  "version": "1.0.46-r64",
+  "size": 270396,
+  "sha256": "efee95fb38929f3f8f5f0aea2795f524e447a83694c1a6bc4249dd2230eb208c",
+  "notes": "r64 Ultra Fast Preview stage 1: update only changed SAT rows, cache mapping/rejection JSON by file signature, avoid decoding identical picons on each IPTV selection. Keeps NEO Dark Comfortable, measured resolution, SmartMatch, playback, native timeshift, audio and TS relay from r63. Receiver-side performance testing required.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r63.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r64.b64"
   ]
 }
