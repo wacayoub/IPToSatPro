@@ -1,0 +1,83 @@
+name: Publish IPToSat Pro r69 BETA Quality Guard
+on:
+  push:
+    paths:
+      - 'scripts/build-r69-beta.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify published r68 beta baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r68-beta.b64 > r68-beta.ipk
+          test "$(wc -c < r68-beta.ipk | tr -d ' ')" = "276082"
+          echo "d2d14f38180807e6060cbbb8927e56fe0d4aa03025ccfff061ea70f1d3f09844  r68-beta.ipk" | sha256sum -c -
+      - name: Build and audit r69 beta
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r69-beta.py
+          ar p r69-beta.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r69-beta'
+          python3 - <<'PY'
+          import ast,io,subprocess,tarfile
+          blob=subprocess.check_output(['ar','p','r69-beta.ipk','data.tar.gz'])
+          with tarfile.open(fileobj=io.BytesIO(blob),mode='r:gz') as t:
+              names=t.getnames()
+              assert len([n for n in names if n.endswith('/monitor.py')])==1
+              assert not any('__pycache__' in n or n.endswith(('.pyc','.pyo')) for n in names)
+              s=t.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/monitor.py').read().decode()
+              tree=ast.parse(s)
+              cl=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='SatFallbackMonitor')
+              fn=next(n for n in cl.body if isinstance(n,ast.FunctionDef) and n.name=='_post_success_quality_update')
+              body=ast.unparse(fn)
+              assert '_late_quality_signature' in body
+              assert '_is_expected_bridge_iptv' in body
+              assert 'resolution_followup_timer.start' in body
+              assert 'self.current_candidate_started_at' in body
+              for name in ('plugin.py','core.py','timeshift_seek_patch.py'):
+                  compile(t.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'+name).read(),name,'exec')
+          print('R69 QUALITY GUARD STATIC CHECK PASS')
+          PY
+      - name: Publish verified r69 beta via Online Update
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,textwrap
+          from pathlib import Path
+          raw=Path('r69-beta.ipk').read_bytes()
+          size=len(raw);sha=hashlib.sha256(raw).hexdigest()
+          b64='\n'.join(textwrap.wrap(base64.b64encode(raw).decode('ascii'),76))+'\n'
+          assert base64.b64decode(b64)==raw
+          Path('payload/r69-beta.b64').write_text(b64)
+          manifest={'version':'1.0.46-r69-beta','size':size,'sha256':sha,
+            'notes':'r69 BETA Quality Guard. Prevent repeated PLAYER_LATE_VIDEO updates; delay possible stale 4K metadata from the outgoing decoder during handover; confirm current service identity before persisting observed size and player mode. r68 Smart Player, fast MANUAL LOCK, timeshift, relay and r67 Preview unchanged. Receiver validation required. Roll back via download-r68-beta.sh.',
+            'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r69-beta.b64']}
+          Path('update.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r69-beta\n')
+          installer=Path('download-latest.sh').read_text()
+          for old,new in {'r68-beta':'r69-beta','276082':str(size),
+            'd2d14f38180807e6060cbbb8927e56fe0d4aa03025ccfff061ea70f1d3f09844':sha}.items():
+              assert old in installer,old
+              installer=installer.replace(old,new)
+          assert 'payload/r69-beta.b64' in installer and sha in installer and str(size) in installer
+          Path('download-latest.sh').write_text(installer)
+          Path('download-r69-beta.sh').write_text(installer)
+          print('R69_VERIFY',size,sha)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r69-beta.b64 update.json latest-version.txt download-latest.sh download-r69-beta.sh
+          git commit -m "Publish r69 BETA metadata quality guard online update"
+          git push
