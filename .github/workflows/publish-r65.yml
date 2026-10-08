@@ -1,0 +1,79 @@
+name: Publish IPToSat Pro r65 Keep Selection
+on:
+  push:
+    paths:
+      - 'scripts/build-r65.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify r64 reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r64.b64 > r64.ipk
+          test "$(wc -c < r64.ipk)" = "270396"
+          echo "efee95fb38929f3f8f5f0aea2795f524e447a83694c1a6bc4249dd2230eb208c  r64.ipk" | sha256sum -c -
+      - name: Build r65 and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r65.py
+          ar p r65.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r65'
+          python3 - <<'PY'
+          import io,subprocess,tarfile
+          buf=subprocess.check_output(['ar','p','r65.ipk','data.tar.gz'])
+          with tarfile.open(fileobj=io.BytesIO(buf),mode='r:gz') as t:
+              names=t.getnames()
+              assert not any('__pycache__' in n or n.endswith(('.pyc','.pyo')) for n in names)
+              assert len([n for n in names if n.endswith('/plugin.py')])==1
+              src=t.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/plugin.py').read()
+              compile(src,'plugin.py','exec')
+              assert b'selected_channel_id' in src
+              assert b'_pending_selected_fp' in src
+              assert b'_shown_fps' in src
+              for name in ('core.py','monitor.py','timeshift_seek_patch.py'):
+                  compile(t.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'+name).read(),name,'exec')
+          print('R65 NAV package integrity: PASS')
+          PY
+      - name: Publish r65 online update
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,base64,json,textwrap
+          data=Path('r65.ipk').read_bytes()
+          size=len(data)
+          sha=hashlib.sha256(data).hexdigest()
+          encoded='\n'.join(textwrap.wrap(base64.b64encode(data).decode(),76))+'\n'
+          assert base64.b64decode(encoded)==data
+          Path('payload/r65.b64').write_text(encoded)
+          manifest={'version':'1.0.46-r65','size':size,'sha256':sha,
+             'notes':'r65 Keep Selection: All Sources stays on current SAT and IPTV candidate; preserves cursor across rankings, deferred All Servers and Preview return. Preserves r64 Ultra Fast LOCKED playback, NEO Dark, real measured resolutions, timeshift and audio.',
+             'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r65.b64']}
+          Path('update.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r65\n')
+          installer=Path('download-latest.sh').read_text()
+          for old,new in {'r64':'r65','270396':str(size),
+             'efee95fb38929f3f8f5f0aea2795f524e447a83694c1a6bc4249dd2230eb208c':sha}.items():
+              installer=installer.replace(old,new)
+          assert 'payload/r65.b64' in installer and sha in installer and str(size) in installer
+          Path('download-latest.sh').write_text(installer)
+          Path('download-r65.sh').write_text(installer)
+          print('R65_UPDATE_OK',size,sha)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r65.b64 update.json latest-version.txt download-latest.sh download-r65.sh
+          git commit -m "Publish r65 selection-preserving All Sources online update"
+          git push
