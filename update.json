@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r64",
-  "size": 270396,
-  "sha256": "efee95fb38929f3f8f5f0aea2795f524e447a83694c1a6bc4249dd2230eb208c",
-  "notes": "r64 Ultra Fast Preview stage 1: update only changed SAT rows, cache mapping/rejection JSON by file signature, avoid decoding identical picons on each IPTV selection. Keeps NEO Dark Comfortable, measured resolution, SmartMatch, playback, native timeshift, audio and TS relay from r63. Receiver-side performance testing required.",
+  "version": "1.0.46-r65",
+  "size": 270986,
+  "sha256": "ad226ae2b511264a64d8778937daa900e88d28536fbe6ddb6841ede42d48045e",
+  "notes": "r65 Keep Selection: All Sources stays on current SAT and IPTV candidate; preserves cursor across rankings, deferred All Servers and Preview return. Preserves r64 Ultra Fast LOCKED playback, NEO Dark, real measured resolutions, timeshift and audio.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r64.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r65.b64"
   ]
 }
