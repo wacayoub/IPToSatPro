@@ -54,6 +54,25 @@ new = '''            if result not in ("PLAYING", "OPENING"):
                     self["status"].setText(("SELECTED • " + measured_text + " • VALEUR DU DERNIER TEST")[:220])'''
 assert s.count(old)==1
 s = s.replace(old,new,1)
+# All Sources / Manual Mapping uses another declared-resolution formatter.
+alt_start = s.index("class SatIPTVBridgeAlternatives(Screen):")
+a_start = s.index("    def _declared_resolution_text(self, channel):", alt_start)
+a_end = s.index("    def _real_resolution_text(self, channel):", a_start)
+s = s[:a_start] + (
+    '    def _declared_resolution_text(self, channel):\n'
+    '        """Unknown unless the receiver has a real measurement."""\n'
+    '        return "NON MESUREE"\n\n'
+) + s[a_end:]
+old_age = '''        if width <= 0 or height <= 0:
+            declared = self._declared_resolution_text(channel)
+            if declared != "HINT ?":
+                return "%s • not receiver-measured yet; BLUE PREVIEW will replace this hint with REAL dimensions." % declared
+            return "Resolution unknown • BLUE PREVIEW will measure the decoded stream on the receiver."'''
+new_age = '''        if width <= 0 or height <= 0:
+            return "NON MESUREE • BLUE PREVIEW mesure le flux avec le decodeur; aucune resolution inventee."'''
+assert s.count(old_age) == 1
+s = s.replace(old_age, new_age, 1)
+
 pl.write_text(s)
 updater = p / "updater.py"
 u = updater.read_text()
