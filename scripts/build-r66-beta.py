@@ -20,6 +20,42 @@ for name in ("plugin.py","monitor.py","updater.py"):
     subprocess.run(["patch","--batch","--fuzz=0","--forward","-p1"],input=payload[name].encode(),cwd=plugin,check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 for name in ("native_selection_follow.py","CHANGELOG-r66-beta.txt"):
     (plugin/name).write_text(payload[name],encoding="utf-8")
+# Published r65 has an extra line in its Preview opener compared to local r65.
+# Zero-context patch insertion can land inside openWithCallback(...); replace
+# this self-contained UI opener atomically with its locally tested implementation.
+preview_file=plugin/"plugin.py"
+preview_src=preview_file.read_text()
+p0=preview_src.index("def _open_preview_sources_direct(session):")
+p1=preview_src.index("def _live_yellow_preview_sources(session):",p0)
+known_good_preview='''def _open_preview_sources_direct(session):
+    """Live TV -> bounded Preview Sources browser; no dashboard and no catalogue scan."""
+    _preview_t0 = time.monotonic()
+    sat_name, sat_ref, ctx, ranked = _rank_current_instant(session, topn=10, per_server=3)
+    _preview_rank_ms = int((time.monotonic() - _preview_t0) * 1000)
+    channels = _preview_channel_rows(ranked)
+    # Put an existing manual lock first when it still exists in the current catalogue.
+    try:
+        manual = _load_overrides().get(sat_service_key(sat_ref))
+        fp = str((manual or {}).get("channel_id") or "")
+        locked = MONITOR.catalog.find_fingerprint(fp) if (fp and MONITOR is not None and MONITOR.catalog is not None) else None
+        if locked is not None:
+            locked_fp = channel_fingerprint(locked)
+            channels = [x for x in channels if channel_fingerprint(x) != locked_fp]
+            item = dict(locked); item["_preview_score"] = 150.0; item["_preview_details"] = {"allow_reason":"manual lock"}
+            channels.insert(0, item)
+    except Exception:
+        pass
+    channels = channels[:SatIPTVBridgePreview.MAX_BROWSER_CANDIDATES]
+    first = channels[0] if channels else {}
+    session.openWithCallback(
+        lambda result: _direct_preview_done(session, result), SatIPTVBridgePreview,
+        sat_ref, first, channels, 0, sat_name, ctx, False)
+    _startup_log("PREVIEW_COST", "rank=%dms open_total=%dms" % (_preview_rank_ms, int((time.monotonic() - _preview_t0) * 1000)))
+    return True
+
+
+'''
+preview_file.write_text(preview_src[:p0]+known_good_preview+preview_src[p1:])
 verified={
 "plugin.py":"65ae5e9cdbed1acfd5cd47a741cd5c8e9081c88f300d7158064e95ff3a706ee8",
 "monitor.py":"e9f82f2be33b8db93bc9b75f6d11e7d1c8fa17365092059325f56018316f4a97",
