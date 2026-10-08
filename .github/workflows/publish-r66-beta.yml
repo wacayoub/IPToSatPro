@@ -1,0 +1,76 @@
+name: Publish IPToSat Pro r66 BETA Online Update
+on:
+  push:
+    paths:
+      - 'scripts/r66-beta-delta.b64'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify published r65 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r65.b64 > r65.ipk
+          test "$(wc -c < r65.ipk)" = "270986"
+          echo "ad226ae2b511264a64d8778937daa900e88d28536fbe6ddb6841ede42d48045e  r65.ipk" | sha256sum -c -
+      - name: Apply exact checked beta source delta and test IPK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r66-beta.py
+          ar t r66-beta.ipk | grep -qx 'data.tar.gz'
+          ar p r66-beta.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r66-beta'
+          python3 - <<'PY'
+          import io,subprocess,tarfile,hashlib
+          b=subprocess.check_output(['ar','p','r66-beta.ipk','data.tar.gz'])
+          with tarfile.open(fileobj=io.BytesIO(b),mode='r:gz') as t:
+            names=t.getnames()
+            assert len([x for x in names if x.endswith('/plugin.py')])==1
+            assert len([x for x in names if x.endswith('/native_selection_follow.py')])==1
+            assert not any('__pycache__' in x or x.endswith(('.pyc','.pyo')) for x in names)
+          print('R66_BETA_PACKAGE_VALIDATED')
+          PY
+      - name: Publish beta as opt-in online update
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,base64,json,textwrap
+          raw=Path('r66-beta.ipk').read_bytes()
+          size=len(raw);sha=hashlib.sha256(raw).hexdigest()
+          encoded='\n'.join(textwrap.wrap(base64.b64encode(raw).decode('ascii'),76))+'\n'
+          assert base64.b64decode(encoded)==raw
+          Path('payload/r66-beta.b64').write_text(encoded)
+          manifest={
+            'version':'1.0.46-r66-beta',
+            'size':size,'sha256':sha,
+            'notes':'BETA / receiver validation required. Fix native RED All Services cursor on current DVB channel without editing OpenATV core. Preserve validated fallback BACKUP after a recently failed LOCKED primary; do not overwrite original manual LOCK. Speed Preview startup with cached encrypted SAT roster; add timing logs. This is an experimental build based on r65. Use download-r65.sh for rollback.',
+            'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r66-beta.b64']
+          }
+          Path('update.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r66-beta\n')
+          installer=Path('download-latest.sh').read_text()
+          for a,b in {'r65':'r66-beta','270986':str(size),
+              'ad226ae2b511264a64d8778937daa900e88d28536fbe6ddb6841ede42d48045e':sha}.items():
+            installer=installer.replace(a,b)
+          assert 'payload/r66-beta.b64' in installer and str(size) in installer and sha in installer
+          Path('download-latest.sh').write_text(installer)
+          Path('download-r66-beta.sh').write_text(installer)
+          print('READY r66-beta',size,sha)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r66-beta.b64 update.json latest-version.txt download-latest.sh download-r66-beta.sh
+          git commit -m "Publish r66 BETA online update with verified package and rollback"
+          git push
