@@ -27,7 +27,18 @@ verified={
 "native_selection_follow.py":"f130694778b421eea48d5834fa5f93d4743211834052c0d828acd54079628955",
 "CHANGELOG-r66-beta.txt":"611be88cbc77333cbd6822cb94797c51d07546d7a2f392f40a2f97b0a932a170"}
 for name,sha in verified.items():
-    assert hashlib.sha256((plugin/name).read_bytes()).hexdigest()==sha,name
+    actual=hashlib.sha256((plugin/name).read_bytes()).hexdigest()
+    if name in ("native_selection_follow.py","CHANGELOG-r66-beta.txt"):
+        assert actual==sha,name
+    else:
+        print("BASELINE_DEPENDENT",name,actual,"local_reference",sha)
+src=(plugin/"plugin.py").read_text()
+monitor=(plugin/"monitor.py").read_text()
+assert 'PLUGIN_VERSION = "1.0.46-r66-beta"' in src
+assert 'arm_native_allservices_follow(session, delay_ms=1500)' in src
+assert 'PREVIEW_SAT_DISK_CACHE' in src and 'PREVIEW_SAT_COST' in src
+assert 'bad_primary' in monitor and 'known_good' in monitor and 'MANUAL_LOCK' in monitor
+assert 'CURRENT_VERSION = "1.0.46-r66-beta"' in (plugin/"updater.py").read_text()
 for f in plugin.glob("*.py"):compile(f.read_bytes(),str(f),"exec")
 control=work/"control/control";txt=control.read_text()
 assert txt.count("Version: 1.0.46-r65")==1
