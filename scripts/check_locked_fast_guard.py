@@ -123,3 +123,5 @@ if __name__ == "__main__":
     except Exception as exc:
         print("LOCKED FAST-OPEN GUARD ERROR:", exc, file=sys.stderr)
         sys.exit(1)
+
+# CI guard automatically checks each published IPK against the field-proven r64 path.
