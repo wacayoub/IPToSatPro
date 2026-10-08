@@ -168,3 +168,5 @@ for kind in ("data","control"):
 if OUT.exists(): OUT.unlink()
 subprocess.check_call(["ar","r",str(OUT),str(WORK/"debian-binary"),str(WORK/"control.tar.gz"),str(WORK/"data.tar.gz")],stdout=subprocess.DEVNULL)
 print("R65_NAV_OK",OUT.stat().st_size,hashlib.sha256(OUT.read_bytes()).hexdigest())
+
+# r65 online release trigger
