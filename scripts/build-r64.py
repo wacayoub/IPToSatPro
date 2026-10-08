@@ -174,3 +174,5 @@ for k in ("data","control"):
 if OUT.exists():OUT.unlink()
 subprocess.check_call(["ar","r",str(OUT),str(WORK/"debian-binary"),str(WORK/"control.tar.gz"),str(WORK/"data.tar.gz")],stdout=subprocess.DEVNULL)
 print("R64 built",len(OUT.read_bytes()),hashlib.sha256(OUT.read_bytes()).hexdigest())
+
+# r64 build release automation trigger
