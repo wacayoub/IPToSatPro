@@ -28,6 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/build-r64.py
+          python3 scripts/check_locked_fast_guard.py r64.ipk
           ar t r64.ipk | grep -qx 'data.tar.gz'
           ar p r64.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r64'
           python3 - <<'PY'
