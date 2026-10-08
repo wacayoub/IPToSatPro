@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r66-beta",
-  "size": 273538,
-  "sha256": "77df0759e41fac9bca979bbed026382d599bf7a0e3aa3806fc8d238c66bba05a",
-  "notes": "BETA / receiver validation required. Fix native RED All Services cursor on current DVB channel without editing OpenATV core. Preserve validated fallback BACKUP after a recently failed LOCKED primary; do not overwrite original manual LOCK. Speed Preview startup with cached encrypted SAT roster; add timing logs. This is an experimental build based on r65. Use download-r65.sh for rollback.",
+  "version": "1.0.46-r67-beta",
+  "size": 274348,
+  "sha256": "f47a170dab971f90bae7053031e2af6a8e32ca4620a083f72794617e5bba889f",
+  "notes": "BETA: Preview Browser now paints current SAT row before scanning lamedb, defers SAT roster, removes two synchronous candidate-ranking passes, and computes all 36 PRIMARY/B1/B2 candidates in one background worker. Stale SAT results discarded. r66 fast LOCKED playback, audio, native OpenATV cursor hook and timeshift unchanged. Test on receiver; r66-beta rollback available.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r66-beta.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r67-beta.b64"
   ]
 }
