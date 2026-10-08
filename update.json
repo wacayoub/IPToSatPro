@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r62",
-  "size": 270048,
-  "sha256": "633eada879209286b89d61acbfb57a40e39379e722e2ac7961467c1da01681d9",
-  "notes": "r62 NEO Dark Comfortable interface update. Based on r61; playback, mappings, audio, timeshift and TS relay unchanged. Includes Metrix Fusion/OLED Minimal and XML Auto Scan fix. Receiver-side validation recommended.",
+  "version": "1.0.46-r63",
+  "size": 269602,
+  "sha256": "05b5440707e307ddceebac160a8f93cd47da3edef88ff5949bfa9b5bf1aec63a",
+  "notes": "r63 NEO Preview real-resolution clarity. Shows measured decoder WxH from cached health immediately when selected; removes misleading HINT HD/FHD labels. Unknown resolutions show NON MESUREE until OK preview. No auto stream probe; core, timeshift, mapping, player, picons and relay unchanged from r62.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r62.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r63.b64"
   ]
 }
