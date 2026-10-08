@@ -49,8 +49,8 @@ with tarfile.open(fileobj=io.BytesIO(subprocess.check_output(["ar","p",str(base)
         old=orig.extractfile("./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/"+filename).read()
         assert (P/filename).read_bytes()==old,filename
     old_plugin=orig.extractfile("./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/plugin.py").read().decode()
+    old_monitor=orig.extractfile("./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/monitor.py").read().decode()
     assert (P/"plugin.py").read_text().replace("PLUGIN_VERSION = \"1.0.46-r68-beta\"","PLUGIN_VERSION = \"1.0.46-r67-beta\"")==old_plugin
-old_monitor=orig.extractfile("./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/monitor.py").read().decode()
 new_monitor=monitor.read_text()
 for key in ("FAST_LOCK_NATIVE_TIMEOUT_MS","FAST_LOCK_UHD_NATIVE_TIMEOUT_MS","NATIVE_PAT_GUARD_MS","FAST_LOCK_PREWARM_TIMEOUT_S","FAST_MAPPED_DELAY_MS"):
     pat=r"^\s*"+key+r"\s*=\s*[^\n]+"
