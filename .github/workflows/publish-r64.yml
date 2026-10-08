@@ -1,0 +1,83 @@
+name: Publish IPToSat Pro r64 Ultra Fast Preview
+on:
+  push:
+    paths:
+      - 'scripts/build-r64.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify r63 release base
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d payload/r63.b64 > r63.ipk
+          test "$(wc -c < r63.ipk)" = "269602"
+          echo "05b5440707e307ddceebac160a8f93cd47da3edef88ff5949bfa9b5bf1aec63a  r63.ipk" | sha256sum -c -
+      - name: Build, audit and check version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r64.py
+          ar t r64.ipk | grep -qx 'data.tar.gz'
+          ar p r64.ipk control.tar.gz | tar -xzOf - ./control | grep -F 'Version: 1.0.46-r64'
+          python3 - <<'PY'
+          import ast,io,subprocess,tarfile
+          buf=subprocess.check_output(['ar','p','r64.ipk','data.tar.gz'])
+          with tarfile.open(fileobj=io.BytesIO(buf),mode='r:gz') as tf:
+              items=tf.getnames()
+              assert len([x for x in items if x.endswith('/plugin.py')])==1
+              assert not any('__pycache__' in x or x.endswith(('.pyc','.pyo')) for x in items)
+              for name in ('plugin.py','core.py','monitor.py','neo_theme.py'):
+                  b=tf.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'+name).read()
+                  compile(b,name,'exec')
+              s=tf.extractfile('./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/plugin.py').read().decode()
+              assert 'invalidateEntry(index)' in s
+              assert 'self._sat_list_dirty = True' in s
+              assert 'self._last_picon_ref = raw_ref' in s
+          print('R64 UI speed path and Python compilation: PASS')
+          PY
+      - name: Publish verified GitHub updater
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,base64,json,textwrap
+          from pathlib import Path
+          raw=Path('r64.ipk').read_bytes()
+          sha=hashlib.sha256(raw).hexdigest()
+          size=len(raw)
+          encoded='\n'.join(textwrap.wrap(base64.b64encode(raw).decode('ascii'),76))+'\n'
+          Path('payload/r64.b64').write_text(encoded)
+          assert base64.b64decode(encoded)==raw
+          manifest={
+            'version':'1.0.46-r64',
+            'size':size,
+            'sha256':sha,
+            'notes':'r64 Ultra Fast Preview stage 1: update only changed SAT rows, cache mapping/rejection JSON by file signature, avoid decoding identical picons on each IPTV selection. Keeps NEO Dark Comfortable, measured resolution, SmartMatch, playback, native timeshift, audio and TS relay from r63. Receiver-side performance testing required.',
+            'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r64.b64']
+          }
+          Path('update.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          Path('latest-version.txt').write_text('1.0.46-r64\n')
+          previous=Path('download-latest.sh').read_text()
+          old={'r63':'r64','269602':str(size),'05b5440707e307ddceebac160a8f93cd47da3edef88ff5949bfa9b5bf1aec63a':sha}
+          for a,b in old.items(): previous=previous.replace(a,b)
+          assert 'payload/r64.b64' in previous and str(size) in previous and sha in previous
+          Path('download-latest.sh').write_text(previous)
+          Path('download-r64.sh').write_text(previous)
+          print('r64:',size,sha)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r64.b64 update.json latest-version.txt download-latest.sh download-r64.sh
+          git commit -m "Publish r64 Ultra Fast Preview online update"
+          git push
