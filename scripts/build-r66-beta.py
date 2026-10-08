@@ -60,7 +60,27 @@ tail=preview_src[p1:]
 stray='    _startup_log("PREVIEW_COST", "rank=%dms open_total=%dms" % (_preview_rank_ms, int((time.monotonic() - _preview_t0) * 1000)))\n'
 assert tail.count(stray)==1,tail.count(stray)
 tail=tail.replace(stray,"",1)
-preview_file.write_text(preview_src[:p0]+known_good_preview+tail)
+preview_src=preview_src[:p0]+known_good_preview+tail
+# Restore session lifecycle hooks by semantic anchors rather than patch line numbers.
+preview_src=preview_src.replace(
+    '            # Preserve the actual selected DVB row on OpenATV\'s native RED All Services.\n'
+    '            # This only replaces the single red ActionMap callback, not ChannelSelection.pyc.\n'
+    '            arm_native_allservices_follow(session, delay_ms=1500)\n',"")
+preview_src=preview_src.replace('        stop_native_allservices_follow()\n',"")
+start=preview_src.index('def sessionstart(reason, session=None, **kwargs):')
+end=preview_src.index('def Plugins(**kwargs):',start)
+section=preview_src[start:end]
+assert section.count('            _arm_live_yellow_shortcut(session, delay_ms=1200)')==1
+assert section.count('        _stop_live_yellow_shortcut()')==1
+section=section.replace(
+    '            _arm_live_yellow_shortcut(session, delay_ms=1200)',
+    '            _arm_live_yellow_shortcut(session, delay_ms=1200)\n'
+    '            arm_native_allservices_follow(session, delay_ms=1500)',1)
+section=section.replace(
+    '        _stop_live_yellow_shortcut()',
+    '        _stop_live_yellow_shortcut()\n'
+    '        stop_native_allservices_follow()',1)
+preview_file.write_text(preview_src[:start]+section+preview_src[end:])
 verified={
 "plugin.py":"65ae5e9cdbed1acfd5cd47a741cd5c8e9081c88f300d7158064e95ff3a706ee8",
 "monitor.py":"e9f82f2be33b8db93bc9b75f6d11e7d1c8fa17365092059325f56018316f4a97",
