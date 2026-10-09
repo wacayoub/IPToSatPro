@@ -9,6 +9,7 @@ on:
       - 'tests/test_r70_safety.py'
       - 'scripts/build-r70-candidate.py'
       - 'scripts/check_r70_baseline.py'
+      - 'scripts/probe_r69_integration.py'
       - '.github/workflows/validate-r70-rc.yml'
   workflow_dispatch:
 
@@ -24,6 +25,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Inspect r69 integration APIs
+        run: python3 scripts/probe_r69_integration.py
       - name: Unit tests (no receiver, no network streams)
         run: python3 -m unittest discover -s tests -p test_r70_safety.py -v
       - name: Build local r70 RC candidate only
