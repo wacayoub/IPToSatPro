@@ -33,6 +33,20 @@ with tarfile.open(fileobj=io.BytesIO(tdata),mode="r:gz") as tar:
                                     print("  %s: %s" % (lineno, lines[lineno-1][:150]))
         if filename=="plugin.py":
             for n in tree.body:
+                if isinstance(n,ast.FunctionDef) and n.name in ("_save_override","_remove_override","_load_overrides"):
+                    print("==SOURCE",n.name)
+                    for lineno in range(n.lineno, min(n.end_lineno, n.lineno+95)+1):
+                        print("  %d: %s" %(lineno, lines[lineno-1][:165]))
+        if filename=="monitor.py":
+            for n in tree.body:
+                if isinstance(n,ast.ClassDef) and n.name=="SatFallbackMonitor":
+                    for m in n.body:
+                        if isinstance(m,ast.FunctionDef) and m.name in ("_post_success_quality_update",):
+                            print("==FULL_SOURCE",m.name)
+                            for lineno in range(m.lineno, m.end_lineno+1):
+                                print("  %d: %s" %(lineno, lines[lineno-1][:165]))
+        if filename=="plugin.py":
+            for n in tree.body:
                 if isinstance(n,ast.FunctionDef) and any(w in n.name.lower() for w in ("override","manual","lock")):
                     print("GLOBAL",n.name,"line",n.lineno,"args",[a.arg for a in n.args.args])
         if filename=="monitor.py":
