@@ -1,0 +1,49 @@
+name: Validate r70 unified candidate (NO PUBLISH)
+
+on:
+  push:
+    branches:
+      - feature/r70-unified-rc
+    paths:
+      - 'r70/**'
+      - 'tests/test_r70_safety.py'
+      - 'scripts/build-r70-candidate.py'
+      - '.github/workflows/validate-r70-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Unit tests (no receiver, no network streams)
+        run: python3 -m unittest discover -s tests -p test_r70_safety.py -v
+      - name: Build local r70 RC candidate only
+        run: python3 scripts/build-r70-candidate.py
+      - name: Verify locked fast path and native bridge unchanged
+        run: python3 scripts/check_locked_fast_guard.py r70-candidate.ipk
+      - name: Verify package contents and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          ar p r70-candidate.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx "Version: 1.0.46-r70-rc1"
+          ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F '/SatIPTVBridge/r70_monitor_adapter.py'
+          ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F '/SatIPTVBridge/r70_safety_core.py'
+          test -s r70-candidate.ipk
+      - name: Enforce NO publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in update.json latest-version.txt download-latest.sh; do
+            diff -u <(git show origin/main:"$f") "$f"
+          done
+          test ! -f payload/r70-rc1.b64
+          echo 'PASS: no release files or online update pointers changed'
+          echo 'HOLD: hardware validation and explicit release approval still required'
