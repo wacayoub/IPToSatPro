@@ -311,7 +311,7 @@ def validate_update(ipk_path, manifest, expected_prefix="1.0.46-r70"):
     count = 0
     with open(ipk_path, "rb") as f:
         header = f.read(8)
-        if header != b"!<arch>\\n":
+        if header != b"!<arch>\n":
             raise ValueError("Not an IPK archive")
         sha.update(header)
         count += len(header)
