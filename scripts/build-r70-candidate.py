@@ -69,7 +69,7 @@ def main():
         if not required.issubset(names):
             raise AssertionError("Runtime hooks changed; manual code review required")
 
-        for module in ("r70_safety_core.py", "r70_monitor_adapter.py"):
+        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py"):
             source = (ROOT / "r70" / module).read_bytes()
             compile(source, module, "exec")
             (package / module).write_bytes(source)
@@ -89,6 +89,18 @@ def main():
             before = p.read_text()
             p.write_text(once(before, key + ' = "1.0.46-r69-beta"',
                               key + ' = "' + VERSION + '"'))
+
+        # Hook *user-initiated* manual mapping saves only; original UI unchanged.
+        # Native r69 overrides remain the authority, and no I/O occurs on zap.
+        plugin_glue = (
+            "\\n# r70: backup mirror of manual locks, legacy mappings are authoritative.\\n"
+            "try:\\n"
+            "    from .r70_lock_adapter import attach_mapping_hooks as _r70_locks\\n"
+            "    _r70_locks(globals())\\n"
+            "except Exception:\\n"
+            "    pass  # r69 manual lock behavior wins in case of adapter issue.\\n"
+        )
+        plugin_path.write_bytes(plugin_path.read_bytes() + plugin_glue.encode("utf-8"))
 
         control_path = work / "control/control"
         ctrl = control_path.read_text()
@@ -111,7 +123,7 @@ def main():
         if not current.startswith(baseline_monitor) or len(current) == len(baseline_monitor):
             raise AssertionError("r69 original monitor altered")
         for name in ("plugin.py", "monitor.py", "r70_safety_core.py",
-                     "r70_monitor_adapter.py", "core.py", "updater.py"):
+                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "core.py", "updater.py"):
             compile((package / name).read_bytes(), name, "exec")
         for name in ("data", "control"):
             dest = work / (name + ".tar.gz")
