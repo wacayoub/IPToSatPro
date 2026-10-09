@@ -10,6 +10,7 @@ on:
       - 'scripts/build-r70-candidate.py'
       - 'scripts/check_r70_baseline.py'
       - 'scripts/probe_r69_integration.py'
+      - 'scripts/receiver-r70-smoke.sh'
       - '.github/workflows/validate-r70-rc.yml'
   workflow_dispatch:
 
@@ -25,6 +26,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Check receiver smoke script syntax
+        run: sh -n scripts/receiver-r70-smoke.sh
       - name: Inspect r69 integration APIs
         run: python3 scripts/probe_r69_integration.py
       - name: Unit tests (no receiver, no network streams)
