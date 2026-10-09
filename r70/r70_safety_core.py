@@ -207,6 +207,20 @@ class CandidateHistory:
         return {"reliability": round((ok + 1.0) / (ok + bad + 2.0), 3),
                 "mode": row.get("mode")}
 
+    def source_health(self, source_id):
+        """Read-only aggregate, never block entire source after single fail."""
+        sid = _token(source_id)
+        now = self.clock()
+        filtered = [row for row in self.rows.values() if row.get("source") == sid
+                    and 0 <= now - row.get("last", 0) <= STALE_AFTER]
+        ok = sum(row.get("ok", 0) for row in filtered)
+        fail = sum(row.get("fail", 0) for row in filtered)
+        return {"candidates": len(filtered),
+                "successes": ok, "failures": fail,
+                "reliability": round((ok + 1) / (ok + fail + 2), 3)
+                               if filtered else None,
+                "blocked": False}  # informational, never blacklist
+
     def flush(self):
         if self.dirty:
             _atomic_json(self.path, {"format": 1, "history": dict(self.rows)})
@@ -238,6 +252,15 @@ class ManualLockGuard:
 
     def matches(self, service_id, candidate_id):
         return self.read(service_id) == _token(candidate_id)
+
+    def drop(self, service_id):
+        """Mirror unlock only; never change native Enigma2 mappings."""
+        key = _token(service_id)
+        existed = key in self.locks
+        if existed:
+            del self.locks[key]
+            _atomic_json(self.path, {"format": 1, "locks": self.locks})
+        return existed
 
     def snapshot_legacy(self, original_path, destination_path):
         """Backup existing mappings without changing the source of truth."""
