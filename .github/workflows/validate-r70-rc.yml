@@ -51,3 +51,11 @@ jobs:
           test ! -f payload/r70-rc1.b64
           echo 'PASS: no release files or online update pointers changed'
           echo 'HOLD: hardware validation and explicit release approval still required'
+      - name: Keep offline candidate for receiver validation (NOT ONLINE UPDATE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosat-r70-rc1-TEST-ONLY
+          path: r70-candidate.ipk
+          if-no-files-found: error
+          retention-days: 3
+
