@@ -10,9 +10,12 @@ import time
 try:
     from .r70_safety_core import PlaybackGuard, CandidateHistory, RecoveryPolicy, _token
 except ImportError:
-    from Plugins.Extensions.SatIPTVBridge.r70_safety_core import (
-        PlaybackGuard, CandidateHistory, RecoveryPolicy, _token
-    )
+    try:
+        from Plugins.Extensions.SatIPTVBridge.r70_safety_core import (
+            PlaybackGuard, CandidateHistory, RecoveryPolicy, _token
+        )
+    except ImportError:
+        from r70_safety_core import PlaybackGuard, CandidateHistory, RecoveryPolicy, _token
 
 _STATE_DIR = "/etc/enigma2/SatIPTVBridge"
 
