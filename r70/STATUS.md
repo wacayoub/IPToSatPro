@@ -10,9 +10,9 @@ Candidate: `1.0.46-r70-rc1`, **offline build only**.
 |---|---|---|
 | Real Playback Verification | State machine CONNECTED / VIDEO_DECODED / STABLE, adapter captures r69 verified late video | First-frame callbacks for DVB/5002/4097; note decoded-size event alone can be insufficient proof of rendered frame |
 | Black Screen Detector | Nonblocking, bounded **no-frame observation** warning after start | True black pixels or stuck frame cannot be inferred from size; needs legitimate decoder/frame metric |
-| Persistent Manual Lock | Atomic, hashed lock mirror + verified legacy mappings backup; existing manual override engine untouched | Wire to user action only after verifying mapping storage/rollback semantics |
+| Persistent Manual Lock | Atomic, hashed lock mirror + native manual lock/unlock hooks + verified native JSON backup; native mapping data stays authoritative | Verify lock/unlock and persistence after reboot on receiver |
 | Anti-Freeze Watchdog | Per-generation, nonblocking eTimer advisory; retry/cooldown policy | GUI watchdog cannot fire while GUI thread is blocked; validate actual freezes |
-| Source Health Monitor | Sanitized bounded candidate/source history and reliability score | Health UI and scoring integration, no server-wide blacklist |
+| Source Health Monitor | Sanitized bounded candidate/source history, aggregate reliability and no provider-wide blacklist | Health UI and scoring integration, no server-wide blacklist |
 | Audio Auto-Recovery | Safe recovery decision policy; **does not switch audio tracks automatically** without proof | Validate TOD Events and audio track APIs before action |
 | Candidate History | Bounded per-candidate OK/fail/decoder mode, atomic delayed disk flush | Reboot persistence and read/write performance |
 | Safe Online Update | SHA-256/size/header/version preflight API; **existing updater unchanged** | Backups, actual install/rollback flow and user confirmation in Enigma2 UI |
@@ -20,7 +20,7 @@ Candidate: `1.0.46-r70-rc1`, **offline build only**.
 ## Explicit non-regressions
 
 - Exact existing r69 monitor AST methods retained; only an adapter call is appended.
-- Existing core.py, timeshift_seek_patch.py, neo_theme.py, relay binary/init, plugin UI unchanged, except two version literals.
+- Existing core.py, timeshift_seek_patch.py, neo_theme.py, relay binary/init and all pre-existing plugin/monitor methods unchanged. Appended optional mapping + telemetry hooks; version labels updated.
 - No network probes, active mass scan, blocking disk write or persistent timer loop on fast zap.
 - No forced service selection, lock rewrite, audio switching or player plan changes in the candidate.
 - CI builds candidate from pinned r69 and checks no changes to main's update.json/latest-version.txt/download-latest.sh.
@@ -31,10 +31,19 @@ Candidate: `1.0.46-r70-rc1`, **offline build only**.
 - Hardware playback validation required for all eight features.
 - Critical: true screen-black detection needs a trusted decoded frame metric; no guessing from a timeout.
 - Audio auto recovery must only be enabled after receiver confirms audio signal and track selection APIs; otherwise no speculative fixes.
-- Existing manual mapping overrides are source of truth; hashed mirror alone is not enough to claim full persistence integration.
+- Existing manual mapping overrides remain the source of truth; mirror now hooks manual save/remove. Hardware reboot and rollback verification are still mandatory.
 - Safe Online Update preflight is present but not wired into GUI/installer; do not claim rollback has been exercised.
 - First frame metrics are an approximation until the receiver confirms precise decoded image events; no promise of 1–2 s.
 - Previous generic r64 guard reports a deviation in r69's _on_start; dedicated r70 checker enforces byte-identical original r69 monitor and no ADDITIONAL regression.
+
+## Development verification — 9 October 2026
+
+- Corrected real decoded FHD below UHD target: a quality downgrade must not be reported as a black screen.
+- Added native manual lock/unlock hooks: after native operation the auxiliary hashed mirror and restricted-permission backup are updated; no added writes on normal zap.
+- Added read-only per-source aggregate health; no global blacklists or automatic source changes.
+- Corrected misleading inherited r62 installation message in offline r70 candidate when present.
+- CI now retains a short-lived **TEST-ONLY** candidate as a GitHub Actions artifact after all offline checks pass. This is not a public online update or release; manual receiver validation remains required.
+- Latest CI state is tracked in `.github/workflows/validate-r70-rc.yml`. A successful Actions run is **not** proof of 1–2 s playback or audio recovery.
 
 ## Validation order
 
