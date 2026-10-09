@@ -1,0 +1,48 @@
+# IPToSat Pro r70 — Unified RC (HOLD / NOT RELEASED)
+
+Branch: `feature/r70-unified-rc`  
+Baseline: published `1.0.46-r69-beta`, size 276666, SHA256 `123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed`  
+Candidate: `1.0.46-r70-rc1`, **offline build only**.
+
+## Eight features consolidated into one candidate
+
+| Feature | Stage in r70 code | Must still verify on receiver |
+|---|---|---|
+| Real Playback Verification | State machine CONNECTED / VIDEO_DECODED / STABLE, adapter captures r69 verified late video | First-frame callbacks for DVB/5002/4097; note decoded-size event alone can be insufficient proof of rendered frame |
+| Black Screen Detector | Nonblocking, bounded **no-frame observation** warning after start | True black pixels or stuck frame cannot be inferred from size; needs legitimate decoder/frame metric |
+| Persistent Manual Lock | Atomic, hashed lock mirror + verified legacy mappings backup; existing manual override engine untouched | Wire to user action only after verifying mapping storage/rollback semantics |
+| Anti-Freeze Watchdog | Per-generation, nonblocking eTimer advisory; retry/cooldown policy | GUI watchdog cannot fire while GUI thread is blocked; validate actual freezes |
+| Source Health Monitor | Sanitized bounded candidate/source history and reliability score | Health UI and scoring integration, no server-wide blacklist |
+| Audio Auto-Recovery | Safe recovery decision policy; **does not switch audio tracks automatically** without proof | Validate TOD Events and audio track APIs before action |
+| Candidate History | Bounded per-candidate OK/fail/decoder mode, atomic delayed disk flush | Reboot persistence and read/write performance |
+| Safe Online Update | SHA-256/size/header/version preflight API; **existing updater unchanged** | Backups, actual install/rollback flow and user confirmation in Enigma2 UI |
+
+## Explicit non-regressions
+
+- Exact existing r69 monitor AST methods retained; only an adapter call is appended.
+- Existing core.py, timeshift_seek_patch.py, neo_theme.py, relay binary/init, plugin UI unchanged, except two version literals.
+- No network probes, active mass scan, blocking disk write or persistent timer loop on fast zap.
+- No forced service selection, lock rewrite, audio switching or player plan changes in the candidate.
+- CI builds candidate from pinned r69 and checks no changes to main's update.json/latest-version.txt/download-latest.sh.
+- Unit tests validate state generations, false positives, persistence, privacy, retry budgets, preflight checks and non-invasive monitor wrapping.
+
+## Known incomplete / gates
+
+- Hardware playback validation required for all eight features.
+- Critical: true screen-black detection needs a trusted decoded frame metric; no guessing from a timeout.
+- Audio auto recovery must only be enabled after receiver confirms audio signal and track selection APIs; otherwise no speculative fixes.
+- Existing manual mapping overrides are source of truth; hashed mirror alone is not enough to claim full persistence integration.
+- Safe Online Update preflight is present but not wired into GUI/installer; do not claim rollback has been exercised.
+- First frame metrics are an approximation until the receiver confirms precise decoded image events; no promise of 1–2 s.
+- Previous generic r64 guard reports a deviation in r69's _on_start; dedicated r70 checker enforces byte-identical original r69 monitor and no ADDITIONAL regression.
+
+## Validation order
+
+1. All offline tests PASS and comparison against r69 PASS.
+2. Test candidate on Vu+ Zero 4K OpenATV 8.0.1, 20+ matched zaps, median/p95 first image, ensure r69 not degraded.
+3. Test audio including TOD Event Sports, timeshift, manual locks, picons, SAT DVB and UHD.
+4. Run failing inputs (EOF, no data, late decoder, slow provider, zapping race), ensure no infinite recovery or GUI freeze.
+5. Implement/enable receiver-dependent recovery only after reliable hardware instrumentation.
+6. Obtain explicit approval to publish; **only then** update main/online manifest and release IPK.
+
+**Current decision: NO RELEASE; NO MERGE INTO MAIN.** The branch consolidates the architecture; not all receiver-dependent behaviors are active yet.
