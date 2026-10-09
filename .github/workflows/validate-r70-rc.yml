@@ -43,6 +43,8 @@ jobs:
           printf 'member test' > "$tmp/item"
           (cd "$tmp" && PATH="$tmp:$PATH" ar r sample.a item)
           test "$(cd "$tmp" && PATH="$tmp:$PATH" ar p sample.a item)" = 'member test'
+          PATH="$tmp:$PATH" python3 scripts/build-r70-candidate.py
+          python3 scripts/check_r70_baseline.py
       - name: Inspect r69 integration APIs
         run: python3 scripts/probe_r69_integration.py
       - name: Unit tests (no receiver, no network streams)
