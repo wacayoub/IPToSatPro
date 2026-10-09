@@ -17,6 +17,14 @@ except ImportError:
     except ImportError:
         from r70_safety_core import PlaybackGuard, CandidateHistory, RecoveryPolicy, _token
 
+try:
+    from .core import channel_fingerprint as _native_fingerprint
+except ImportError:
+    try:
+        from Plugins.Extensions.SatIPTVBridge.core import channel_fingerprint as _native_fingerprint
+    except ImportError:
+        _native_fingerprint = None
+
 _STATE_DIR = "/etc/enigma2/SatIPTVBridge"
 
 
@@ -129,9 +137,26 @@ def attach_monitor(monitor_class):
     @functools.wraps(late)
     def wrapped_late(self, candidate, width, height, *args, **kwargs):
         result = late(self, candidate, width, height, *args, **kwargs)
-        # r69 already validates current service, decoder handover and identity.
-        # Only call it a decoded frame if that function accepted the evidence.
-        if result:
+        # r69 returns False even AFTER decoder verification when it has
+        # accepted a real below-target quality (e.g. FHD for requested UHD).
+        # Its verified signature is written only after the active service,
+        # channel fingerprint and stale decoder guards pass. Match the exact
+        # playback attempt before counting evidence or clearing no-video.
+        confirmed = bool(result)
+        try:
+            if _native_fingerprint is not None:
+                sig = getattr(self, "_late_quality_signature", None)
+                expected = (
+                    _native_fingerprint(candidate),
+                    str(getattr(self, "current_play_mode", "")),
+                    float(getattr(self, "current_candidate_started_at", 0) or 0),
+                    (int(width), int(height)),
+                    str(kwargs.get("hdr", args[0] if args else "") or ""),
+                )
+                confirmed = bool(confirmed or (sig == expected))
+        except Exception:
+            pass
+        if confirmed:
             try:
                 guard = _ensure(self)
                 gen = self._r70_generation
