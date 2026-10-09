@@ -60,7 +60,16 @@ def main():
             tag + ' = "1.0.46-r69-beta"',
             tag + ' = "1.0.46-r70-rc1"'
         )
-        assert expected != old and cand[name].decode() == expected, name + " changed"
+        assert expected != old, "Version anchor missing: " + name
+        if name == "plugin.py":
+            # All old declarations and methods must be a byte-identical prefix.
+            # Only an optional native-mapping mirror hook is appended.
+            assert cand[name].decode().startswith(expected), "r69 plugin changed"
+            trailer = cand[name].decode()[len(expected):]
+            assert "_r70_locks(globals())" in trailer, "Missing lock adapter"
+            assert "r70_lock_adapter" in trailer, "Missing lock adapter import"
+        else:
+            assert cand[name].decode() == expected, name + " changed"
     assert b"r70_monitor_adapter" in cand["monitor.py"]
     print("PASS r70 exact locked fast-path AST, SAT/timeshift, relay, GUI core")
     print("BASELINE r69 pinned:", BASE_SHA)
