@@ -102,6 +102,17 @@ def main():
         )
         plugin_path.write_bytes(plugin_path.read_bytes() + plugin_glue.encode("utf-8"))
 
+        # The inherited r69 postinst still prints "r62 installed".
+        # Replace only the stale human-readable label, never its commands.
+        postinst = work / "control/postinst"
+        if postinst.is_file():
+            post_text = postinst.read_text()
+            post_text = post_text.replace(
+                "IPToSat Pro 1.0.46-r62 installed",
+                "IPToSat Pro " + VERSION + " candidate installed"
+            )
+            postinst.write_text(post_text)
+
         control_path = work / "control/control"
         ctrl = control_path.read_text()
         ctrl = once(ctrl, "Version: 1.0.46-r69-beta", "Version: " + VERSION)
