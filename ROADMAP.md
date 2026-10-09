@@ -1,4 +1,14 @@
-# Feuille de route IPToSat Pro — r70 à r72
+# Feuille de route IPToSat Pro — consolidation r70
+
+> **Décision du 9 octobre 2026 : consolidation dans une seule candidate r70-rc1.**
+> Les 8 fonctionnalités initialement réparties entre r70, r71 et r72 sont
+> regroupées dans `feature/r70-unified-rc` pour préparer une seule prochaine
+> version. Lire [r70/STATUS.md](r70/STATUS.md) : certaines fonctions sont
+> implémentées comme noyau/politique mais leur intégration matérielle reste
+> à valider; aucune publication et aucune fusion sur main ne sont autorisées.
+> Les titres r71/r72 ci-dessous décrivent l'ancien phasage, **non** des
+> releases distinctes actuellement prévues.
+
 
 **État : PLANIFIÉ — aucune fonctionnalité ci-dessous n'est annoncée comme implémentée, testée ou publiée.**  
 **Référence stable pour la comparaison : r69-beta (1.0.46-r69-beta), Vu+ Zero 4K / OpenATV 8.0.1.**  
