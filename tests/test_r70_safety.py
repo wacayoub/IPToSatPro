@@ -15,6 +15,8 @@ from r70_safety_core import (
     validate_update, FEATURES
 )
 from r70_monitor_adapter import attach_monitor
+import r70_monitor_adapter
+from r70_lock_adapter import attach_mapping_hooks
 
 
 class Clock:
@@ -109,6 +111,69 @@ class GuardTests(unittest.TestCase):
             manifest["sha256"] = "0" * 64
             with self.assertRaises(ValueError):
                 validate_update(path, manifest)
+
+    def test_native_mapping_mirrored_without_changing_legacy(self):
+        with tempfile.TemporaryDirectory() as td:
+            native = os.path.join(td, "native_overrides.json")
+            def save(sat_ref_string, channel, **kwargs):
+                Path(native).write_text(json.dumps(
+                    {sat_ref_string: {"channel_id": channel["id"], "locked": True}}))
+                return "NATIVE_SAVED"
+            def unlock(sat_ref_string):
+                Path(native).write_text("{}")
+                return "NATIVE_REMOVED"
+            namespace = {"OVERRIDE_PATH": native,
+                         "sat_service_key": lambda ref: ref,
+                         "channel_fingerprint": lambda c: c["id"],
+                         "_save_override": save,
+                         "_remove_override": unlock}
+            self.assertTrue(attach_mapping_hooks(namespace))
+            self.assertFalse(attach_mapping_hooks(namespace))
+            self.assertEqual(namespace["_save_override"]("SAT_REF", {"id": "C1"}),
+                             "NATIVE_SAVED")
+            self.assertEqual(json.loads(Path(native).read_text())["SAT_REF"]["channel_id"], "C1")
+            locks = ManualLockGuard(os.path.join(td, "r70-manual-locks.json"))
+            self.assertTrue(locks.matches("SAT_REF", "C1"))
+            self.assertTrue(os.path.isfile(os.path.join(td, "r70-manual-overrides.backup.json")))
+            self.assertEqual(namespace["_remove_override"]("SAT_REF"), "NATIVE_REMOVED")
+            self.assertIsNone(ManualLockGuard(os.path.join(td, "r70-manual-locks.json")).read("SAT_REF"))
+
+    def test_below_target_verified_frame_is_not_black_screen(self):
+        original = r70_monitor_adapter._native_fingerprint
+        try:
+            r70_monitor_adapter._native_fingerprint = lambda candidate: candidate.get("id")
+            class Fake:
+                current_play_mode = "dvb"
+                current_candidate_started_at = 987.5
+                sat_ref_string = "SAT-REF"
+                def _play_match(self, match, score=100, retry=False):
+                    self.pending_match = match
+                    return True
+                def _post_success_quality_update(self, candidate, width, height, hdr=""):
+                    self._late_quality_signature = (
+                        candidate["id"], "dvb", 987.5, (width, height), hdr)
+                    return False  # r69 below-target quality fallback
+                def _handle_iptv_failure(self, reason):
+                    return reason
+            c = attach_monitor(Fake)
+            inst = c()
+            channel = {"id": "A", "source_id": "provider"}
+            inst._play_match(channel)
+            self.assertFalse(inst._post_success_quality_update(channel, 1920, 1080))
+            self.assertTrue(inst._r70_playback.snapshot()["video_decoded"])
+            self.assertEqual(inst._r70_playback.snapshot()["dimensions"], [1920, 1080])
+        finally:
+            r70_monitor_adapter._native_fingerprint = original
+
+    def test_source_health_is_read_only(self):
+        with tempfile.TemporaryDirectory() as td:
+            h = CandidateHistory(os.path.join(td, "history.json"))
+            h.record("c1", True, source_id="server1")
+            h.record("c2", False, source_id="server1")
+            stat = h.source_health("server1")
+            self.assertEqual(stat["candidates"], 2)
+            self.assertFalse(stat["blocked"])
+            self.assertEqual(stat["reliability"], 0.5)
 
     def test_all_eight_features_in_kernel(self):
         self.assertEqual(len(FEATURES), 8)
