@@ -8,6 +8,7 @@ on:
       - 'r70/**'
       - 'tests/test_r70_safety.py'
       - 'scripts/build-r70-candidate.py'
+      - 'scripts/check_r70_baseline.py'
       - '.github/workflows/validate-r70-rc.yml'
   workflow_dispatch:
 
@@ -28,7 +29,7 @@ jobs:
       - name: Build local r70 RC candidate only
         run: python3 scripts/build-r70-candidate.py
       - name: Verify locked fast path and native bridge unchanged
-        run: python3 scripts/check_locked_fast_guard.py r70-candidate.ipk
+        run: python3 scripts/check_r70_baseline.py
       - name: Verify package contents and version
         shell: bash
         run: |
