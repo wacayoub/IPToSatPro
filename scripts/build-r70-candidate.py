@@ -93,12 +93,12 @@ def main():
         # Hook *user-initiated* manual mapping saves only; original UI unchanged.
         # Native r69 overrides remain the authority, and no I/O occurs on zap.
         plugin_glue = (
-            "\\n# r70: backup mirror of manual locks, legacy mappings are authoritative.\\n"
-            "try:\\n"
-            "    from .r70_lock_adapter import attach_mapping_hooks as _r70_locks\\n"
-            "    _r70_locks(globals())\\n"
-            "except Exception:\\n"
-            "    pass  # r69 manual lock behavior wins in case of adapter issue.\\n"
+            "\n# r70: backup mirror of manual locks, legacy mappings are authoritative.\n"
+            "try:\n"
+            "    from .r70_lock_adapter import attach_mapping_hooks as _r70_locks\n"
+            "    _r70_locks(globals())\n"
+            "except Exception:\n"
+            "    pass  # r69 manual lock behavior wins in case of adapter issue.\n"
         )
         plugin_path.write_bytes(plugin_path.read_bytes() + plugin_glue.encode("utf-8"))
 
