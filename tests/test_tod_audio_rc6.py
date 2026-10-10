@@ -96,5 +96,20 @@ class TODAudioTests(unittest.TestCase):
     def test_failed_preference_without_history_does_not_guess(self):
         self.assertEqual(FakeMonitor("TOD EVENT SPORTS 7")._playback_plan(), ["5002","4097"])
 
+    def test_second_retry_never_reuses_failed_5002(self):
+        m=FakeMonitor("TOD EVENT SPORTS 14 FHD")
+        initial=m._playback_plan()
+        self.assertEqual(initial, ["5002", "4097"])
+        # Player failure recorded immediately before native
+        # _handle_iptv_failure recomputes the playback plan.
+        m.stream_health["stale-record"] = {
+            "last_failed_player": "5002",
+            "last_failed_player_at": rc6.time.time()
+        }
+        next_plan=m._playback_plan()
+        self.assertEqual(next_plan, ["5002", "4097"])
+        self.assertNotEqual(next_plan[1], "5002")
+
+
 if __name__ == "__main__":
     unittest.main()
