@@ -134,6 +134,14 @@ def attach_auto_recovery(cls, namespace):
         pending = getattr(self, "_r70_rc7_pending", None)
         if not pending:
             return
+        # A stream can produce its first real decoded picture AFTER an earlier
+        # 1.9s watchdog marked it failed. Such success wins over any pending
+        # recovery, including a rank timeout: do not restore SAT over live video.
+        if bool(getattr(self, "playback_locked", False)):
+            self._log("AUTO_RESCUE_CANCEL_LATE_OK",
+                      "decoder succeeded after fallback was queued; keep IPTV")
+            cancel(self)
+            return
         # Never apply a background result after another zap or IPTV selection.
         if (self.current_sat_ref_string != pending["sat_ref"] or
                 int(getattr(self, "_r70_rc7_token", 0)) != pending["token"]):
@@ -148,6 +156,9 @@ def attach_auto_recovery(cls, namespace):
                     cancel(self)
                     return
         except Exception:
+            cancel(self)
+            return
+        if bool(getattr(self, "playback_locked", False)):
             cancel(self)
             return
         result = getattr(self, "_r70_rc7_result", None)
@@ -254,6 +265,19 @@ def attach_auto_recovery(cls, namespace):
             self._log("AUTO_RESCUE_SETUP_ERR", exc.__class__.__name__)
             cancel(self)
             return original["_schedule_next_candidate"](self, reason, mark_failure)
+
+    native_success = getattr(cls, "_accept_verified_video", None)
+    if callable(native_success):
+        @functools.wraps(native_success)
+        def verified(self, *args, **kwargs):
+            ok = native_success(self, *args, **kwargs)
+            if ok and bool(getattr(self, "playback_locked", False)) and getattr(
+                    self, "_r70_rc7_pending", None):
+                self._log("AUTO_RESCUE_CANCEL_LATE_OK",
+                          "cancel background rescue after accepted decoder frame")
+                cancel(self)
+            return ok
+        cls._accept_verified_video = verified
 
     @functools.wraps(original["_stop_probe_timers"])
     def stop_probe(self):
