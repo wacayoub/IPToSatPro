@@ -52,7 +52,7 @@ jobs:
           for spec in test_no_signal_policy.py test_fta_runtime_rc3.py test_r70_safety.py test_r70_preview.py test_preview_autotest_rc4.py test_player_recovery_rc5.py test_tod_audio_rc6.py; do
             python3 -m unittest discover -s tests -p "$spec" -v
           done
-      - name: Forensic comparison of real archived r62-r69 mapping engines
+      - name: Forensic comparison of real archived r53-r69 mapping engines
         run: python3 scripts/audit_legacy_r62_r69.py
       - name: Audit structure and 100-point issue matrix
         run: |
@@ -64,7 +64,7 @@ jobs:
           path: |
             audit/MAPPING_100_RESULTS.md
             audit/MAPPING_100_RESULTS.csv
-            audit/LEGACY_COMPARISON_R62_R69.json
+            audit/LEGACY_COMPARISON_R53_R69.json
           retention-days: 14
       - name: Freeze official update and shipping artifacts
         shell: bash
