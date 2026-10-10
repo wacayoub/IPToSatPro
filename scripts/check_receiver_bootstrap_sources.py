@@ -19,6 +19,7 @@ required = [
     "r70/preview_autotest_rc4.py",
     "r70/player_recovery_rc5.py",
     "r70/tod_audio_recovery_rc6.py",
+    "r70/auto_recovery_rc7.py",
     "payload/r69-beta.b64",
 ]
 for path in required:
@@ -26,10 +27,10 @@ for path in required:
         raise AssertionError("Missing source in repository: " + path)
     if not re.search(r"(?m)^    " + re.escape(path) + r"\s*(?:\\)?$", boot):
         raise AssertionError("Receiver bootstrap omits: " + path)
-assert '"1.0.46-r70-rc6"' in builder
-assert "1.0.46-r70-rc6" in boot
+assert '"1.0.46-r70-rc7"' in builder
+assert "1.0.46-r70-rc7" in boot
 assert "r70_preview_patch.py" in builder
 assert "r70_preview_async.py" in builder
-assert "feature/r70-rc6-tod-audio-recovery" in boot, "Wrong GitHub branch for receiver build"
+assert "feature/r70-rc7-auto-candidates" in boot, "Wrong GitHub branch for receiver build"
 compile(ast.parse(builder), "builder", "exec")
-print("PASS receiver bootstrap includes every r70-rc6 source file and correct version")
+print("PASS receiver bootstrap includes every r70-rc7 source file and correct version")
