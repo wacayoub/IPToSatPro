@@ -9,7 +9,7 @@ import ast, base64, hashlib, inspect, io, subprocess, tarfile, tempfile, json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-VERSIONS=["r62","r63","r64","r65","r66-beta","r67-beta","r68-beta","r69-beta"]
+VERSIONS=["r53","r54","r55","r56","r57","r58","r59","r60","r61","r62","r63","r64","r65","r66-beta","r67-beta","r68-beta","r69-beta"]
 TARGETS = {
 "core.py": [
 "normalize_name","market_from_text","_channel_market",
@@ -143,7 +143,7 @@ for name in TARGETS:
                         for v in VERSIONS)
         if len({results.get(v,{}).get("fns",{}).get(name,{}).get(target,"MISSING") for v in VERSIONS})>1:
             print("EVOLUTION",target,series)
-report=ROOT/"audit"/"LEGACY_COMPARISON_R62_R69.json"
+report=ROOT/"audit"/"LEGACY_COMPARISON_R53_R69.json"
 report.parent.mkdir(exist_ok=True)
 report.write_text(json.dumps(results,ensure_ascii=False,indent=2)+"\n")
 print("REPORT",report)
