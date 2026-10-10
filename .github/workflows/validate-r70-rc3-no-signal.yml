@@ -7,6 +7,7 @@ on:
       - 'r70/no_signal_policy.py'
       - 'r70/NO_SIGNAL_FTA_PLAN.md'
       - 'tests/test_no_signal_policy.py'
+      - 'scripts/probe_fta_gate_rc3.py'
       - '.github/workflows/validate-r70-rc3-no-signal.yml'
   workflow_dispatch:
 permissions:
@@ -20,6 +21,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Review legacy tuner and FTA paths
+        run: python3 scripts/probe_fta_gate_rc3.py
       - name: FTA no-signal policy safety tests
         run: python3 -m unittest discover -s tests -p test_no_signal_policy.py -v
       - name: Existing r70-rc2 playback and Preview regression tests
