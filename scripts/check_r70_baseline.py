@@ -58,7 +58,7 @@ def main():
         old = base[name].decode()
         expected = old.replace(
             tag + ' = "1.0.46-r69-beta"',
-            tag + ' = "1.0.46-r70-rc1"'
+            tag + ' = "1.0.46-r70-rc2"'
         )
         assert expected != old, "Version anchor missing: " + name
         if name == "plugin.py":
