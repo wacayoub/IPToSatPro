@@ -49,12 +49,10 @@ def _verified_preference(monitor, channel, options):
         if (preferred in options and verified_at > 0 and
                 0 <= now-verified_at <= 86400 and verified_at >= failed_at):
             return preferred
-        # A recent 5002 failure may prioritize 4097 during the next visit
-        # without assuming 4097 has been verified. The second mode remains.
-        last_failed = str(rec.get("last_failed_player") or "")
-        if last_failed == "5002" and "4097" in options and (
-                0 <= now-failed_at <= 900):
-            return "4097"
+        # Never reorder the current retry plan on speculative failures:
+        # the native failure handler calls _playback_plan() AFTER it records
+        # "last_failed_player". If we promoted 4097 here, plan[1] would
+        # become the already-failed 5002, causing a duplicate attempt.
     except Exception:
         pass
     return ""
