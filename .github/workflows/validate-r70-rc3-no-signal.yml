@@ -1,0 +1,42 @@
+name: Prepare r70-rc3 no-signal FTA policy (NO RELEASE)
+on:
+  push:
+    branches:
+      - feature/r70-rc3-no-signal
+    paths:
+      - 'r70/no_signal_policy.py'
+      - 'r70/NO_SIGNAL_FTA_PLAN.md'
+      - 'tests/test_no_signal_policy.py'
+      - '.github/workflows/validate-r70-rc3-no-signal.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy-and-no-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: FTA no-signal policy safety tests
+        run: python3 -m unittest discover -s tests -p test_no_signal_policy.py -v
+      - name: Existing r70-rc2 playback and Preview regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p test_r70_safety.py -v
+          python3 -m unittest discover -s tests -p test_r70_preview.py -v
+      - name: Ensure r70-rc2 binary baseline and Online Update are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-r70-candidate.py
+          python3 scripts/check_r70_baseline.py
+          for file in update.json latest-version.txt download-latest.sh; do
+            diff -u <(git show origin/main:"$file") "$file"
+          done
+          test ! -f payload/r70-rc3.b64
+          grep -q 'VERSION = "1.0.46-r70-rc2"' scripts/build-r70-candidate.py
+          echo 'PASS: FTA policy is staged only; no install, release or Online Update.'
