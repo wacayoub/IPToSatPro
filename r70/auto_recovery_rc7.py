@@ -123,8 +123,9 @@ def attach_auto_recovery(cls, namespace):
             current_raw = current.toString() if self._ref_valid(current) else ""
             expected = str(getattr(self, "expected_iptv_ref_string", "") or "")
             if current_raw and current_raw != expected and current_raw != pending["sat_ref"]:
-                cancel(self)
-                return
+                if not self._is_expected_bridge_iptv(current, current_raw):
+                    cancel(self)
+                    return
         except Exception:
             cancel(self)
             return
@@ -236,6 +237,9 @@ def attach_auto_recovery(cls, namespace):
     @functools.wraps(original["_stop_probe_timers"])
     def stop_probe(self):
         cancel(self)
+        # A fresh Enigma2 evStart means a new zap is eligible for one
+        # recovery search, even when the user returns to the same SAT.
+        self._r70_rc7_attempted_ref = ""
         return original["_stop_probe_timers"](self)
 
     @functools.wraps(original["_stop_all_timers"])
