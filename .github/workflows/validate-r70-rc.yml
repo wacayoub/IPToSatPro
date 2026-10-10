@@ -1,0 +1,90 @@
+name: Validate r70 unified candidate (NO PUBLISH)
+
+on:
+  push:
+    branches:
+      - feature/r70-unified-rc
+    paths:
+      - 'r70/**'
+      - 'tests/test_r70_safety.py'
+      - 'tests/test_r70_preview.py'
+      - 'scripts/build-r70-candidate.py'
+      - 'scripts/check_r70_baseline.py'
+      - 'scripts/probe_r69_integration.py'
+      - 'scripts/probe_preview_r70.py'
+      - 'scripts/receiver-r70-smoke.sh'
+      - 'scripts/receiver-build-r70-test.sh'
+      - 'scripts/portable_ar_r70.py'
+      - 'scripts/check_receiver_bootstrap_sources.py'
+      - '.github/workflows/validate-r70-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify receiver build references every required file
+        run: python3 scripts/check_receiver_bootstrap_sources.py
+      - name: Check receiver smoke script syntax
+        run: sh -n scripts/receiver-r70-smoke.sh
+      - name: Check SSH bootstrap syntax and portable package builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh -n scripts/receiver-build-r70-test.sh
+          python3 -m py_compile scripts/portable_ar_r70.py
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          cp scripts/portable_ar_r70.py "$tmp/ar"
+          chmod +x "$tmp/ar"
+          printf 'member test' > "$tmp/item"
+          (cd "$tmp" && PATH="$tmp:$PATH" ar r sample.a item)
+          test "$(cd "$tmp" && PATH="$tmp:$PATH" ar p sample.a item)" = 'member test'
+          PATH="$tmp:$PATH" python3 scripts/build-r70-candidate.py
+          python3 scripts/check_r70_baseline.py
+      - name: Audit Preview Browser existing implementation
+        run: python3 scripts/probe_preview_r70.py
+      - name: Inspect r69 integration APIs
+        run: python3 scripts/probe_r69_integration.py
+      - name: Unit tests (no receiver, no network streams)
+        run: python3 -m unittest discover -s tests -p test_r70_safety.py -v
+      - name: Preview Browser regression and 10k-row pagination tests
+        run: python3 -m unittest discover -s tests -p test_r70_preview.py -v
+      - name: Build local r70 RC candidate only
+        run: python3 scripts/build-r70-candidate.py
+      - name: Verify locked fast path and native bridge unchanged
+        run: python3 scripts/check_r70_baseline.py
+      - name: Verify package contents and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          ar p r70-candidate.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx "Version: 1.0.46-r70-rc2"
+          ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F '/SatIPTVBridge/r70_monitor_adapter.py'
+          ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F '/SatIPTVBridge/r70_safety_core.py'
+          test -s r70-candidate.ipk
+      - name: Enforce NO publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in update.json latest-version.txt download-latest.sh; do
+            diff -u <(git show origin/main:"$f") "$f"
+          done
+          test ! -f payload/r70-rc2.b64
+          echo 'PASS: no release files or online update pointers changed'
+          echo 'HOLD: hardware validation and explicit release approval still required'
+      - name: Keep offline candidate for receiver validation (NOT ONLINE UPDATE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosat-r70-rc2-TEST-ONLY
+          path: r70-candidate.ipk
+          if-no-files-found: error
+          retention-days: 3
+
