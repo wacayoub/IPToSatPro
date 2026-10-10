@@ -62,6 +62,16 @@ sh /tmp/iptosat-explain.sh
 
 Ce script lit localement `catalog.jsonl` et `stream_health.json`, n'affiche aucun URL ni secret de fournisseur, et donne pour TREK/Tipik les décisions détaillées, les raisons de refus et le cooldown éventuel. Il ne joue aucun flux et ne touche à aucun mapping.
 
+## Diagnostic réel du catalogue de 72 198 chaînes (21:27)
+
+- `catalog.jsonl` : **58 884 181 octets**, **72 198 entrées** ; `stream_health.json` contient **433 entrées**.
+- `TREK` : **21 lignes portant ce nom**. Sources principales `VIP: TREK HD` 101 REVIEW, `FR TREK FHD` 87 REVIEW, `FR TREK HD` 83 REVIEW, `FR TREK SD` 64 REVIEW. **Toutes les sources citées affichent HEALTH_BLOCKED=False.**
+- `Tipik` : **10 lignes**. `BE TIPIK HD/FHD` et `BE: Tipik 4K` obtiennent 1 REJECT avec le motif `identity confidence below safe floor`. Les autres variantes sont à distinguer : `TIPIK VISION` n'est pas simplement Tipik ; `TIPIK (13)` est rejetée pour différence de numéro, ce qui est correct.
+- Causes : `TREK` sans preuve nationale se voit attribuer les marchés génériques IT/PL de 13°E ; `BE` n'existe pas dans `MARKET_ALIASES`, et le moteur conserve « be » comme morceau de nom.
+- **Correction hors paquet préparée** : `r70/mapping_identity_audit_patch.py`, transformation à ancres exactes du vrai `core.py` ; marché SAT public TREK=FR et Tipik=BE, préfixes BE Tipik strictement bornés, variante Vision et décalage de numéro inchangés. Contrôle additionnel sur `BE MOVIES` / `BE HAPPY TV` pour ne pas confondre le verbe anglais avec le code pays.
+- **CI passée** : 10 tests spécifiques du patch dont les 100 scénarios de scoring historiques, plus les autres suites déjà présentes ; pas d'IPK construit ni publié.
+- **Blocage encore ouvert** : les anciens instantanés congelés `Catalog` (pickle/snapshot) portent les clés `norm` et index `_exact/_token_index` préalables à la correction. Le patch sait réparer une ancienne ligne `_e=11` lors de la **reconstruction d'un nouveau Catalog**, mais ne migre pas encore un objet `Catalog` déjà désérialisé. La migration d'index et les performances sur 72k lignes devront être mesurées hors boucle Enigma2 avant de proposer une installation.
+
 ## Matrice d'audit
 
 Le protocole `scripts/audit_mapping_100.py` suit exactement **100 contrôles**, sans confondre code présent, simulation réussie et tests du récepteur.
