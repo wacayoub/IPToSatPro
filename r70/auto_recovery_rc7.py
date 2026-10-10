@@ -333,7 +333,12 @@ def attach_plugin(ns):
     sat_key = ns.get("sat_service_key")
     cache_get = ns.get("_preview_candidate_cache_get")
     cache_drop = ns.get("_preview_candidate_cache_drop")
-    if preview is not None and callable(sat_key) and callable(cache_get):
+    load_overrides = ns.get("_load_overrides")
+    preview_fingerprint = ns.get("channel_fingerprint")
+    # Both helpers are available as plugin.py globals in the real Enigma2
+    # browser. Test doubles must provide the same API (no fake self._manual_overrides).
+    if (preview is not None and callable(sat_key) and callable(cache_get)
+            and callable(load_overrides) and callable(preview_fingerprint)):
         orig_load = getattr(preview, "_load_selected_sat_candidates", None)
         if callable(orig_load) and not getattr(preview, "_r70_rc7_reconciled", False):
             @functools.wraps(orig_load)
@@ -342,7 +347,7 @@ def attach_plugin(ns):
                     row = self._selected_sat_row() or {}
                     raw = str(row.get("ref") or "")
                     key = sat_key(raw)
-                    manual = (self._manual_overrides or {}).get(key) or {}
+                    manual = (load_overrides() or {}).get(key) or {}
                     fp = str(manual.get("channel_id") or "")
                     if fp and raw:
                         cached = self._candidate_cache.get(key)
@@ -351,7 +356,7 @@ def attach_plugin(ns):
                         if cached is None:
                             cached = (str(row.get("name") or "SAT channel"), {}, [], False)
                         channels = [dict(c or {}) for c in cached[2] or []]
-                        if not any(fingerprint(c) == fp for c in channels):
+                        if not any(preview_fingerprint(c) == fp for c in channels):
                             monitor = ns.get("MONITOR")
                             cat = getattr(monitor, "catalog", None)
                             locked = cat.find_fingerprint(fp) if cat is not None else None
