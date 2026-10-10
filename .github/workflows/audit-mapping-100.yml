@@ -1,0 +1,45 @@
+name: Mapping Engine Deep Audit — NO IPK / NO RELEASE
+on:
+  push:
+    branches:
+      - audit/r70-rc7-mapping-root-cause
+    paths:
+      - 'r70/auto_recovery_rc7.py'
+      - 'tests/test_mapping_root_causes.py'
+      - 'tests/test_auto_recovery_rc7.py'
+      - 'scripts/audit_mapping_100.py'
+      - 'audit/**'
+      - '.github/workflows/audit-mapping-100.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Mapping core and Preview race regression tests
+        run: |
+          python3 -m unittest discover -s tests -p test_auto_recovery_rc7.py -v
+          python3 -m unittest discover -s tests -p test_mapping_root_causes.py -v
+      - name: Previous rc6 player, TOD audio, Preview and FTA regressions
+        run: |
+          for spec in test_no_signal_policy.py test_fta_runtime_rc3.py test_r70_safety.py test_r70_preview.py test_preview_autotest_rc4.py test_player_recovery_rc5.py test_tod_audio_rc6.py; do
+            python3 -m unittest discover -s tests -p "$spec" -v
+          done
+      - name: Audit structure and 100-point issue matrix
+        run: |
+          python3 scripts/audit_mapping_100.py
+      - name: Freeze official update and shipping artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in update.json latest-version.txt download-latest.sh; do
+            diff -u <(git show origin/main:"$f") "$f"
+          done
+          test ! -f r70-candidate.ipk
+          echo 'AUDIT ONLY. No packaging, no release, no published online update.'
