@@ -34,6 +34,9 @@ jobs:
                       orig='./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'+name
                       (out/name).write_bytes(t.extractfile(orig).read())
           PY
+          mkdir -p virtual-fixtures/audit
+          cp r70/auto_recovery_rc7.py r70/mapping_identity_audit_patch.py virtual-fixtures/audit/
+          cp tests/test_mapping_root_causes.py virtual-fixtures/audit/
       - uses: actions/upload-artifact@v4
         with:
           name: virtual-enigma2-r66-r69-python-fixtures
