@@ -7,6 +7,7 @@ on:
     paths:
       - 'r70/**'
       - 'tests/test_r70_safety.py'
+      - 'tests/test_r70_preview.py'
       - 'scripts/build-r70-candidate.py'
       - 'scripts/check_r70_baseline.py'
       - 'scripts/probe_r69_integration.py'
@@ -52,6 +53,8 @@ jobs:
         run: python3 scripts/probe_r69_integration.py
       - name: Unit tests (no receiver, no network streams)
         run: python3 -m unittest discover -s tests -p test_r70_safety.py -v
+      - name: Preview Browser regression and 10k-row pagination tests
+        run: python3 -m unittest discover -s tests -p test_r70_preview.py -v
       - name: Build local r70 RC candidate only
         run: python3 scripts/build-r70-candidate.py
       - name: Verify locked fast path and native bridge unchanged
