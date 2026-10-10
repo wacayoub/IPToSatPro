@@ -69,7 +69,7 @@ def main():
         if not required.issubset(names):
             raise AssertionError("Runtime hooks changed; manual code review required")
 
-        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py"):
+        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py"):
             source = (ROOT / "r70" / module).read_bytes()
             compile(source, module, "exec")
             (package / module).write_bytes(source)
@@ -90,6 +90,12 @@ def main():
             p.write_text(once(before, key + ' = "1.0.46-r69-beta"',
                               key + ' = "' + VERSION + '"'))
 
+        # Preview is a UI-only source transformation. Abort on any baseline drift.
+        preview_ns = {}
+        exec(compile((ROOT / "r70/r70_preview_patch.py").read_bytes(),
+                     "r70_preview_patch.py", "exec"), preview_ns)
+        plugin_path.write_text(preview_ns["improve"](plugin_path.read_text()))
+
         # Hook *user-initiated* manual mapping saves only; original UI unchanged.
         # Native r69 overrides remain the authority, and no I/O occurs on zap.
         plugin_glue = (
@@ -101,6 +107,15 @@ def main():
             "    pass  # r69 manual lock behavior wins in case of adapter issue.\n"
         )
         plugin_path.write_bytes(plugin_path.read_bytes() + plugin_glue.encode("utf-8"))
+        preview_glue = (
+            "\n# r70: asynchronous All Sources index-ranking, no playback modifications.\n"
+            "try:\n"
+            "    from .r70_preview_async import attach_alternatives as _r70_preview_attach\n"
+            "    _r70_preview_attach(SatIPTVBridgeAlternatives, globals())\n"
+            "except Exception:\n"
+            "    pass  # preserve native Preview if async adapter is unavailable.\n"
+        )
+        plugin_path.write_bytes(plugin_path.read_bytes() + preview_glue.encode("utf-8"))
 
         # The inherited r69 postinst still prints "r62 installed".
         # Replace only the stale human-readable label, never its commands.
@@ -134,7 +149,7 @@ def main():
         if not current.startswith(baseline_monitor) or len(current) == len(baseline_monitor):
             raise AssertionError("r69 original monitor altered")
         for name in ("plugin.py", "monitor.py", "r70_safety_core.py",
-                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "core.py", "updater.py"):
+                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "core.py", "updater.py"):
             compile((package / name).read_bytes(), name, "exec")
         for name in ("data", "control"):
             dest = work / (name + ".tar.gz")
