@@ -188,8 +188,13 @@ def attach_preview(preview_cls, namespace):
 
     @functools.wraps(old["_sat_selection_changed"])
     def sat_changed(self):
-        if (getattr(self, "_r70_autotest_running", False)
-                and self.sat_ref_string != getattr(self, "_r70_autotest_ref", None)):
+        try:
+            selected = self._selected_sat_row() or {}
+            selected_ref = str(selected.get("ref") or "")
+        except Exception:
+            selected_ref = ""
+        if (getattr(self, "_r70_autotest_running", False) and
+                (selected_ref != getattr(self, "_r70_autotest_ref", None))):
             stop(self)
         return old["_sat_selection_changed"](self)
 
