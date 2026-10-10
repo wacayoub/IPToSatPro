@@ -19,7 +19,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "payload/r69-beta.b64"
 OUT = ROOT / "r70-candidate.ipk"
-VERSION = "1.0.46-r70-rc3"
+VERSION = "1.0.46-r70-rc4"
 BASE_BYTES = 276666
 BASE_SHA256 = "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed"
 REL = "usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
@@ -69,7 +69,7 @@ def main():
         if not required.issubset(names):
             raise AssertionError("Runtime hooks changed; manual code review required")
 
-        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py"):
+        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py"):
             source = (ROOT / "r70" / module).read_bytes()
             compile(source, module, "exec")
             (package / module).write_bytes(source)
@@ -102,7 +102,30 @@ def main():
         preview_ns = {}
         exec(compile((ROOT / "r70/r70_preview_patch.py").read_bytes(),
                      "r70_preview_patch.py", "exec"), preview_ns)
-        plugin_path.write_text(preview_ns["improve"](plugin_path.read_text()))
+        preview_source = preview_ns["improve"](plugin_path.read_text())
+        old_action = '"2": self._open_auto_scan,'
+        if preview_source.count(old_action) != 1:
+            raise AssertionError("Unexpected Preview actions; refusing unsafe rc4 package")
+        preview_source = preview_source.replace(
+            old_action,
+            '"2": self._open_auto_scan, "3": self._r70_autotest_start,', 1)
+        old_label = 'self["key_blue"] = Label("PREVIEW / RETRY")'
+        if preview_source.count(old_label) != 1:
+            raise AssertionError("Unexpected Preview BLUE key; refusing unsafe rc4 package")
+        preview_source = preview_source.replace(
+            old_label, 'self["key_blue"] = Label("AUTO TEST / PREVIEW")', 1)
+        # Native fallback stub prevents Preview crash if the optional
+        # auto-test adapter fails to import on an older OpenATV image.
+        begin_method = '    def __init__(self, session, sat_ref_string, channel,'
+        if preview_source.count(begin_method) != 1:
+            raise AssertionError("Preview constructor signature unexpectedly changed")
+        preview_source = preview_source.replace(
+            begin_method,
+            '    def _r70_autotest_start(self):\n'
+            '        self["detail"].setText("Auto Test unavailable; RIGHT then BLUE tests one source")\n'
+            '\n' + begin_method, 1
+        )
+        plugin_path.write_text(preview_source)
 
         # Hook *user-initiated* manual mapping saves only; original UI unchanged.
         # Native r69 overrides remain the authority, and no I/O occurs on zap.
@@ -133,6 +156,15 @@ def main():
             "    pass  # no new menu or FTA fallback on unavailable API\n"
         )
         plugin_path.write_bytes(plugin_path.read_bytes() + fta_plugin_glue.encode("utf-8"))
+        autopick_glue = (
+            "\n# r70-rc4: Preview Auto Test (only on explicit BLUE/3)\n"
+            "try:\n"
+            "    from .preview_autotest_rc4 import attach_preview as _rc4_autotest_attach\n"
+            "    _rc4_autotest_attach(SatIPTVBridgePreview, globals())\n"
+            "except Exception:\n"
+            "    pass  # native manual Preview remains intact\n"
+        )
+        plugin_path.write_bytes(plugin_path.read_bytes() + autopick_glue.encode("utf-8"))
 
         # The inherited r69 postinst still prints "r62 installed".
         # Replace only the stale human-readable label, never its commands.
@@ -166,7 +198,7 @@ def main():
         if not current.startswith(baseline_monitor) or len(current) == len(baseline_monitor):
             raise AssertionError("r69 original monitor altered")
         for name in ("plugin.py", "monitor.py", "r70_safety_core.py",
-                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "core.py", "updater.py"):
+                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "core.py", "updater.py"):
             compile((package / name).read_bytes(), name, "exec")
         for name in ("data", "control"):
             dest = work / (name + ".tar.gz")
