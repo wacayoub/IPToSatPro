@@ -32,6 +32,36 @@ Le moteur respecte un verrou manuel dont le nom IPTV peut être très différent
 ### MAJEUR E — SAT 14/240 ne prouve pas un lamedb cassé
 La légende `CRYPTED 14 / 240 TV` est un filtre « chaînes cryptées » de Preview sur l'orbite sélectionnée. Les 240 chaînes TV et 14 chaînes déclarées cryptées ne signifient pas nécessairement que 226 services ont disparu. Vérifier l'état crypté réel et le filtre FTA indépendamment.
 
+## Nouveaux faits démontrés par le diagnostic réel (21:11)
+
+### E — TREK : score élevé mais décision REVIEW
+
+- Log du récepteur : `MATCH_BG_DONE sat='TREK' stage=fuzzy rows=19 candidates=0`, `NO_MATCH best='FR TREK FHD' score=87.0 threshold=82`, puis 89 lors d'un nouveau passage.
+- Reproduction *avec le core.py original* : `normalize_name('TREK') == normalize_name('FR TREK FHD') == 'trek'`. À 13°E (`orbital_position=130`), le contexte de repli infère IT/PL avec confiance MEDIUM ; un IPTV explicitement FR déclenche `review_reason='explicit IPTV market FR differs from ambiguous SAT market hint IT'`.
+- `match_decision(87, details, 82)` retourne `REVIEW` malgré le score : le filtrage de sûreté prend priorité sur le seuil. Le Preview conserve 17 propositions dans ce cas, tandis que SmartMatch en accepte zéro.
+- Correctif à concevoir : départager le marché réel d'origine (audio DVB/EPG/métadonnées chaîne) et le simple indice orbital, sans autoriser un flux étranger sur une incompatibilité *forte*. **Pas encore corrigé.**
+
+### F — Tipik : le préfixe de pays `BE:` détruit la correspondance
+
+- Log réel : `NO_MATCH best='BE: Tipik 4K' score=1.0 threshold=82`.
+- Reproduction *core.py original* : `normalize_name('Tipik') == 'tipik'`, mais `normalize_name('BE: Tipik 4K') == 'be tipik'`. Le mot `BE` ne fait pas partie des marqueurs géographiques reconnus ; la confiance d'identité tombe à 71 sous le plancher de 72, avec `reject_reason='identity confidence below safe floor'`, pénalité supplémentaire -70 et score final 1.
+- Correctif : traiter le préfixe **de pays réellement identifié** `BE:` (et variantes limitées) comme une étiquette, sans supprimer globalement `be` dans les marques. Recalculer la normalisation des catalogues JSONL/snapshot existants après évolution du schéma. **Pas encore corrigé.**
+
+### G — Premier scan SAT lent, cache chaud rapide
+
+- Mesures réelles : `PREVIEW_SAT_COST orbital=130 rows=591 elapsed=4809ms` puis 21 à 35ms à chaud, à nouveau 4868ms pour un scan froid ; `PREVIEW_RANK_BG candidate_count=17 elapsed=729ms` pour TREK.
+- Source : `_preview_sat_service_rows` parcourt le catalogue DVB, consulte des données CA statiques par service dont l'état est inconnu puis met en cache les résultats. Le classement IPTV (729ms) est un coût différent de la constitution SAT (~4,8s).
+- Correctif : audit d'invalidation de cache par lamedb/lamedb5, traitement différé de l'identification CA non confirmée, et mesures p50/p95 sur les mêmes bouquets avant toute nouvelle candidate. **Pas encore corrigé.**
+
+### Diagnostic lecture seule préparé
+
+```sh
+wget -O /tmp/iptosat-explain.sh https://raw.githubusercontent.com/wacayoub/IPToSatPro/audit/r70-rc7-mapping-root-cause/scripts/receiver-explain-matches.sh
+sh /tmp/iptosat-explain.sh
+```
+
+Ce script lit localement `catalog.jsonl` et `stream_health.json`, n'affiche aucun URL ni secret de fournisseur, et donne pour TREK/Tipik les décisions détaillées, les raisons de refus et le cooldown éventuel. Il ne joue aucun flux et ne touche à aucun mapping.
+
 ## Matrice d'audit
 
 Le protocole `scripts/audit_mapping_100.py` suit exactement **100 contrôles**, sans confondre code présent, simulation réussie et tests du récepteur.
