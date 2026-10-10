@@ -126,12 +126,11 @@ def attach_monitor(monitor_cls):
 
     @functools.wraps(old_gate)
     def crypto_gate(self):
-        # Existing r69 encryption gate MUST win. It retains fast crypted
-        # handling and the manual-lock stale CAID exception.
-        if old_gate(self):
-            return True
-        if not _enabled(self):
-            return False
+        # Explicitly confirmed clear access + opted-in FTA mode must pass
+        # the no-signal gate FIRST. An old manual lock must not override
+        # a newly recovered LOCKED tuner (some legacy locks lack access data).
+        if not _enabled(self) or _access(self) is not False:
+            return old_gate(self)  # exact r69 rule for encrypted/unknown
         allowed, reason = _policy(self)
         if allowed:
             try:
