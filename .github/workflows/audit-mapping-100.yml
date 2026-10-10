@@ -8,6 +8,8 @@ on:
       - 'tests/test_mapping_root_causes.py'
       - 'tests/test_mapping_corpus_100.py'
       - 'tests/test_mapping_known_gaps.py'
+      - 'r70/mapping_identity_audit_patch.py'
+      - 'tests/test_mapping_identity_audit_patch.py'
       - 'scripts/receiver-explain-matches.sh'
       - 'tests/test_auto_recovery_rc7.py'
       - 'scripts/audit_mapping_100.py'
@@ -42,6 +44,8 @@ jobs:
           payload=s.split("python3 - <<'PY'\n",1)[1].rsplit("\nPY",1)[0]
           compile(payload,"receiver-explain-matches.py","exec")
           PY
+      - name: Audited TREK and Tipik identity correction, plus original 100-case non-regression
+        run: python3 -m unittest discover -s tests -p test_mapping_identity_audit_patch.py -v
       - name: Previous rc6 player, TOD audio, Preview and FTA regressions
         run: |
           for spec in test_no_signal_policy.py test_fta_runtime_rc3.py test_r70_safety.py test_r70_preview.py test_preview_autotest_rc4.py test_player_recovery_rc5.py test_tod_audio_rc6.py; do
