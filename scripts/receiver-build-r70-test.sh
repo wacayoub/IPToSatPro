@@ -5,7 +5,7 @@ set -eu
 
 ROOT=/tmp/iptosat-r70-source
 OUT=/tmp/iptosat-r70-rc6.ipk
-BASE=https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r70-rc6-no-signal
+BASE=https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r70-rc6-tod-audio-recovery
 
 command -v python3 >/dev/null 2>&1 || {
     echo "ERROR: Python3 is required; nothing changed."
