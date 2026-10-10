@@ -9,7 +9,7 @@ on:
       - 'scripts/check_r70_baseline.py'
       - 'scripts/receiver-build-r70-test.sh'
       - 'scripts/check_receiver_bootstrap_sources.py'
-      - 'tests/test_fta_runtime_rc4.py'
+      - 'tests/test_fta_runtime_rc3.py'
       - 'tests/test_no_signal_policy.py'
       - 'tests/test_preview_autotest_rc4.py'
       - '.github/workflows/validate-r70-rc4-preview.yml'
@@ -28,7 +28,7 @@ jobs:
       - name: FTA policy and live adapter tests
         run: |
           python3 -m unittest discover -s tests -p test_no_signal_policy.py -v
-          python3 -m unittest discover -s tests -p test_fta_runtime_rc4.py -v
+          python3 -m unittest discover -s tests -p test_fta_runtime_rc3.py -v
       - name: Prior rc2 playback and Preview non-regression tests
         run: |
           python3 -m unittest discover -s tests -p test_r70_safety.py -v
@@ -57,7 +57,7 @@ jobs:
           done
           test ! -f payload/r70-rc4.b64
           echo 'PASS: Preview Auto Test gated, no autoplay on navigation, no automatic REVIEW lock, Fast Zap unchanged.'
-      - name: Keep short-lived RC3 test artifact (NOT A RELEASE)
+      - name: Keep short-lived RC4 test artifact (NOT A RELEASE)
         uses: actions/upload-artifact@v4
         with:
           name: iptosat-r70-rc4-TEST-ONLY
