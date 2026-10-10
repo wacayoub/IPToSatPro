@@ -1,45 +1,63 @@
-name: Prepare r70-rc3 no-signal FTA policy (NO RELEASE)
+name: Validate r70-rc3 FTA no-signal + Preview (NO RELEASE)
 on:
   push:
     branches:
       - feature/r70-rc3-no-signal
     paths:
-      - 'r70/no_signal_policy.py'
-      - 'r70/NO_SIGNAL_FTA_PLAN.md'
+      - 'r70/**'
+      - 'scripts/build-r70-candidate.py'
+      - 'scripts/check_r70_baseline.py'
+      - 'scripts/receiver-build-r70-test.sh'
+      - 'scripts/check_receiver_bootstrap_sources.py'
+      - 'tests/test_fta_runtime_rc3.py'
       - 'tests/test_no_signal_policy.py'
-      - 'scripts/probe_fta_gate_rc3.py'
       - '.github/workflows/validate-r70-rc3-no-signal.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  policy-and-no-regression:
+  validate-only:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Review legacy tuner and FTA paths
-        run: python3 scripts/probe_fta_gate_rc3.py
-      - name: FTA no-signal policy safety tests
-        run: python3 -m unittest discover -s tests -p test_no_signal_policy.py -v
-      - name: Existing r70-rc2 playback and Preview regression tests
-        shell: bash
+      - name: FTA policy and live adapter tests
         run: |
-          set -euo pipefail
+          python3 -m unittest discover -s tests -p test_no_signal_policy.py -v
+          python3 -m unittest discover -s tests -p test_fta_runtime_rc3.py -v
+      - name: Prior rc2 playback and Preview non-regression tests
+        run: |
           python3 -m unittest discover -s tests -p test_r70_safety.py -v
           python3 -m unittest discover -s tests -p test_r70_preview.py -v
-      - name: Ensure r70-rc2 binary baseline and Online Update are unchanged
+      - name: Ensure receiver SSH bootstrap includes all rc3 modules
+        run: |
+          python3 scripts/check_receiver_bootstrap_sources.py
+          sh -n scripts/receiver-build-r70-test.sh
+      - name: Build rc3 locally and assert protected r69/rc2 code remains safe
+        run: |
+          python3 scripts/build-r70-candidate.py
+          python3 scripts/check_r70_baseline.py
+      - name: Verify candidate, version and updater hold
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/build-r70-candidate.py
-          python3 scripts/check_r70_baseline.py
+          test -s r70-candidate.ipk
+          ar p r70-candidate.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx 'Version: 1.0.46-r70-rc3'
+          for filename in no_signal_policy.py fta_runtime_adapter.py r70_preview_async.py; do
+            ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F "/SatIPTVBridge/$filename"
+          done
           for file in update.json latest-version.txt download-latest.sh; do
             diff -u <(git show origin/main:"$file") "$file"
           done
           test ! -f payload/r70-rc3.b64
-          grep -q 'VERSION = "1.0.46-r70-rc2"' scripts/build-r70-candidate.py
-          echo 'PASS: FTA policy is staged only; no install, release or Online Update.'
+          echo 'PASS: encrypted fast zap unchanged; FTA opt-in; Online Update not touched.'
+      - name: Keep short-lived RC3 test artifact (NOT A RELEASE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosat-r70-rc3-TEST-ONLY
+          path: r70-candidate.ipk
+          retention-days: 3
+          if-no-files-found: error
