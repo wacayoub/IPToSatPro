@@ -6,6 +6,7 @@ on:
     paths:
       - 'r70/auto_recovery_rc7.py'
       - 'tests/test_mapping_root_causes.py'
+      - 'tests/test_mapping_corpus_100.py'
       - 'tests/test_auto_recovery_rc7.py'
       - 'scripts/audit_mapping_100.py'
       - 'audit/**'
@@ -26,6 +27,8 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p test_auto_recovery_rc7.py -v
           python3 -m unittest discover -s tests -p test_mapping_root_causes.py -v
+      - name: 100 real native matching-score test scenarios
+        run: python3 -m unittest discover -s tests -p test_mapping_corpus_100.py -v
       - name: Previous rc6 player, TOD audio, Preview and FTA regressions
         run: |
           for spec in test_no_signal_policy.py test_fta_runtime_rc3.py test_r70_safety.py test_r70_preview.py test_preview_autotest_rc4.py test_player_recovery_rc5.py test_tod_audio_rc6.py; do
@@ -34,6 +37,14 @@ jobs:
       - name: Audit structure and 100-point issue matrix
         run: |
           python3 scripts/audit_mapping_100.py
+      - name: Upload audit report ONLY (not a package)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-audit-100-report
+          path: |
+            audit/MAPPING_100_RESULTS.md
+            audit/MAPPING_100_RESULTS.csv
+          retention-days: 14
       - name: Freeze official update and shipping artifacts
         shell: bash
         run: |
@@ -43,3 +54,4 @@ jobs:
           done
           test ! -f r70-candidate.ipk
           echo 'AUDIT ONLY. No packaging, no release, no published online update.'
+
