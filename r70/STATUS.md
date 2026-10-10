@@ -24,7 +24,7 @@ Candidate: `1.0.46-r70-rc2` (Preview Browser UI upgrade), **offline build only**
 - New All Sources browse/search page navigation: **8 = previous page**, **9 = next page**; 48 rows painted at once, full 10,000+ candidate collections retained. CH± continues to navigate SAT channels.
 - Background SAT ranking on old cursor selection is discarded sooner (230ms rerun delay rather than 680ms) without parallel workers or new network scans.
 - Live image/codec/Dolby statistics update while the candidate list repaint is throttled to 1s; final decoder sample repaints immediately.
-- When ranked candidates reorder, the source selection is restored using the exact candidate fingerprint rather than an unrelated old row index.
+- When ranked candidates reorder, the source selection is restored using the exact candidate fingerprint rather than an unrelated old row index. If the manually selected All Sources candidate lies outside the best 36, it is preserved as an extra visible row, not silently replaced.
 - Preview/All Sources typography and row density are adjusted for a FHD screen (two columns preserved).
 - Tests exercise source patch against pinned r69, simulated 10k-row page navigation, asynchronous rank, core/relay preservation, no online release.
 - Actual GUI smoothness and ranking latency on Vu+ Zero 4K still require receiver tests; this is **not** a measured 1–2s Preview guarantee.
