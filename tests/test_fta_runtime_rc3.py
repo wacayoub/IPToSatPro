@@ -67,6 +67,13 @@ class NoSignalMonitorTests(unittest.TestCase):
         self.assertIsNone(f._fallback_if_matched())
         self.assertEqual(f._fallback_calls,0)
 
+    def test_clear_manual_mapping_cannot_override_healthy_sat(self):
+        f=self.monitor(access=False,tuner='LOCKED',old_gate=True)
+        self.assertFalse(f._instant_mapped_enabled())
+        self.assertFalse(f._encrypted_fallback_allowed_once())
+        self.assertIsNone(f._fallback_if_matched())
+        self.assertEqual(f._fallback_calls,0)
+
     def test_encrypted_existing_fast_path(self):
         f=self.monitor(access=True,tuner="LOCKED",old_gate=True)
         self.assertTrue(f._instant_mapped_enabled())
