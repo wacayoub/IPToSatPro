@@ -10,6 +10,7 @@ on:
       - 'scripts/build-r70-candidate.py'
       - 'scripts/check_r70_baseline.py'
       - 'scripts/probe_r69_integration.py'
+      - 'scripts/probe_preview_r70.py'
       - 'scripts/receiver-r70-smoke.sh'
       - 'scripts/receiver-build-r70-test.sh'
       - 'scripts/portable_ar_r70.py'
@@ -45,6 +46,8 @@ jobs:
           test "$(cd "$tmp" && PATH="$tmp:$PATH" ar p sample.a item)" = 'member test'
           PATH="$tmp:$PATH" python3 scripts/build-r70-candidate.py
           python3 scripts/check_r70_baseline.py
+      - name: Audit Preview Browser existing implementation
+        run: python3 scripts/probe_preview_r70.py
       - name: Inspect r69 integration APIs
         run: python3 scripts/probe_r69_integration.py
       - name: Unit tests (no receiver, no network streams)
