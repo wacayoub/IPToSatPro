@@ -2,7 +2,7 @@
 
 Branch: `feature/r70-unified-rc`  
 Baseline: published `1.0.46-r69-beta`, size 276666, SHA256 `123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed`  
-Candidate: `1.0.46-r70-rc1`, **offline build only**.
+Candidate: `1.0.46-r70-rc2` (Preview Browser UI upgrade), **offline build only**. r70-rc1 remains the previous test baseline.
 
 ## Eight features consolidated into one candidate
 
@@ -16,6 +16,18 @@ Candidate: `1.0.46-r70-rc1`, **offline build only**.
 | Audio Auto-Recovery | Safe recovery decision policy; **does not switch audio tracks automatically** without proof | Validate TOD Events and audio track APIs before action |
 | Candidate History | Bounded per-candidate OK/fail/decoder mode, atomic delayed disk flush | Reboot persistence and read/write performance |
 | Safe Online Update | SHA-256/size/header/version preflight API; **existing updater unchanged** | Backups, actual install/rollback flow and user confirmation in Enigma2 UI |
+
+## Preview Browser overhaul in r70-rc2
+
+- Initial P/B1/B2 Preview rank remains first-paint instant. A previously completed shared cache is no longer overwritten by an incomplete seed when reopening Preview.
+- The deferred full Manual Mapping/All Sources rank now runs off Enigma2's GUI thread, with one bounded worker and stale-service result protection. Existing core ranking/scoring is unmodified.
+- New All Sources browse/search page navigation: **8 = previous page**, **9 = next page**; 48 rows painted at once, full 10,000+ candidate collections retained. CH± continues to navigate SAT channels.
+- Background SAT ranking on old cursor selection is discarded sooner (230ms rerun delay rather than 680ms) without parallel workers or new network scans.
+- Live image/codec/Dolby statistics update while the candidate list repaint is throttled to 1s; final decoder sample repaints immediately.
+- When ranked candidates reorder, the source selection is restored using the exact candidate fingerprint rather than an unrelated old row index.
+- Preview/All Sources typography and row density are adjusted for a FHD screen (two columns preserved).
+- Tests exercise source patch against pinned r69, simulated 10k-row page navigation, asynchronous rank, core/relay preservation, no online release.
+- Actual GUI smoothness and ranking latency on Vu+ Zero 4K still require receiver tests; this is **not** a measured 1–2s Preview guarantee.
 
 ## Explicit non-regressions
 
