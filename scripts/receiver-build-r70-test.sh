@@ -4,8 +4,8 @@
 set -eu
 
 ROOT=/tmp/iptosat-r70-source
-OUT=/tmp/iptosat-r70-rc3.ipk
-BASE=https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r70-rc3-no-signal
+OUT=/tmp/iptosat-r70-rc4.ipk
+BASE=https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r70-rc4-no-signal
 
 command -v python3 >/dev/null 2>&1 || {
     echo "ERROR: Python3 is required; nothing changed."
@@ -28,6 +28,7 @@ for item in \
     r70/r70_preview_async.py \
     r70/no_signal_policy.py \
     r70/fta_runtime_adapter.py \
+    r70/preview_autotest_rc4.py \
     payload/r69-beta.b64
 do
     echo "Fetching $item"
@@ -64,7 +65,7 @@ assert ipk.read_bytes().startswith(b"!<arch>\n")
 ctrl=subprocess.check_output(["ar", "p", str(ipk), "control.tar.gz"])
 with tarfile.open(fileobj=io.BytesIO(ctrl),mode="r:gz") as t:
     c=t.extractfile("./control").read().decode("utf-8")
-assert "Version: 1.0.46-r70-rc3\n" in c, c
+assert "Version: 1.0.46-r70-rc4\n" in c, c
 print("Validated r70 RC package control. NOT INSTALLED.")
 PY
 
