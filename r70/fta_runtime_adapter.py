@@ -20,25 +20,36 @@ def _enabled(monitor):
 
 
 def _access(monitor):
-    """Static DVB metadata wins over stale live sIsCrypted=0."""
+    """Per-SAT-service access cache; avoids repeating lamedb/overrides I/O on zap."""
+    key = (getattr(monitor, "current_sat_ref_string", ""),
+           getattr(monitor, "current_sat_started_at", 0),
+           getattr(monitor, "direct_mapping_source", ""))
+    cached = getattr(monitor, "_r70_fta_access_cached", None)
+    if cached and cached[0] == key:
+        return cached[1]
+    access = None
+    # Strong positive live CA evidence is the cheapest encrypted fast path.
     try:
-        saved = monitor._manual_lock_saved_access()
-        if saved is True:
-            return True
-        if saved is False:
-            return False
+        if monitor._is_crypted() is True:
+            access = True
     except Exception:
         pass
-    try:
-        static = monitor._static_crypted_state_fast()
+    if access is not True:
+        static = None
+        saved = None
+        try: static = monitor._static_crypted_state_fast()
+        except Exception: pass
         if static is True:
-            return True
-        if static is False:
-            return False
-    except Exception:
-        pass
-    # A live False alone is not proof of FTA when DVB PMT is absent.
-    return None
+            access = True
+        else:
+            try: saved = monitor._manual_lock_saved_access()
+            except Exception: pass
+            if saved is True:
+                access = True
+            elif saved is False or static is False:
+                access = False
+    monitor._r70_fta_access_cached = (key, access)
+    return access
 
 
 def _policy(monitor, explicit=False):
