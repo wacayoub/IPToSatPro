@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ar p r70-candidate.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx "Version: 1.0.46-r70-rc1"
+          ar p r70-candidate.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx "Version: 1.0.46-r70-rc2"
           ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F '/SatIPTVBridge/r70_monitor_adapter.py'
           ar p r70-candidate.ipk data.tar.gz | tar -tzf - | grep -F '/SatIPTVBridge/r70_safety_core.py'
           test -s r70-candidate.ipk
@@ -74,13 +74,13 @@ jobs:
           for f in update.json latest-version.txt download-latest.sh; do
             diff -u <(git show origin/main:"$f") "$f"
           done
-          test ! -f payload/r70-rc1.b64
+          test ! -f payload/r70-rc2.b64
           echo 'PASS: no release files or online update pointers changed'
           echo 'HOLD: hardware validation and explicit release approval still required'
       - name: Keep offline candidate for receiver validation (NOT ONLINE UPDATE)
         uses: actions/upload-artifact@v4
         with:
-          name: iptosat-r70-rc1-TEST-ONLY
+          name: iptosat-r70-rc2-TEST-ONLY
           path: r70-candidate.ipk
           if-no-files-found: error
           retention-days: 3
