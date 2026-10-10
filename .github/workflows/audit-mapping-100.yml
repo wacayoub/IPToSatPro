@@ -14,6 +14,7 @@ on:
       - 'tests/test_auto_recovery_rc7.py'
       - 'scripts/audit_mapping_100.py'
       - 'scripts/audit_legacy_r62_r69.py'
+      - 'scripts/audit_legacy_regression_diffs.py'
       - 'audit/**'
       - '.github/workflows/audit-mapping-100.yml'
   workflow_dispatch:
@@ -54,6 +55,8 @@ jobs:
           done
       - name: Forensic comparison of real archived r53-r69 mapping engines
         run: python3 scripts/audit_legacy_r62_r69.py
+      - name: Show critical Preview and monitor regression diffs from r65 through r68
+        run: python3 scripts/audit_legacy_regression_diffs.py
       - name: Audit structure and 100-point issue matrix
         run: |
           python3 scripts/audit_mapping_100.py
