@@ -7,6 +7,8 @@ on:
       - 'r70/auto_recovery_rc7.py'
       - 'tests/test_mapping_root_causes.py'
       - 'tests/test_mapping_corpus_100.py'
+      - 'tests/test_mapping_known_gaps.py'
+      - 'scripts/receiver-explain-matches.sh'
       - 'tests/test_auto_recovery_rc7.py'
       - 'scripts/audit_mapping_100.py'
       - 'audit/**'
@@ -29,6 +31,17 @@ jobs:
           python3 -m unittest discover -s tests -p test_mapping_root_causes.py -v
       - name: 100 real native matching-score test scenarios
         run: python3 -m unittest discover -s tests -p test_mapping_corpus_100.py -v
+      - name: Known real-world matching gaps (2 expected failures, no fake pass)
+        run: python3 -m unittest discover -s tests -p test_mapping_known_gaps.py -v
+      - name: Verify receiver diagnostic shell and embedded Python syntax
+        run: |
+          sh -n scripts/receiver-explain-matches.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/receiver-explain-matches.sh").read_text()
+          payload=s.split("python3 - <<'PY'\n",1)[1].rsplit("\nPY",1)[0]
+          compile(payload,"receiver-explain-matches.py","exec")
+          PY
       - name: Previous rc6 player, TOD audio, Preview and FTA regressions
         run: |
           for spec in test_no_signal_policy.py test_fta_runtime_rc3.py test_r70_safety.py test_r70_preview.py test_preview_autotest_rc4.py test_player_recovery_rc5.py test_tod_audio_rc6.py; do
