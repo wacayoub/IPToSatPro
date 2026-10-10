@@ -62,12 +62,39 @@ def main():
         )
         assert expected != old, "Version anchor missing: " + name
         if name == "plugin.py":
-            # All old declarations and methods must be a byte-identical prefix.
-            # Only an optional native-mapping mirror hook is appended.
-            assert cand[name].decode().startswith(expected), "r69 plugin changed"
-            trailer = cand[name].decode()[len(expected):]
-            assert "_r70_locks(globals())" in trailer, "Missing lock adapter"
-            assert "r70_lock_adapter" in trailer, "Missing lock adapter import"
+            patch_ns = {}
+            exec(compile((ROOT / "r70/r70_preview_patch.py").read_bytes(),
+                         "r70_preview_patch.py", "exec"), patch_ns)
+            preview_expected = patch_ns["improve"](expected)
+            # Strictly permit the separately audited Preview UI patch, plus
+            # appended auxiliary lock and async ranking adapters. Other
+            # original classes and non-Preview globals must be AST identical.
+            result = cand[name].decode()
+            assert result.startswith(preview_expected), "Unexpected plugin changes"
+            trailer = result[len(preview_expected):]
+            for required in ("_r70_locks(globals())", "r70_lock_adapter",
+                             "_r70_preview_attach(SatIPTVBridgeAlternatives, globals())",
+                             "r70_preview_async"):
+                assert required in trailer, "Missing UI hook: " + required
+            orig = ast.parse(expected)
+            actual = ast.parse(result)
+            allowed_classes = {"SatIPTVBridgePreview", "SatIPTVBridgeAlternatives",
+                               "SmartMatchAlternativesList"}
+            allowed_functions = {"_preview_candidate_cache_put",
+                                 "_open_all_sources_for_ref"}
+            old_code = {("class", n.name): ast.dump(n, include_attributes=False)
+                        for n in orig.body if isinstance(n, ast.ClassDef)
+                        and n.name not in allowed_classes}
+            old_code.update({("function", n.name): ast.dump(n, include_attributes=False)
+                            for n in orig.body if isinstance(n, ast.FunctionDef)
+                            and n.name not in allowed_functions})
+            new_code = {("class", n.name): ast.dump(n, include_attributes=False)
+                        for n in actual.body if isinstance(n, ast.ClassDef)
+                        and n.name not in allowed_classes}
+            new_code.update({("function", n.name): ast.dump(n, include_attributes=False)
+                            for n in actual.body if isinstance(n, ast.FunctionDef)
+                            and n.name not in allowed_functions})
+            assert old_code == new_code, "Unrelated plugin classes/functions changed"
         else:
             assert cand[name].decode() == expected, name + " changed"
     assert b"r70_monitor_adapter" in cand["monitor.py"]
