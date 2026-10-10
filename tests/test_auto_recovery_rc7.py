@@ -41,6 +41,7 @@ class Monitor:
         )
         self.current_sat_ref_string="SAT:BEIN1"
         self.current_sat_name="beIN SPORTS 1"
+        self.target_quality_rank=0
         self.current_match_name="beIN SPORTS 1"
         self.expected_iptv_ref_string="IPTV:OLD"
         self.current_sat_ref=True
@@ -63,6 +64,7 @@ class Monitor:
     def _user_languages(self):return ["EN","AR"]
     def _user_rejected_ids(self):return set()
     def _health_blocked(self,ch):return False
+    def _no_4k_upscale_enabled(self):return True
     def _record_health(self,ch,success,reason=""):self.records.append((ch["id"],reason))
     def _log(self,event,msg):self.logged.append(event)
     def _set_state(self,*args):pass
@@ -96,7 +98,10 @@ class RC7Tests(unittest.TestCase):
     def setUpClass(cls):
         attach_auto_recovery(Monitor, dict(eTimer=Timer,
             channel_fingerprint=fingerprint,normalize_name=normalize,
-            match_decision=decision))
+            match_decision=decision,
+            effective_quality_info=lambda c:(
+                "UHD" if c.get("quality_rank")==600 else "FHD",
+                c.get("quality_rank",300),c.get("quality_source","guess"))))
     def test_manual_failed_lock_selects_alternative_automatically(self):
         m=Monitor([row("safe","beIN SPORTS 1",110,{"name":100}),
                    row("wrong","TOD EVENT SPORTS 8",110,{"name":100})])
@@ -154,6 +159,26 @@ class RC7Tests(unittest.TestCase):
                    row("good","beIN SPORTS 1",60,{"name":100})])
         m._user_rejected_ids=lambda:{"bad"}
         self.assertEqual([a[0]["id"] for a in m._build_candidate_plan(m.catalog.rows)],["good"])
+    def test_forced_review_preserves_no_4k_upscale(self):
+        candidate=row("wrong4k","beIN SPORTS 1",60,{"name":100})
+        candidate[0]["quality_rank"]=600
+        m=Monitor([candidate])
+        m.target_quality_rank=500
+        self.assertEqual(m._build_candidate_plan(m.catalog.rows),[])
+
+    def test_forced_review_uhd_unknown_quality_is_not_automapped(self):
+        candidate=row("unknown","beIN SPORTS 1",60,{"name":100})
+        m=Monitor([candidate])
+        m.target_quality_rank=600
+        self.assertEqual(m._build_candidate_plan(m.catalog.rows),[])
+
+    def test_forced_review_allows_observed_compatible_quality(self):
+        candidate=row("fhd","beIN SPORTS 1",60,{"name":100})
+        candidate[0].update(quality_rank=500,quality_source="observed")
+        m=Monitor([candidate])
+        m.target_quality_rank=500
+        self.assertEqual(m._build_candidate_plan(m.catalog.rows)[0][0]["id"],"fhd")
+
     def test_cancel_stops_pending_timer(self):
         m=Monitor([row("safe","beIN SPORTS 1",110,{"name":100})])
         m._schedule_next_candidate("EOF")
