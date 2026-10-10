@@ -58,7 +58,7 @@ def main():
         old = base[name].decode()
         expected = old.replace(
             tag + ' = "1.0.46-r69-beta"',
-            tag + ' = "1.0.46-r70-rc4"'
+            tag + ' = "1.0.46-r70-rc5"'
         )
         assert expected != old, "Version anchor missing: " + name
         if name == "plugin.py":
@@ -112,6 +112,7 @@ def main():
             assert cand[name].decode() == expected, name + " changed"
     assert b"r70_monitor_adapter" in cand["monitor.py"]
     assert b"_rc3_fta_attach(SatFallbackMonitor)" in cand["monitor.py"], "Missing opt-in FTA gate"
+    assert b"_rc5_recovery_attach(SatFallbackMonitor)" in cand["monitor.py"], "Missing rc5 failed-only decoder fallback"
     print("PASS r70 exact locked fast-path AST, SAT/timeshift, relay, GUI core")
     print("BASELINE r69 pinned:", BASE_SHA)
     print("NOTE: r64 legacy guard reports inherited _on_start deviation in r69;")
