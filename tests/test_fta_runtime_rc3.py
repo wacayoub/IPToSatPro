@@ -93,6 +93,21 @@ class NoSignalMonitorTests(unittest.TestCase):
         self.assertFalse(f._encrypted_fallback_allowed_once())
         self.assertIsNone(f._fallback_if_matched())
 
+    def test_access_cache_avoids_repeated_lamedb_lookup(self):
+        f=self.monitor(access=False,tuner="FAILED")
+        counts=[0]
+        def static():
+            counts[0]+=1
+            return False
+        f._static_crypted_state_fast=static
+        self.assertFalse(f._instant_mapped_enabled())
+        self.assertTrue(f._encrypted_fallback_allowed_once())
+        self.assertEqual(f._fallback_if_matched(),"IPTV")
+        self.assertEqual(counts[0],1)
+        f.current_sat_started_at-=5  # next SAT service/decision cycle
+        self.assertFalse(f._instant_mapped_enabled())
+        self.assertEqual(counts[0],2)
+
     def test_no_callbacks_replaced_on_double_attach(self):
         f=self.monitor()
         wrapped=type(f)._fallback_if_matched
