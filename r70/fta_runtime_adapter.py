@@ -216,16 +216,21 @@ def attach_plugin(namespace):
             # confirmed FTA only; unknown crypted state is not assumed FTA.
             rows = [dict(row or {}) for row in original]
             ids = {namespace["_dvb_service_key"](row.get("ref")) for row in rows}
+            access_states = namespace.get("_lamedb_access_states")
+            static_access = access_states() if callable(access_states) else {}
             for entry_row in catalog:
-                if entry_row.get("crypted") is not False:
-                    continue
                 if orbital is not None and entry_row.get("orbital_position") != orbital:
                     continue
                 key = namespace["_dvb_service_key"](entry_row.get("ref"))
                 if not key or key in ids:
                     continue
                 ids.add(key)
-                rows.append(dict(entry_row))
+                row = dict(entry_row)
+                if row.get("crypted") is not True and key in static_access:
+                    # FTA from lamedb is provisional, never enough alone to
+                    # authorize playback switching without the runtime gate.
+                    row["crypted"] = bool(static_access[key])
+                rows.append(row)
             rows.sort(key=lambda row: str(row.get("name") or "").casefold())
             return rows
         except Exception:
