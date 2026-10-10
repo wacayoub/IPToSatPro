@@ -15,6 +15,7 @@ on:
       - 'scripts/receiver-r70-smoke.sh'
       - 'scripts/receiver-build-r70-test.sh'
       - 'scripts/portable_ar_r70.py'
+      - 'scripts/check_receiver_bootstrap_sources.py'
       - '.github/workflows/validate-r70-rc.yml'
   workflow_dispatch:
 
@@ -30,6 +31,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Verify receiver build references every required file
+        run: python3 scripts/check_receiver_bootstrap_sources.py
       - name: Check receiver smoke script syntax
         run: sh -n scripts/receiver-r70-smoke.sh
       - name: Check SSH bootstrap syntax and portable package builder
