@@ -19,7 +19,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "payload/r69-beta.b64"
 OUT = ROOT / "r70-candidate.ipk"
-VERSION = "1.0.46-r70-rc6"
+VERSION = "1.0.46-r70-rc7"
 BASE_BYTES = 276666
 BASE_SHA256 = "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed"
 REL = "usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
@@ -69,7 +69,7 @@ def main():
         if not required.issubset(names):
             raise AssertionError("Runtime hooks changed; manual code review required")
 
-        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "player_recovery_rc5.py", "tod_audio_recovery_rc6.py"):
+        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "player_recovery_rc5.py", "tod_audio_recovery_rc6.py", "auto_recovery_rc7.py"):
             source = (ROOT / "r70" / module).read_bytes()
             compile(source, module, "exec")
             (package / module).write_bytes(source)
@@ -106,9 +106,18 @@ def main():
             "except Exception:\n"
             "    pass  # existing player and audio safety remain authoritative\n"
         )
+        rc7_auto_glue = (
+            "\n# rc7: background rescue of exact SAT identity after dead manual IPTV.\n"
+            "try:\n"
+            "    from .auto_recovery_rc7 import attach_auto_recovery as _rc7_rescue_attach\n"
+            "    _rc7_rescue_attach(SatFallbackMonitor, globals())\n"
+            "except Exception:\n"
+            "    pass  # leave prior manual-lock logic on incompatible Enigma2\n"
+        )
         mon_path.write_bytes(
             baseline_monitor + glue.encode("utf-8") + fta_monitor_glue.encode("utf-8")
-            + rc5_player_glue.encode("utf-8") + rc6_tod_glue.encode("utf-8"))
+            + rc5_player_glue.encode("utf-8") + rc6_tod_glue.encode("utf-8")
+            + rc7_auto_glue.encode("utf-8"))
         for filename, key in (("plugin.py", "PLUGIN_VERSION"),
                               ("updater.py", "CURRENT_VERSION")):
             p = package / filename
@@ -183,6 +192,15 @@ def main():
             "    pass  # native manual Preview remains intact\n"
         )
         plugin_path.write_bytes(plugin_path.read_bytes() + autopick_glue.encode("utf-8"))
+        rescue_plugin_glue = (
+            "\n# rc7: enable same-channel rescue on failed manual locks; opt-out Settings.\n"
+            "try:\n"
+            "    from .auto_recovery_rc7 import attach_plugin as _rc7_plugin_attach\n"
+            "    _rc7_plugin_attach(globals())\n"
+            "except Exception:\n"
+            "    pass  # never prevent native Settings from opening\n"
+        )
+        plugin_path.write_bytes(plugin_path.read_bytes() + rescue_plugin_glue.encode("utf-8"))
 
         # The inherited r69 postinst still prints "r62 installed".
         # Replace only the stale human-readable label, never its commands.
@@ -216,7 +234,7 @@ def main():
         if not current.startswith(baseline_monitor) or len(current) == len(baseline_monitor):
             raise AssertionError("r69 original monitor altered")
         for name in ("plugin.py", "monitor.py", "r70_safety_core.py",
-                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "player_recovery_rc5.py", "tod_audio_recovery_rc6.py", "core.py", "updater.py"):
+                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "player_recovery_rc5.py", "tod_audio_recovery_rc6.py", "auto_recovery_rc7.py", "core.py", "updater.py"):
             compile((package / name).read_bytes(), name, "exec")
         for name in ("data", "control"):
             dest = work / (name + ".tar.gz")
