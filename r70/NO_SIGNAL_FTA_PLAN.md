@@ -1,5 +1,17 @@
 # IPToSat Pro — mode SAT sans signal pour cryptées + en clair
 
+## Implémentation r70-rc3 — 10 octobre 2026
+
+**Candidate intégrée, non publiée : 1.0.46-r70-rc3.** Le plugin installe un réglage persistant **FTA rescue only when SAT has no signal**, qui est désactivé par défaut. L'ancien réglage *only_crypted* reste à True ; la seule exception suit le garde-fou `r70/no_signal_policy.py`.
+
+- Le moteur de lecture crypté conserve les callbacks, plans et temps de garde existants ; identification d'accès FTA mise en cache par service SAT pour éviter les accès répétés à lamedb pendant le zap.
+- Les événements `evTuneFailed` empruntent toujours le traitement différé Enigma2/PAT avant le fallback ; un tuner qui a retrouvé `LOCKED` annule le secours FTA, même si un ancien mapping manuel existe.
+- Un état FTA incertain ou un tuner inconnu sans preuve explicite **ne déclenche pas** le fallback.
+- Preview Browser affiche les services TV cryptés, en clair et à statut inconnu présents dans lamedb (pour le satellite sélectionné) lorsque ce mode est activé. Les filtres dédiés *Cryptées / En clair / Sans signal* restent à développer ; aucune chaîne radio ni modification de bouquets.
+- Tests GitHub Actions : **41/41** (10 politique + 11 adaptateur + 12 sécurité + 8 Preview), génération de l'IPK de test et vérification des modules/version. L'image/les changements de chaînes restent non testés physiquement sur Vu+ Zero 4K.
+- Pas de fusion de `main`, pas de modification de `update.json`, pas de publication Online Update. Voir la [Pull Request #2](https://github.com/wacayoub/IPToSatPro/pull/2).
+
+
 **Prochaine étape proposée : r70-rc3 (PREPARATION / PAS DE RELEASE).**
 
 Branche : `feature/r70-rc3-no-signal`, basée sur la candidate r70-rc2. Les
@@ -80,4 +92,4 @@ différente et ne pas tourner en boucle.
    toute régression du chemin validé.
 7. Ne pas fusionner dans `main` ni publier d'Online Update avant essais réels.
 
-**État : SPEC + POLICY + TESTS. Pas encore activé.**
+**État actuel : candidate r70-rc3 construite et testée hors récepteur ; fonction activable dans Settings après installation, sous réserve de validation matérielle.**
