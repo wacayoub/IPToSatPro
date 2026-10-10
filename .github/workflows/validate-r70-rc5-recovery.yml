@@ -36,11 +36,13 @@ jobs:
           python3 -m unittest discover -s tests -p test_r70_preview.py -v
       - name: Preview Auto-Test selection and failover regressions
         run: python3 -m unittest discover -s tests -p test_preview_autotest_rc4.py -v
-      - name: Ensure receiver SSH bootstrap includes all rc4 modules
+      - name: Failed-player recovery unit tests
+        run: python3 -m unittest discover -s tests -p test_player_recovery_rc5.py -v
+      - name: Ensure receiver SSH bootstrap includes all rc5 modules
         run: |
           python3 scripts/check_receiver_bootstrap_sources.py
           sh -n scripts/receiver-build-r70-test.sh
-      - name: Build rc4 locally and assert protected r69/rc2 code remains safe
+      - name: Build rc5 locally and assert protected r69/rc2 code remains safe
         run: |
           python3 scripts/build-r70-candidate.py
           python3 scripts/check_r70_baseline.py
@@ -58,7 +60,7 @@ jobs:
           done
           test ! -f payload/r70-rc5.b64
           echo 'PASS: new player mode only on first failed attempt, no change to successful Fast Zap, Online Update held.'
-      - name: Keep short-lived RC4 test artifact (NOT A RELEASE)
+      - name: Keep short-lived RC5 test artifact (NOT A RELEASE)
         uses: actions/upload-artifact@v4
         with:
           name: iptosat-r70-rc5-TEST-ONLY
