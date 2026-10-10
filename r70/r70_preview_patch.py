@@ -47,9 +47,13 @@ def improve(source):
                         shared[0], dict(shared[1] or {}), full, True)
                     self._source_pos_by_sat[key] = matching
                 else:
+                    # Exact manually chosen source was outside the automatic
+                    # top 36. Preserve its row and keep the rest in core order.
+                    window = full[:max(0, self.MAX_BROWSER_CANDIDATES-1)]
+                    window.append(dict(incoming[incoming_selected]))
                     self._candidate_cache[key] = (
-                        self.sat_name, dict(self.context), incoming, False)
-                    self._source_pos_by_sat[key] = incoming_selected
+                        shared[0], dict(shared[1] or {}), window, True)
+                    self._source_pos_by_sat[key] = len(window)-1
             else:
                 self._candidate_cache[key] = (
                     self.sat_name, dict(self.context), incoming, False)
@@ -84,6 +88,22 @@ def improve(source):
         '''            try: self.candidate_expand_timer.start(230, True)
             except Exception: pass
             return'''
+    )
+
+    # When background ranking omits the candidate opened explicitly from
+    # All Sources, preserve it as a visible final row instead of changing
+    # the user's selection to another stream at the old index.
+    once(
+        '''        channels = self._sort_candidates_with_cached_evidence(channels, context=ctx)[:self.MAX_BROWSER_CANDIDATES]
+        rec = (sat_name, dict(ctx or {}), channels, True)''',
+        '''        channels = self._sort_candidates_with_cached_evidence(channels, context=ctx)[:self.MAX_BROWSER_CANDIDATES]
+        current_selected = self._selected_channel()
+        if current_selected:
+            wanted_fp = channel_fingerprint(current_selected)
+            if wanted_fp and not any(channel_fingerprint(ch) == wanted_fp for ch in channels):
+                channels = channels[:max(0, self.MAX_BROWSER_CANDIDATES-1)]
+                channels.append(dict(current_selected))
+        rec = (sat_name, dict(ctx or {}), channels, True)'''
     )
 
     # Preserve candidate fingerprint after background reorder; old keep_index=True
