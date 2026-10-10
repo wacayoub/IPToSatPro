@@ -65,6 +65,7 @@ def attach_auto_recovery(cls, namespace):
     fingerprint = namespace.get("channel_fingerprint")
     normalize = namespace.get("normalize_name")
     decision_fn = namespace.get("match_decision")
+    quality_fn = namespace.get("effective_quality_info")
     if (eTimer is None or not all(callable(original[k]) for k in required)
             or not all(callable(x) for x in (fingerprint, normalize, decision_fn))):
         return cls
@@ -91,6 +92,26 @@ def attach_auto_recovery(cls, namespace):
             if self._health_blocked(ch) or not _review_exact(
                     self, row, fingerprint, normalize, decision_fn):
                 continue
+            # Same UHD / no upscale / strict measured quality fences used
+            # by the original SAFE planner apply to exact-name REVIEW too.
+            if callable(quality_fn):
+                try:
+                    _qlabel, qrank, qsource = quality_fn(ch)
+                    qrank = int(qrank or 0)
+                    target = int(getattr(self, "target_quality_rank", 0) or 0)
+                    if (target < 600 and qrank >= 600 and
+                            self._no_4k_upscale_enabled()):
+                        continue
+                    if (target >= 600 and qrank <= 300 and
+                            str(qsource or "").lower() not in ("observed","receiver")):
+                        continue
+                    policy = getattr(getattr(self.cfg,"resolution_policy",None),
+                                     "value", "source_strict")
+                    if (policy == "strict_exact" and target > 0 and
+                            qsource == "observed" and qrank < target):
+                        continue
+                except Exception:
+                    continue
             used.add(fp)
             ds = dict(details or {})
             ds["decision"] = "REVIEW_EXACT_AUTO"
