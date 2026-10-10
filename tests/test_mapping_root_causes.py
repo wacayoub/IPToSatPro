@@ -93,7 +93,6 @@ class PreviewLockedSourceTests(unittest.TestCase):
                         "url":"fake://source"} if found else None
         class Preview:
             def __init__(self):
-                self._manual_overrides={"REF6":{"channel_id":"lock6"}}
                 self._candidate_cache={}
                 self.channels=[]
             def _selected_sat_row(self):
@@ -109,6 +108,8 @@ class PreviewLockedSourceTests(unittest.TestCase):
             "getConfigListEntry":lambda name,item:(name,item),
             "SatIPTVBridgePreview":Preview,
             "sat_service_key":lambda ref:ref,
+            "_load_overrides":lambda:{"REF6":{"channel_id":"lock6"}},
+            "channel_fingerprint":lambda c:c.get("id"),
             "_preview_candidate_cache_get":lambda ref:("beIN SPORTS 6",{},[],True),
             "_preview_candidate_cache_drop":lambda ref:drops.append(ref),
             "MONITOR":SimpleNamespace(catalog=Cat()),
