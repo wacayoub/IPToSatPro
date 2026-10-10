@@ -58,6 +58,11 @@ class PreviewTests(unittest.TestCase):
         self.assertIn("shared = _preview_candidate_cache_get(self.input_sat_ref)", self.patched)
         self.assertIn("if matching is not None:", self.patched)
 
+    def test_selected_manual_candidate_survives_missing_top36(self):
+        self.assertIn('window.append(dict(incoming[incoming_selected]))', self.patched)
+        self.assertIn('channels.append(dict(current_selected))', self.patched)
+        self.assertIn('self._source_pos_by_sat[key] = len(window)-1', self.patched)
+
     def test_video_quality_live_poll_does_not_repaint_all_rows_300ms(self):
         self.assertIn('time.monotonic() - last_paint >= 1.0', self.patched)
         self.assertIn('if final or time.monotonic() - last_paint >= 1.0:', self.patched)
