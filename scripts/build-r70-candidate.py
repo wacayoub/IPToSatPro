@@ -114,6 +114,17 @@ def main():
             raise AssertionError("Unexpected Preview BLUE key; refusing unsafe rc4 package")
         preview_source = preview_source.replace(
             old_label, 'self["key_blue"] = Label("AUTO TEST / PREVIEW")', 1)
+        # Native fallback stub prevents Preview crash if the optional
+        # auto-test adapter fails to import on an older OpenATV image.
+        begin_method = '    def __init__(self, session, sat_ref_string, channel,'
+        if preview_source.count(begin_method) != 1:
+            raise AssertionError("Preview constructor signature unexpectedly changed")
+        preview_source = preview_source.replace(
+            begin_method,
+            '    def _r70_autotest_start(self):\n'
+            '        self["detail"].setText("Auto Test unavailable; RIGHT then BLUE tests one source")\n'
+            '\n' + begin_method, 1
+        )
         plugin_path.write_text(preview_source)
 
         # Hook *user-initiated* manual mapping saves only; original UI unchanged.
