@@ -327,4 +327,52 @@ def attach_plugin(ns):
                     pass
             return r
         settings._build_list = build
+    # Reconcile saved manual-lock candidates on Preview cache hits.
+    # An empty "complete" result must never hide a valid locked source.
+    preview = ns.get("SatIPTVBridgePreview")
+    sat_key = ns.get("sat_service_key")
+    cache_get = ns.get("_preview_candidate_cache_get")
+    cache_drop = ns.get("_preview_candidate_cache_drop")
+    if preview is not None and callable(sat_key) and callable(cache_get):
+        orig_load = getattr(preview, "_load_selected_sat_candidates", None)
+        if callable(orig_load) and not getattr(preview, "_r70_rc7_reconciled", False):
+            @functools.wraps(orig_load)
+            def load(self):
+                try:
+                    row = self._selected_sat_row() or {}
+                    raw = str(row.get("ref") or "")
+                    key = sat_key(raw)
+                    manual = (self._manual_overrides or {}).get(key) or {}
+                    fp = str(manual.get("channel_id") or "")
+                    if fp and raw:
+                        cached = self._candidate_cache.get(key)
+                        if cached is None:
+                            cached = cache_get(raw)
+                        if cached is None:
+                            cached = (str(row.get("name") or "SAT channel"), {}, [], False)
+                        channels = [dict(c or {}) for c in cached[2] or []]
+                        if not any(fingerprint(c) == fp for c in channels):
+                            monitor = ns.get("MONITOR")
+                            cat = getattr(monitor, "catalog", None)
+                            locked = cat.find_fingerprint(fp) if cat is not None else None
+                            if isinstance(locked, dict):
+                                item = dict(locked)
+                                item["_preview_score"] = float(manual.get("auto_scan_score") or 150)
+                                item["_preview_details"] = {
+                                    "allow_reason": "manual lock", "pinned": True}
+                                channels.insert(0, item)
+                                self._candidate_cache[key] = (
+                                    cached[0], dict(cached[1] or {}), channels, bool(cached[3]))
+                            else:
+                                # Rotated/removed IPTV source: never fabricate a playable
+                                # channel, but re-enable deferred ranker for this SAT row.
+                                self._candidate_cache[key] = (
+                                    cached[0], dict(cached[1] or {}), channels, False)
+                                if callable(cache_drop):
+                                    cache_drop(raw)
+                except Exception:
+                    pass
+                return orig_load(self)
+            preview._load_selected_sat_candidates = load
+            preview._r70_rc7_reconciled = True
     return True
