@@ -24,6 +24,8 @@ for item in \
     r70/r70_safety_core.py \
     r70/r70_monitor_adapter.py \
     r70/r70_lock_adapter.py \
+    r70/r70_preview_patch.py \
+    r70/r70_preview_async.py \
     payload/r69-beta.b64
 do
     echo "Fetching $item"
