@@ -58,7 +58,7 @@ def main():
         old = base[name].decode()
         expected = old.replace(
             tag + ' = "1.0.46-r69-beta"',
-            tag + ' = "1.0.46-r70-rc2"'
+            tag + ' = "1.0.46-r70-rc3"'
         )
         assert expected != old, "Version anchor missing: " + name
         if name == "plugin.py":
@@ -74,7 +74,7 @@ def main():
             trailer = result[len(preview_expected):]
             for required in ("_r70_locks(globals())", "r70_lock_adapter",
                              "_r70_preview_attach(SatIPTVBridgeAlternatives, globals())",
-                             "r70_preview_async"):
+                             "r70_preview_async", "_rc3_fta_plugin(globals())", "fta_runtime_adapter"):
                 assert required in trailer, "Missing UI hook: " + required
             orig = ast.parse(expected)
             actual = ast.parse(result)
@@ -98,6 +98,7 @@ def main():
         else:
             assert cand[name].decode() == expected, name + " changed"
     assert b"r70_monitor_adapter" in cand["monitor.py"]
+    assert b"_rc3_fta_attach(SatFallbackMonitor)" in cand["monitor.py"], "Missing opt-in FTA gate"
     print("PASS r70 exact locked fast-path AST, SAT/timeshift, relay, GUI core")
     print("BASELINE r69 pinned:", BASE_SHA)
     print("NOTE: r64 legacy guard reports inherited _on_start deviation in r69;")
