@@ -1,0 +1,41 @@
+name: Export historic Python fixtures for virtual Enigma2 (NO IPK)
+on:
+  push:
+    branches:
+      - audit/r70-rc7-mapping-root-cause
+    paths:
+      - '.github/workflows/virtual-enigma2-fixtures.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export actual r66/r67/r69 Python sources (never package binaries)
+        run: |
+          set -e
+          mkdir -p virtual-fixtures
+          python3 - <<'PY'
+          import base64,tarfile,subprocess,tempfile,pathlib,io
+          root=pathlib.Path.cwd()
+          for tag in ['r66-beta','r67-beta','r68-beta','r69-beta']:
+              pkg=base64.b64decode((root/'payload'/(tag+'.b64')).read_bytes())
+              with tempfile.TemporaryDirectory() as td:
+                  p=pathlib.Path(td)/'old.ipk'
+                  p.write_bytes(pkg)
+                  tgz=subprocess.check_output(['ar','p',str(p),'data.tar.gz'])
+              out=root/'virtual-fixtures'/tag
+              out.mkdir(parents=True,exist_ok=True)
+              with tarfile.open(fileobj=io.BytesIO(tgz),mode='r:gz') as t:
+                  for name in ('plugin.py','core.py','monitor.py'):
+                      orig='./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'+name
+                      (out/name).write_bytes(t.extractfile(orig).read())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: virtual-enigma2-r66-r69-python-fixtures
+          path: virtual-fixtures/
+          retention-days: 3
