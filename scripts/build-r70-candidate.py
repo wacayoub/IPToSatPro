@@ -19,7 +19,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "payload/r69-beta.b64"
 OUT = ROOT / "r70-candidate.ipk"
-VERSION = "1.0.46-r70-rc1"
+VERSION = "1.0.46-r70-rc2"
 BASE_BYTES = 276666
 BASE_SHA256 = "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed"
 REL = "usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
