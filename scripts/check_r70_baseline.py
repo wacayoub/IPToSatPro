@@ -58,7 +58,7 @@ def main():
         old = base[name].decode()
         expected = old.replace(
             tag + ' = "1.0.46-r69-beta"',
-            tag + ' = "1.0.46-r70-rc3"'
+            tag + ' = "1.0.46-r70-rc4"'
         )
         assert expected != old, "Version anchor missing: " + name
         if name == "plugin.py":
@@ -66,6 +66,17 @@ def main():
             exec(compile((ROOT / "r70/r70_preview_patch.py").read_bytes(),
                          "r70_preview_patch.py", "exec"), patch_ns)
             preview_expected = patch_ns["improve"](expected)
+            preview_expected = preview_expected.replace(
+                '"2": self._open_auto_scan,',
+                '"2": self._open_auto_scan, "3": self._r70_autotest_start,', 1)
+            preview_expected = preview_expected.replace(
+                'self["key_blue"] = Label("PREVIEW / RETRY")',
+                'self["key_blue"] = Label("AUTO TEST / PREVIEW")', 1)
+            preview_expected = preview_expected.replace(
+                '    def __init__(self, session, sat_ref_string, channel,',
+                '    def _r70_autotest_start(self):\n'
+                '        self["detail"].setText("Auto Test unavailable; RIGHT then BLUE tests one source")\n'
+                '\n    def __init__(self, session, sat_ref_string, channel,', 1)
             # Strictly permit the separately audited Preview UI patch, plus
             # appended auxiliary lock and async ranking adapters. Other
             # original classes and non-Preview globals must be AST identical.
@@ -74,7 +85,9 @@ def main():
             trailer = result[len(preview_expected):]
             for required in ("_r70_locks(globals())", "r70_lock_adapter",
                              "_r70_preview_attach(SatIPTVBridgeAlternatives, globals())",
-                             "r70_preview_async", "_rc3_fta_plugin(globals())", "fta_runtime_adapter"):
+                             "r70_preview_async", "_rc3_fta_plugin(globals())", "fta_runtime_adapter",
+                             "_rc4_autotest_attach(SatIPTVBridgePreview, globals())",
+                             "preview_autotest_rc4"):
                 assert required in trailer, "Missing UI hook: " + required
             orig = ast.parse(expected)
             actual = ast.parse(result)
