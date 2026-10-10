@@ -10,6 +10,7 @@ on:
       - 'tests/test_mapping_known_gaps.py'
       - 'r70/mapping_identity_audit_patch.py'
       - 'tests/test_mapping_identity_audit_patch.py'
+      - 'tests/test_regression_boundaries.py'
       - 'scripts/receiver-explain-matches.sh'
       - 'tests/test_auto_recovery_rc7.py'
       - 'scripts/audit_mapping_100.py'
@@ -57,6 +58,8 @@ jobs:
         run: python3 scripts/audit_legacy_r62_r69.py
       - name: Show critical Preview and monitor regression diffs from r65 through r68
         run: python3 scripts/audit_legacy_regression_diffs.py
+      - name: Verify precise historic regression boundaries in archived r65-r69
+        run: python3 -m unittest discover -s tests -p test_regression_boundaries.py -v
       - name: Audit structure and 100-point issue matrix
         run: |
           python3 scripts/audit_mapping_100.py
