@@ -1,0 +1,34 @@
+name: R72.1 Premium Icons guarded CI
+on:
+  push:
+    branches: [feature/r72-1-premium-icons]
+    paths:
+      - 'scripts/build-r721-icons.py'
+      - 'scripts/test_r721_icons.py'
+      - '.github/workflows/r721-icons.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build-time image rasterizer
+        run: python3 -m pip install -q pillow
+      - name: Test real Enigma2 static artwork and decoder resolution badges
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r721_icons.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r72_live_monitor.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r721-icons.py
+          python3 scripts/check_locked_fast_guard.py r721-premium-icons-beta.ipk
+          python3 -m py_compile scripts/build-r721-icons.py scripts/test_r721_icons.py
+      - name: Publish CI artifact only if tests pass
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r721-premium-icons-beta
+          path: r721-premium-icons-beta.ipk
+          retention-days: 14
