@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72.2-tv-polish-beta",
+  "size": 359174,
+  "sha256": "fdfa391b6ead34b27977be9e9592b60be7a50247bbe45a2a2645e3a5488bdfb1",
+  "notes": "SAT->IPTV R72.2 screen polish from real Vu+ photo. Short native title; 2-line full IPTV channel name; zero SNR meter never looks full; SAT badge not asserted when no SAT lock; more legible metrics and MENU footer. Fast Zap, IPTV player, mapping and preview unchanged.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r72-2-tv-polish/payload/r722-tv-polish.b64"
+  ],
+  "receiver_tested": false,
+  "production_published": false
+}
