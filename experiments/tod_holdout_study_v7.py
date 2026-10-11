@@ -142,6 +142,11 @@ def study(samples, *, corner="right", digit_roi=None, banner_roi=None):
     if not result["class_coverage_complete"]:
         result["leave_one_out"]["status"] = "MISSING_CLASSES_NO_CLASSIFICATION"
         return result
+    if not result["roi_suitable_for_two_digit_10"]:
+        result["leave_one_out"]["status"] = "DIGIT_ROI_TOO_NARROW_FOR_BEIN10"
+        result["issues"].append(
+            "single numeral 5x5 cannot validate the two-digit beIN Sports 10")
+        return result
     if result["shape_collision_pairs"]:
         result["leave_one_out"]["status"] = "INSUFFICIENT_INTERCLASS_MARGIN"
         return result
