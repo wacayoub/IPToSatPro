@@ -52,7 +52,7 @@ class OfflineHoldoutV7Tests(unittest.TestCase):
             chosen = mask if mask is not None else mask_for(number)
             if i == variant_at:
                 chosen = tuple(p for p in chosen if p != chosen[-1])
-            image = synthetic_bmp(width, chosen, 100*number+i)
+            image = synthetic_bmp(width, chosen, number*3+i)
             if mirrored:
                 image = mirror_bmp(image)
             with open(os.path.join(folder, "frame-%02d.bmp" % i), "wb") as out:
@@ -120,7 +120,7 @@ class OfflineHoldoutV7Tests(unittest.TestCase):
         folders = self.full_set()
         # Same class label, slight in-event numeral inconsistency.
         path = folders[8]
-        bmp = synthetic_bmp(480, mask_for(8)[:-1], 100*8+2)
+        bmp = synthetic_bmp(480, mask_for(8)[:-1], 8*3+2)
         with open(os.path.join(path, "frame-02.bmp"), "wb") as out:
             out.write(bmp)
         result = study(folders, digit_roi=(446, 21, 456, 26))
