@@ -1,0 +1,56 @@
+name: Stage R72.4 Confirmed No-SAT-Signal Fallback
+on:
+  push:
+    branches: [feature/r724-zero-signal-fallback]
+    paths:
+      - '.github/workflows/stage-r724-zero-signal.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r724-no-sat-signal-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify both FTA and encrypted no-signal paths, protected Fast Zap
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r724_zero_signal.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r724-zero-signal.py
+          echo 'fe779fc4a2c95bea7166c4ce168e18b76416959d9e51b247fdbc809d1b737194  r724-zero-signal-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r724-zero-signal-beta.ipk
+      - name: Package checksum-pinned read-only download
+        run: |
+          set -eu
+          python3 scripts/stage-r724-zero-signal.py
+          sh -n download-r724-zero-signal.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib,base64
+          m=json.loads(Path('staging/r724-zero-signal.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r724-zero-signal.b64').read_bytes())
+          assert len(blob)==m['size']==403344
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert not m['field_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          print('R724_BETA_VERIFIED_R70_PRODUCTION_UNCHANGED')
+          PY
+      - name: Publish only on experimental branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r724-zero-signal.b64 staging/r724-zero-signal.update.json download-r724-zero-signal.sh
+          if git diff --cached --quiet; then
+            echo 'Already staged'
+          else
+            git commit -m 'Stage SHA256-verified R72.4 no-signal fallback beta only'
+            git push origin HEAD:feature/r724-zero-signal-fallback
+          fi
