@@ -162,7 +162,9 @@ def update_skin(xml):
     root=ET.fromstring(xml)
     widgets={x.get("name"):x for x in root if x.tag=="widget"}
     for name in ("r72_res_head","r72_speed_head","r72_audio_lang_head",
-                 "r72_audio_codec_head","r72_video_codec_head","r72_source_head"):
+                 "r72_audio_codec_head","r72_video_codec_head","r72_source_head",
+                 "r72_res_val","r72_speed_val","r72_audio_lang_val",
+                 "r72_audio_codec_val","r72_video_codec_val","r72_source_val"):
         target=widgets[name]
         x,y=map(int,target.get("position").split(","))
         w,h=map(int,target.get("size").split(","))
@@ -214,7 +216,7 @@ def patch_plugin(raw):
     new_bg='''os.path.join(os.path.dirname(__file__), "images", "r721-premium-icons.png")'''
     src=replace_exact(src,old_bg,new_bg)
     src=replace_exact(src,'"__IPTOSAT_R72_BG__"', '"__IPTOSAT_R721_BG__"')
-    init='''        self["r72_source_val"] = Label("—")
+    init='''        self["r72_source_val"] = Label('—')
 '''
     extra='''        self["r721_sat_res_badge"] = Label("?")
         self["r721_iptv_res_badge"] = Label("?")
