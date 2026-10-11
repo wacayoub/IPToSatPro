@@ -1,0 +1,20 @@
+name: R72.7 Playback latency audit
+on:
+  push:
+    branches: [feature/r727-fast-playback-audit]
+    paths:
+      - '.github/workflows/r727-fast.yml'
+      - 'scripts/audit-r727-playback.py'
+      - 'scripts/build-r727-fast.py'
+      - 'scripts/test_r727_fast.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact shipped playback and slow fallback paths
+        run: python3 scripts/audit-r727-playback.py
