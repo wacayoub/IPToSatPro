@@ -44,7 +44,7 @@ class InlineThread:
 
 class Matcher:
     def __init__(self):
-        self.references = {6: 1, 8: 1}
+        self.references = {n: 1 for n in range(1, 11)}
         self.samples = 0
         self.logo = 6
 
@@ -129,6 +129,22 @@ class WorkerTests(unittest.TestCase):
             self.ctx[flag] = False
         self.assertEqual(self.calls, [])
 
+    def test_single_real_logo7_never_activates_auto_mapping(self):
+        """One stable genuine watermark is not proof against other beIN digits."""
+        worker = self.make_worker()
+        self.matcher.references = {7: 1}
+        for i in range(1, 5):
+            self.tick(worker, float(i))
+        self.assertEqual(worker.stats["attempts"], 0)
+        self.assertFalse(self.ctrl.resolve_bein(
+            source_id="provider-king-real-ID", bein_channel=7, now=5))
+
+    def test_nine_templates_are_still_incomplete(self):
+        worker = self.make_worker()
+        self.matcher.references = {n: 1 for n in range(1, 10)}
+        self.tick(worker, 1.0)
+        self.assertEqual(worker.stats["attempts"], 0)
+
     def test_missing_templates_skips_probe(self):
         worker = self.make_worker()
         self.matcher.references.clear()
@@ -160,7 +176,7 @@ class WorkerTests(unittest.TestCase):
 
     def test_never_more_than_max_attempts(self):
         class Unknown:
-            references = {6: 1}
+            references = {n: 1 for n in range(1, 11)}
             def classify(self, data):
                 return None
         self.matcher = Unknown()
