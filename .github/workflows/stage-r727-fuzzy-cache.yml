@@ -1,0 +1,58 @@
+name: Stage R72.7 Fast Fuzzy Cache BETA
+on:
+  push:
+    branches: [feature/r727-fast-playback-audit]
+    paths:
+      - '.github/workflows/stage-r727-fuzzy-cache.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r727-fuzzy-cache-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Test repeat-zap cache and unchanged candidate/player guards
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r727_fast.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r726_safe_match.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r725_fuzzy.py' -v
+          python3 scripts/build-r727-fast.py
+          echo 'cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62  r727-fuzzy-cache-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r727-fuzzy-cache-beta.ipk
+      - name: Stage checked R72.7 download script and verify main unaffected
+        run: |
+          set -eu
+          python3 scripts/stage-r727-fuzzy-cache.py
+          sh -n download-r727-fuzzy-cache.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r727-fuzzy-cache.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r727-fuzzy-cache.b64').read_bytes())
+          assert len(raw)==m['size']==405774
+          assert hashlib.sha256(raw).hexdigest()==m['sha256']
+          assert m['hardware_tested'] is False and m['production_published'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R727_VERIFIED_STAGE_MAIN_R70_UNCHANGED')
+          PY
+      - name: Commit opt-in R72.7 assets ONLY on feature branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r727-fuzzy-cache.b64 staging/r727-fuzzy-cache.update.json download-r727-fuzzy-cache.sh
+          if git diff --cached --quiet; then
+            echo 'R72.7 already staged'
+          else
+            git commit -m 'Stage SHA256-verified R72.7 fuzzy caching beta'
+            git push origin HEAD:feature/r727-fast-playback-audit
+          fi
