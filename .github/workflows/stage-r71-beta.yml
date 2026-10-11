@@ -1,0 +1,57 @@
+name: Stage R71 beta on isolated branch
+on:
+  push:
+    branches: [feature/r71-stability]
+    paths:
+      - '.github/workflows/stage-r71-beta.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r71-staging
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate 22 real-scoring scenarios and exact R70 playback preservation
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r71-beta.py
+          echo '2fe47964933906522680114f7d3ac23aee928caf4dd7e02554a8cd183d2980f3  r71-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r71-beta.ipk
+          python3 scripts/test_r70_preview_logic.py
+      - name: Produce downloadable R71 BETA staging artifacts only
+        run: |
+          set -eu
+          python3 scripts/stage-r71-beta.py
+          sh -n download-r71-beta.sh
+          python3 - <<'PY'
+          import json,hashlib,base64
+          from pathlib import Path
+          staged=json.loads(Path('staging/r71-beta.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r71-beta.b64').read_bytes())
+          assert len(raw)==staged['size']==277614
+          assert hashlib.sha256(raw).hexdigest()==staged['sha256']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          assert staged['published_to_main'] is False
+          print('R71_BETA_STAGE_ONLY_PRODUCTION_R70_SAFE')
+          PY
+      - name: Commit stage only on R71 feature branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r71-beta.b64 staging/r71-beta.update.json download-r71-beta.sh
+          if git diff --cached --quiet; then
+            echo 'R71 staging already current'
+          else
+            git commit -m 'Stage verified r71 beta package on branch, no production update'
+            git push origin HEAD:feature/r71-stability
+          fi
