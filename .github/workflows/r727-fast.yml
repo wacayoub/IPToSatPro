@@ -20,3 +20,19 @@ jobs:
       - name: Inspect exact shipped playback and slow fallback paths
         run: |
           python3 scripts/audit-r727-focused.py
+      - name: Test exact R72.7 fuzzy cache and unchanged playback
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r727_fast.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r726_safe_match.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r725_fuzzy.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r727-fast.py
+          python3 scripts/check_locked_fast_guard.py r727-fuzzy-cache-beta.ipk
+          python3 -m py_compile scripts/build-r727-fast.py scripts/test_r727_fast.py
+      - name: Upload beta candidate only after checks
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r727-fuzzy-cache-beta
+          path: r727-fuzzy-cache-beta.ipk
+          retention-days: 14
