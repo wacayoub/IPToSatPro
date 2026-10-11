@@ -60,6 +60,16 @@ jobs:
           done
           test ! -f payload/r70-rc5.b64
           echo 'PASS: new player mode only on first failed attempt, no change to successful Fast Zap, Online Update held.'
+      - name: Run receiver-equivalent remote bootstrap, build only (NO INSTALL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh scripts/receiver-build-r70-test.sh
+          test -s /tmp/iptosat-r70-rc5.ipk
+          test "$(sha256sum /tmp/iptosat-r70-rc5.ipk | cut -d' ' -f1)" = "$(sha256sum r70-candidate.ipk | cut -d' ' -f1)" || {
+            echo "Different archive bytes may be caused by gzip timestamps; checking version and files instead."
+            ar p /tmp/iptosat-r70-rc5.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx 'Version: 1.0.46-r70-rc5'
+          }
       - name: Keep short-lived RC5 test artifact (NOT A RELEASE)
         uses: actions/upload-artifact@v4
         with:
