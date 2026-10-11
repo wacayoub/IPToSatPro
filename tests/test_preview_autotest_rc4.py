@@ -137,6 +137,14 @@ class AutoTestCases(unittest.TestCase):
         f._r70_autotest_timer.fire()
         self.assertEqual(f.played, ["trek"])
 
+    def test_unmeasured_source_candidate_is_eligible_only_after_blue(self):
+        f = FakePreview([Candidate("TREK_SOURCE", "SOURCE")])
+        self.assertEqual(f.played, [])
+        f._r70_autotest_start()
+        f._r70_autotest_timer.fire()
+        self.assertEqual(f.played, ["TREK_SOURCE"])
+        self.assertEqual(f.saved, 0)
+
     def test_trial_limit_six_and_no_mass_scan(self):
         f = FakePreview([Candidate(str(i)) for i in range(100)])
         f._r70_autotest_start()

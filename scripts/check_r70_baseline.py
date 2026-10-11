@@ -51,6 +51,27 @@ def main():
     assert functions(cand["monitor.py"]) == functions(monitor), (
         "Existing monitor method/locked fast-open AST changed"
     )
+    # Validate the *real receiver engine*, not only FakeMonitor unit tests.
+    # A missing method silently disables attach_recovery() without breaking CI.
+    live_hooks = set(functions(monitor))
+    critical_rc5 = {"_playback_plan", "_current_player_override",
+                    "_audio_safe_serviceapp_required"}
+    missing_rc5 = sorted(critical_rc5 - live_hooks)
+    print("RC5 baseline hooks present:", sorted(critical_rc5 & live_hooks))
+    print("RC5 baseline hooks missing:", missing_rc5)
+    assert not missing_rc5, (
+        "RC5 decoder adapter would be silently inactive/incompatible: "
+        + ", ".join(missing_rc5)
+    )
+    baseline_tree = ast.parse(monitor)
+    plan_call_sites = sum(
+        1 for n in ast.walk(baseline_tree)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Attribute)
+        and n.func.attr == "_playback_plan"
+    )
+    print("RC5 original playback plan call sites:", plan_call_sites)
+    assert plan_call_sites > 0, "RC5 playback plan is never called by monitor"
     for name in ("core.py", "timeshift_seek_patch.py", "neo_theme.py"):
         assert cand[name] == base[name], name + " changed"
     assert new_bridge == base_bridge, "Relay changed"
@@ -58,7 +79,7 @@ def main():
         old = base[name].decode()
         expected = old.replace(
             tag + ' = "1.0.46-r69-beta"',
-            tag + ' = "1.0.46-r70-rc4"'
+            tag + ' = "1.0.46-r70-rc5"'
         )
         assert expected != old, "Version anchor missing: " + name
         if name == "plugin.py":
@@ -112,6 +133,7 @@ def main():
             assert cand[name].decode() == expected, name + " changed"
     assert b"r70_monitor_adapter" in cand["monitor.py"]
     assert b"_rc3_fta_attach(SatFallbackMonitor)" in cand["monitor.py"], "Missing opt-in FTA gate"
+    assert b"_rc5_recovery_attach(SatFallbackMonitor)" in cand["monitor.py"], "Missing rc5 failed-only decoder fallback"
     print("PASS r70 exact locked fast-path AST, SAT/timeshift, relay, GUI core")
     print("BASELINE r69 pinned:", BASE_SHA)
     print("NOTE: r64 legacy guard reports inherited _on_start deviation in r69;")

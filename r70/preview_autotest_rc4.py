@@ -96,7 +96,7 @@ def attach_preview(preview_cls, namespace):
                 continue
             try:
                 decision = self._candidate_decision(ch)
-                if decision not in ("MANUAL", "SAFE", "ALLOWED", "REVIEW"):
+                if decision not in ("MANUAL", "SAFE", "ALLOWED", "REVIEW", "SOURCE"):
                     continue
                 details = ch.get("_preview_details") or {}
                 if details.get("reject_reason"):

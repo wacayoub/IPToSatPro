@@ -19,7 +19,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "payload/r69-beta.b64"
 OUT = ROOT / "r70-candidate.ipk"
-VERSION = "1.0.46-r70-rc4"
+VERSION = "1.0.46-r70-rc5"
 BASE_BYTES = 276666
 BASE_SHA256 = "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed"
 REL = "usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
@@ -69,7 +69,7 @@ def main():
         if not required.issubset(names):
             raise AssertionError("Runtime hooks changed; manual code review required")
 
-        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py"):
+        for module in ("r70_safety_core.py", "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "player_recovery_rc5.py"):
             source = (ROOT / "r70" / module).read_bytes()
             compile(source, module, "exec")
             (package / module).write_bytes(source)
@@ -90,7 +90,17 @@ def main():
             "except Exception:\n"
             "    pass  # fail closed: native encrypted-only mode remains active\n"
         )
-        mon_path.write_bytes(baseline_monitor + glue.encode("utf-8") + fta_monitor_glue.encode("utf-8"))
+        rc5_player_glue = (
+            "\n# rc5: optional auto-playback SECOND decoder only after failed first.\n"
+            "try:\n"
+            "    from .player_recovery_rc5 import attach_recovery as _rc5_recovery_attach\n"
+            "    _rc5_recovery_attach(SatFallbackMonitor)\n"
+            "except Exception:\n"
+            "    pass  # never break existing r69/r70 decoder selection\n"
+        )
+        mon_path.write_bytes(
+            baseline_monitor + glue.encode("utf-8") + fta_monitor_glue.encode("utf-8")
+            + rc5_player_glue.encode("utf-8"))
         for filename, key in (("plugin.py", "PLUGIN_VERSION"),
                               ("updater.py", "CURRENT_VERSION")):
             p = package / filename
@@ -198,7 +208,7 @@ def main():
         if not current.startswith(baseline_monitor) or len(current) == len(baseline_monitor):
             raise AssertionError("r69 original monitor altered")
         for name in ("plugin.py", "monitor.py", "r70_safety_core.py",
-                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "core.py", "updater.py"):
+                     "r70_monitor_adapter.py", "r70_lock_adapter.py", "r70_preview_async.py", "no_signal_policy.py", "fta_runtime_adapter.py", "preview_autotest_rc4.py", "player_recovery_rc5.py", "core.py", "updater.py"):
             compile((package / name).read_bytes(), name, "exec")
         for name in ("data", "control"):
             dest = work / (name + ".tar.gz")
