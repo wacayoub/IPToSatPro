@@ -123,8 +123,13 @@ class TodScreenshotWorker:
         if self.bridge.controller.routes.by_tod(
                 "King", ctx["tod_channel"], now=now) is not None:
             return assignment
-        # No verified references => never waste CPU taking useless screenshots.
-        if not getattr(self.matcher, "references", None):
+        # A single beIN watermark (e.g. only 7) is NOT sufficient: most of
+        # the channel badge is visually shared between beIN 1-10 and a
+        # partial catalog can falsely map 1/6/8 as 7. Keep runtime OFF until
+        # all TEN independently confirmed numbered logos are calibrated.
+        # Diagnostic tools may still classify individual screenshots offline.
+        refs = getattr(self.matcher, "references", None)
+        if not isinstance(refs, dict) or not set(range(1, 11)).issubset(refs):
             return assignment
         self._attempts += 1
         self.stats["attempts"] += 1
