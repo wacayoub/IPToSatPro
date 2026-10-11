@@ -1,0 +1,29 @@
+name: IPToSatPro R70 baseline audit
+on:
+  push:
+    branches:
+      - feature/iptosatpro-final-r70
+    paths:
+      - 'scripts/audit_r70_baseline.py'
+      - 'scripts/build-r70-final.py'
+      - 'scripts/test_r70_candidate.py'
+      - '.github/workflows/r70-final-audit.yml'
+      - 'docs/r70-final-status.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check baseline source structure and candidate logic
+        run: |
+          python3 scripts/audit_r70_baseline.py
+          python3 scripts/audit_r70_baseline.py candidate
+          python3 scripts/audit_r70_baseline.py score
+          python3 scripts/audit_r70_baseline.py fast
+      - name: Source syntax checks
+        run: |
+          python3 -m py_compile scripts/audit_r70_baseline.py
