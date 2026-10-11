@@ -1,0 +1,10 @@
+{
+  "version": "1.0.46-r70-final",
+  "size": 277002,
+  "sha256": "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c",
+  "notes": "OPT-IN r70 final candidate; runtime unchanged from r69-beta, does not guarantee faster zapping or solve unverified receiver bugs. Existing manual mappings, audio, timeshift and player code preserved. NO experimental TOD functionality. Not installed/field validated.",
+  "published_to_main": false,
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/iptosatpro-final-r70/payload/r70-final.b64"
+  ]
+}
