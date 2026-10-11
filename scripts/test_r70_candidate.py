@@ -32,6 +32,12 @@ class R70CandidateTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.temp.cleanup()
 
+    def test_two_separate_rebuilds_are_byte_identical(self):
+        path = Path(self.temp.name) / "candidate-again.ipk"
+        built_again = build(path)
+        self.assertEqual(built_again["sha256"], self.meta["sha256"])
+        self.assertEqual(path.read_bytes(), self.out.read_bytes())
+
     def test_package_integrity_and_labeled_release(self):
         self.assertEqual(self.meta["version"], NEW_VERSION)
         self.assertFalse(self.meta["logic_changed"])
