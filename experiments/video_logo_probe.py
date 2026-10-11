@@ -145,6 +145,8 @@ class VideoLogoMatcher:
             else:
                 raise ValueError("logo ROI missing")
 
+            if not placements:
+                raise ValueError("at least one watermark ROI is required")
             checked = []
             for place in placements:
                 if not isinstance(place, dict) or "roi" not in place or "bmp" not in place:
