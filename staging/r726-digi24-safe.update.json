@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72.6-digi24-safe-beta",
+  "size": 405038,
+  "sha256": "9b7efbef03368c9a97b86c265574dbd9389401b7d5b014a50e427eaaf267859b",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r726-digi24-safe-match/payload/r726-digi24-safe.b64"
+  ],
+  "notes": "R72.6 guarded Digi 24 HD on no-signal SAT: exact RO: DIGI 24 HD/FHD, score>=65, confirmed tuner failure, no hard language/market/number identity reject, and no user rejected candidate; all other streams keep threshold 82; preserves Fast Zap, player, timeshift, Preview, mappings and R72.5 fuzzy stability.",
+  "hardware_tested": false,
+  "published_to_main": false
+}
