@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72.3-classic-premium-beta",
+  "size": 402536,
+  "sha256": "b76e9fb551cef1d0422d6303f3d74e38b94cadae6fda6b6f90d6eecf7739afa3",
+  "notes": "R72.3 Classic Premium: restore original R71.1 Neo Dark dashboard as DEFAULT with updated native SAT/IPTV icons, measured video resolution, catalog audio, IPTV provider and measured first-frame speed. Current R72 Live Monitor remains selectable in MENU > Appearance > Home layout. No player, matching, sources, audio, timeshift or mapping changes. Receiver field validation pending.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r723-neo-classic-fusion/payload/r723-neo-classic-premium.b64"
+  ],
+  "field_tested": false,
+  "published_to_main": false
+}
