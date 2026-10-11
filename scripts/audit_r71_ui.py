@@ -29,4 +29,13 @@ for filename, raw in sorted(before.items()):
     for i,line in enumerate(lines,1):
         if ("all source" in line.lower() or "all_source" in line.lower() or "all sources" in line.lower() or "preview browser" in line.lower()):
             print("LITERAL",filename.removeprefix(m.PREFIX),i,line[:220])
+for name, regions in [
+    ("plugin.py",[(3513,3570),(3610,3695),(3775,3827),(4818,4990),(5929,5995),(6050,6110),(6252,6362),(7106,7120),(8185,8270)]),
+    ("core.py",[(3314,3473)]),
+]:
+    lines=before[m.PREFIX+name].decode("utf-8").splitlines()
+    for start,end in regions:
+        print("=== SOURCE",name,start,end)
+        for number in range(start,min(end,len(lines))+1):
+            print("CODE",name,number,lines[number-1])
 print("R71_UI_CATALOG_OK")
