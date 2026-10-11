@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72.4-zero-signal-beta",
+  "size": 403344,
+  "sha256": "fe779fc4a2c95bea7166c4ce168e18b76416959d9e51b247fdbc809d1b737194",
+  "notes": "R72.4 zero signal FTA and encrypted IPTV fallback after explicit no-lock/TUNE_FAILED with unchanged DVB PAT deferred safety, exact current SAT service, enabled no-signal fallback; other FTA/locked paths unchanged. New status log NO_SIGNAL_FTA_IPTV_ALLOWED. Existing smart matcher must still have a safe candidate. Receiver hardware test pending.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r724-zero-signal-fallback/payload/r724-zero-signal.b64"
+  ],
+  "field_tested": false,
+  "production_published": false
+}
