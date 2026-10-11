@@ -1,0 +1,20 @@
+name: IPToSatPro R72 Live Monitor CI
+on:
+  push:
+    branches: [feature/r72-sat-iptv-live-monitor]
+    paths:
+      - 'scripts/*r72*'
+      - '.github/workflows/r72-live-monitor.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install asset build dependency
+        run: python3 -m pip install -q pillow
+      - name: Audit real Enigma2 status fields
+        run: python3 scripts/audit-r72-snapshot.py
