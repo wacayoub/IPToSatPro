@@ -1,0 +1,56 @@
+name: Stage R72.5 Digi24 Fuzzy Stability Beta
+on:
+  push:
+    branches: [feature/r725-fuzzy-no-signal-stability]
+    paths:
+      - '.github/workflows/stage-r725-fuzzy.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r725-fuzzy-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Test duplicate SAT tune-fail and unchanged player
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r725_fuzzy.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r724_zero_signal.py' -v
+          python3 scripts/build-r725-fuzzy.py
+          echo 'f4b1c1ab8a23ced1856e95b2481b70e6fbb245af3cd5b36fb0d63a3d3a5983f5  r725-fuzzy-stability-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r725-fuzzy-stability-beta.ipk
+      - name: Generate checksum-verified read-only GitHub download
+        run: |
+          set -eu
+          python3 scripts/stage-r725-fuzzy.py
+          sh -n download-r725-fuzzy.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,json,hashlib
+          m=json.loads(Path('staging/r725-fuzzy-stability.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r725-fuzzy-stability.b64').read_bytes())
+          assert len(blob)==m['size']==404226
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert not m['field_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          print('R725_CHECKSUM_VERIFIED_MAIN_R70_UNCHANGED')
+          PY
+      - name: Publish beta ONLY on experimental branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r725-fuzzy-stability.b64 staging/r725-fuzzy-stability.update.json download-r725-fuzzy.sh
+          if git diff --cached --quiet; then
+            echo 'R72.5 already staged'
+          else
+            git commit -m 'Publish SHA256-verified R72.5 fuzzy stability beta'
+            git push origin HEAD:feature/r725-fuzzy-no-signal-stability
+          fi
