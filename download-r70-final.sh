@@ -1,8 +1,8 @@
 #!/bin/sh
 # Download only. Does not install or restart Enigma2.
 set -eu
-RAW="https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/iptosatpro-final-r70/payload/r70-final.b64"
-TARGET="/tmp/iptosatpro-r70-final.ipk"
+RAW="https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r70-final.b64"
+TARGET="/tmp/iptosatpro.ipk"
 TMPB64="/tmp/iptosatpro-r70-final.$$-download.b64"
 TMPIPK="/tmp/iptosatpro-r70-final.$$-download.ipk"
 trap 'rm -f "$TMPB64" "$TMPIPK"' EXIT HUP INT TERM
@@ -30,5 +30,5 @@ with open(sys.argv[1],"rb") as f:
 PY
 fi
 mv -f "$TMPIPK" "$TARGET"
-echo "Verified candidate: $TARGET"
+echo "Verified official online package: $TARGET"
 echo "No installation performed. Existing plugin remains unchanged."

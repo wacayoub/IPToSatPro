@@ -1,48 +1,34 @@
 #!/bin/sh
+# Download only. Does not install or restart Enigma2.
 set -eu
-
-URL="https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r69-beta.b64"
-OUT="/tmp/iptosatpro.ipk"
-B64="/tmp/iptosatpro-r69-beta.b64"
-EXPECTED_SIZE="276666"
-EXPECTED_SHA256="123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed"
-
-rm -f "$OUT" "$B64"
-echo "Downloading IPToSat Pro r69-beta..."
-wget -q -O "$B64" "$URL"
-test -s "$B64"
-
+RAW="https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r70-final.b64"
+TARGET="/tmp/iptosatpro.ipk"
+TMPB64="/tmp/iptosatpro-r70-final.$$-download.b64"
+TMPIPK="/tmp/iptosatpro-r70-final.$$-download.ipk"
+trap 'rm -f "$TMPB64" "$TMPIPK"' EXIT HUP INT TERM
+wget -q -O "$TMPB64" "$RAW"
+test -s "$TMPB64"
 if command -v base64 >/dev/null 2>&1; then
-    base64 -d "$B64" > "$OUT"
+  base64 -d "$TMPB64" > "$TMPIPK"
 else
-    python3 - "$B64" "$OUT" <<'PY'
-import base64, sys
-src, dst = sys.argv[1], sys.argv[2]
-with open(src, "rb") as f:
-    data = base64.b64decode(f.read())
-with open(dst, "wb") as f:
-    f.write(data)
+  python3 - "$TMPB64" "$TMPIPK" <<'PY'
+import base64,sys
+with open(sys.argv[1],"rb") as f:
+    raw=base64.b64decode(f.read(), validate=False)
+with open(sys.argv[2],"wb") as f:
+    f.write(raw)
 PY
 fi
-
-SIZE=$(wc -c < "$OUT" | tr -d ' ')
-if [ "$SIZE" != "$EXPECTED_SIZE" ]; then
-    echo "ERROR: bad IPK size: $SIZE (expected $EXPECTED_SIZE)"
-    rm -f "$OUT"
-    exit 1
-fi
-
+test "$(wc -c < "$TMPIPK" | tr -d ' ')" = "277002"
 if command -v sha256sum >/dev/null 2>&1; then
-    SHA=$(sha256sum "$OUT" | awk '{print $1}')
-    if [ "$SHA" != "$EXPECTED_SHA256" ]; then
-        echo "ERROR: SHA256 mismatch: $SHA"
-        rm -f "$OUT"
-        exit 1
-    fi
+  echo "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c  $TMPIPK" | sha256sum -c - >/dev/null
+else
+  python3 - "$TMPIPK" <<'PY'
+import sys,hashlib
+with open(sys.argv[1],"rb") as f:
+    assert hashlib.sha256(f.read()).hexdigest()=="471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c", "SHA256 mismatch"
+PY
 fi
-
-rm -f "$B64"
-echo "OK: $OUT"
-echo "Version: 1.0.46-r69-beta"
-echo "Size: $SIZE bytes"
-echo "SHA256: $EXPECTED_SHA256"
+mv -f "$TMPIPK" "$TARGET"
+echo "Verified official online package: $TARGET"
+echo "No installation performed. Existing plugin remains unchanged."

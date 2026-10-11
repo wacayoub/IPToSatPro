@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r69-beta",
-  "size": 276666,
-  "sha256": "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed",
-  "notes": "r69 BETA Quality Guard. Prevent repeated PLAYER_LATE_VIDEO updates; delay possible stale 4K metadata from the outgoing decoder during handover; confirm current service identity before persisting observed size and player mode. r68 Smart Player, fast MANUAL LOCK, timeshift, relay and r67 Preview unchanged. Receiver validation required. Roll back via download-r68-beta.sh.",
+  "version": "1.0.46-r70-final",
+  "size": 277002,
+  "sha256": "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c",
+  "notes": "R70 FINAL, verified stable packaging of existing r69 playback code. Fast MANUAL LOCK, Preview matcher, audio, timeshift, quality guard and TS relay unchanged. No TOD dynamic module. No receiver speed or UHD/audio improvement claimed without hardware validation. Rollback: download-r69-beta.sh.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r69-beta.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r70-final.b64"
   ]
 }
