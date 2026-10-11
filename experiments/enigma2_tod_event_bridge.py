@@ -147,6 +147,22 @@ class Enigma2TodEventBridge:
             return True
         return False
 
+    def screenshot_token(self):
+        """Snapshot BEFORE a screenshot: reject images from a changed event/ref.
+
+        Caller must capture the image in a worker, not on Enigma2's GUI thread.
+        The same tuple is rechecked when classified results return to the GUI.
+        """
+        ctx = self._current()
+        if ctx is None or self._live is None:
+            return None
+        if self._check_transition():
+            return None
+        return (self._live["ref"], self.generation, ctx["source_id"],
+                tod_slot(ctx["tod_channel"]),
+                str(ctx.get("stream_id") or ""),
+                str(ctx.get("event_id") or ""))
+
     def classified_video_logo(self, *, number, confidence, capture_ref,
                               capture_generation, observed_at):
         """Consume independent video-only watermark evidence, never EPG text."""
