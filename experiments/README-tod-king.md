@@ -80,3 +80,11 @@ python3 -m unittest discover -s experiments -p 'test_*.py' -v
 - If `grab` is unsupported, produces a PNG instead of BMP or yields non-distinct frames, the report says capture failed/unsupported. Such a result is NEVER classified as a black screen and NEVER used to confirm a beIN number.
 - On receiver when ready: `wget -qO /tmp/tod-capture.py https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/fast-zap-tod-king-v1/experiments/receiver_tod_capture.py && python3 /tmp/tod-capture.py`
 - This is not a receiver plugin or an on-air matcher. Human-authenticated examples of genuine beIN 1–10 logos and exact King source identity still must be established before calibration and any opt-in installation.
+
+## 11 Oct 2026 — first receiver screenshots inspected: beIN Sports 7
+
+- Three genuine 480x270 screenshots were supplied privately by the receiver owner and inspected. They depict tennis, visible beIN SPORTS 7 LIVE broadcaster bug at upper RIGHT and a distinct TOD watermark at lower RIGHT. The TOD watermark must be ignored. Screenshots were never uploaded to this public repository.
+- The visible beIN 7 badge occupies approximately pixel bounding rectangle x=404..455, y=19..29 in the 480x270 sample. The discriminating numeral covers only about 5x5 pixels, so more real examples and preferably a larger capture are essential for validating all digits without false positives.
+- Offline cross-frame white-mask Dice overlap for a manually selected 52x11 logo ROI was 0.9362 and 0.9371 relative to frame 1. Its tiny dark-digit mask overlapped 1.0 on the other two images. This is REPEATABILITY on one on-air logo only, NOT cross-channel precision/recall.
+- The exact King provider ID, TOD 1-14 slot and actual ability to recognize any other beIN number could not be inferred from the screenshots (source_verified=false). A provisional calibration bundle stays private to the current conversation, not deployed to the box or committed as pixels.
+- Critical safety gate: the experimental auto-mapping worker now refuses ALL screenshot-driven routes until independently verified samples for beIN 1 through 10 are present. A single 7 template alone could match the common beIN SPORTS banner from 6 or 8. Read-only offline diagnostics remain possible. This safety gate is covered by regression tests.
