@@ -1,0 +1,30 @@
+name: IPToSatPro R71 Stability CI
+on:
+  push:
+    branches: [feature/r71-stability]
+    paths:
+      - 'scripts/*r71*'
+      - '.github/workflows/r71-stability.yml'
+      - 'docs/r71*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit REAL released matching and player source
+        run: python3 scripts/audit_r71_focus.py
+      - name: Verify inherited matching baseline
+        run: python3 scripts/test_r70_preview_logic.py
+      - name: Ensure production release stays R70
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('update.json').read_text())
+          assert x['version']=='1.0.46-r70-final'
+          print('PRODUCTION_R70_NOT_MODIFIED')
+          PY
