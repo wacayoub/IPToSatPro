@@ -64,6 +64,36 @@ def main():
         matching = [n for n, _ in fns if selector.search(n)]
         print("MODULE", short, "LINES", len(code.splitlines()),
               "MATCHING_METHODS", " ".join(matching[:100]))
+    if len(sys.argv) > 1 and sys.argv[1] == "__focused__":
+        core = files[PREFIX + "core.py"].decode("utf-8")
+        methods = (
+            "_effective_sat_provider_family",
+            "_iptv_provider_family",
+            "_sat_provider_family",
+            "_provider_market",
+            "_audio_market",
+            "match_decision",
+            "Catalog._preview_nomination_pool",
+            "Catalog.fast_preview_top_matches",
+            "Catalog.rank_matches",
+        )
+        lines = core.splitlines()
+        for fname, fn in functions(core, "core.py"):
+            if fname in methods:
+                print("FOCUS", fname, "LINES", fn.lineno, fn.end_lineno,
+                      "\\n".join(lines[fn.lineno - 1:fn.end_lineno])[:11500])
+        for name, frag in (
+            ("match_score_details", "language"),
+            ("match_score_details", "market"),
+            ("match_score_details", "provider"),
+        ):
+            fn = next(v for k,v in functions(core, "core.py") if k==name)
+            source = lines[fn.lineno - 1:fn.end_lineno]
+            for idx, line in enumerate(source):
+                if frag in line.lower():
+                    print("MATCH_PART", frag, fn.lineno+idx,
+                          "\\n".join(source[max(0,idx-4):min(len(source),idx+9)]))
+        return
     if len(sys.argv) > 1:
         needle = sys.argv[1].lower()
         limit = 12
