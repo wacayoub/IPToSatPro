@@ -46,7 +46,7 @@ class SignalTests(unittest.TestCase):
         ast.fix_missing_locations(method)
         ns={"sat_service_key":lambda r:r,"bool":bool}
         exec(compile(method,"r724_real_monitor.py","exec"),ns)
-        cls.gate=ns[func.name]
+        cls.gate=staticmethod(ns[func.name])
     @classmethod
     def tearDownClass(cls):cls.temp.cleanup()
 
