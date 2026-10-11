@@ -69,6 +69,9 @@ def background():
     rect(825,330,795,134,card,27)
     rect(40,482,1580,213,card,29)
     rect(1356,495,235,49,"#16473D",22)
+    # Four individually rounded info chips, as in the approved Home mockup.
+    for x,w in ((74,120),(210,205),(435,168),(625,162)):
+        rect(x,620,w,42,"#2A3D55",12)
     # Signal track base with rounded ends; native progress bar will overlay it
     rect(75,411,562,17,"#344761",8)
     # IPTV READY check outline in second card
@@ -113,7 +116,8 @@ def source_skin():
        "home_sat_name", "home_sat_context", "home_snr_head", "home_snr_bar",
        "home_snr_value", "home_iptv_head", "home_iptv_status", "home_iptv_detail",
        "home_selected_head", "home_selected_name", "home_lock_badge",
-       "home_selected_badges", "home_selected_info", "home_preview_action",
+       "home_quality_chip", "home_audio_chip", "home_role_chip", "home_speed_chip",
+       "home_selected_info", "home_preview_action",
        "home_preview_hint", "home_update_action", "home_update_hint",
        "home_menu_hint", "key_blue"}
     for w in list(root):
@@ -187,6 +191,13 @@ def source_skin():
             w.set("position","1080,846");w.set("size","526,31")
             w.set("font","Regular;20")
             w.set("foregroundColor","#A0B5CA")
+    # Draw text for individual rounded chip containers via native screen Labels.
+    for name,x,w in (("home_quality_chip",74,120),("home_audio_chip",210,205),
+                     ("home_role_chip",435,168),("home_speed_chip",625,162)):
+        ET.SubElement(root,"widget",{
+            "name":name,"zPosition":"3","position":"%d,621"%(x+3),
+            "size":"%d,40"%(w-6),"font":"Regular;19","foregroundColor":"#DCE9FB",
+            "transparent":"1","halign":"center","valign":"center"})
     # Enigma2 XML parser accepts self-closing native component tags.
     xml=ET.tostring(root,encoding="unicode")
     parsed=ET.fromstring(xml)
@@ -220,6 +231,12 @@ def patched(raw):
             os.path.join(os.path.dirname(__file__), "images", "neo-home-cleanup.png")))''')
     # Home doesn't need an additional label for the RED EXIT button;
     # visual buttons are native Labels over painted pixel-art rounded cards.
+    s=replace_exact(s,'self["home_selected_badges"] = Label("Resolution —   •   Source —   •   Speed —")',
+        'self["home_selected_badges"] = Label("Resolution —   •   Source —   •   Speed —")'+
+        '\\n        self["home_quality_chip"] = Label("?")'+
+        '\\n        self["home_audio_chip"] = Label("Audio ?")'+
+        '\\n        self["home_role_chip"] = Label("—")'+
+        '\\n        self["home_speed_chip"] = Label("Zap —")')
     s=replace_exact(s,'self["home_preview_action"] = Label("PREVIEW BROWSER")',
                     'self["home_preview_action"] = Label("Preview Browser")')
     s=replace_exact(s,'self["home_update_action"] = Label("ONLINE UPDATE")',
@@ -316,6 +333,14 @@ def patched(raw):
     # not confirmed live video or verified source reachability.
     s=replace_exact(s,'self["home_iptv_detail"].setText("%d IPTV channels cached  •  no live stream probe" % count)',
                     'self["home_iptv_detail"].setText("%d IPTV channels in catalog" % count)')
+    # Native Labels exactly over the four dark rounded badge tiles.
+    s=replace_exact(s,'self["home_selected_info"].setText("Video %s  •  First frame %s  •  %s" %',
+    '''self["home_quality_chip"].setText(quality_short)
+        self["home_audio_chip"].setText(audio_badge.replace("*", ""))
+        self["home_role_chip"].setText(role)
+        self["home_speed_chip"].setText("Fast Zap" if 0 < timing <= 2000 else
+                                       ("Zap %.1fs" % (timing / 1000.0) if timing > 0 else "Zap ?"))
+        self["home_selected_info"].setText("Video %s  •  First frame %s  •  %s" %''')
     # Screen state "ACTIVE" only when fallback enabled and monitor exists.
     s=replace_exact(s,'self["home_status"].setText("AUTO ON" if cfg.enabled.value and MONITOR is not None',
                     'self["home_status"].setText("ACTIVE" if cfg.enabled.value and MONITOR is not None')
