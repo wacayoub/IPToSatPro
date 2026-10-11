@@ -46,7 +46,7 @@ class BlackScreenAutoSkip:
             "generation": int(generation), "channel": str(channel),
             "start": float(now), "last": float(now), "sent": False,
             "dark_since": None, "dark_samples": 0, "last_dark_at": None,
-            "had_frame": False,
+            "had_frame": False, "last_frame_count": 0, "last_frame_at": None,
         }
 
     def observe(self, generation, now, *, decoded_frames=None,
@@ -71,13 +71,16 @@ class BlackScreenAutoSkip:
             return None
         s["last"] = now
         frames = decoded_frames if type(decoded_frames) is int and decoded_frames >= 0 else None
-        if frames is not None and frames > 0:
+        fresh = frames is not None and frames > s["last_frame_count"]
+        if fresh:
             s["had_frame"] = True
+            s["last_frame_count"] = frames
+            s["last_frame_at"] = now
         elapsed = now - s["start"]
 
         # Only fresh decoder frames can establish a dark image; a screenshot
         # captured while no decoder data exists is not reliable evidence.
-        dark_frame = (frames is not None and frames > 0 and
+        dark_frame = (fresh and
                       isinstance(black_ratio, (int, float)) and
                       self.dark_threshold <= black_ratio <= 1.0 and
                       audio_present is False)
@@ -98,8 +101,10 @@ class BlackScreenAutoSkip:
         elif (elapsed >= self.startup_grace and frames == 0 and
               decoder_status == "no_frames"):
             reason = "decoder_no_frames"
-        elif (elapsed >= self.startup_grace and decoder_status == "stalled"
-              and s["had_frame"] and audio_present is False):
+        elif (decoder_status == "stalled" and s["had_frame"] and
+              s["last_frame_at"] is not None and
+              now - s["last_frame_at"] >= self.black_grace and
+              audio_present is False):
             reason = "decoder_stalled"
         elif (s["dark_since"] is not None and s["dark_samples"] >= 3 and
               now - s["dark_since"] >= self.black_grace):
