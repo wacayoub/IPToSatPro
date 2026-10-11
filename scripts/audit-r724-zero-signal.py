@@ -24,6 +24,10 @@ for path,data in files.items():
   for idx in hits[:85]:
     for j in range(max(0,idx-10),min(len(lines),idx+18)):
       selected.add(j)
+  if path.endswith("/monitor.py"):
+    for lo,hi in [(3010,3312),(3430,3630),(2730,2780)]:
+      print("=== EXTENDED",lo,hi)
+      selected.update(range(lo-1,min(hi,len(lines))))
   for j in sorted(selected):
     text=lines[j]
     if any(term in text.lower() for term in ("http://","https://","password","username","token","api_key","auth=")):continue
