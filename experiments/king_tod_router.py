@@ -101,16 +101,20 @@ class KingTodRouter:
         if not is_king_provider(provider):
             return None
         slot = tod_slot(tod_name)
-        logo = bein_logo_number(on_screen_logo)
-        if slot is None or logo is None:
+        if slot is None:
             return None
         now = time.monotonic() if now is None else float(now)
         stream_id, event_id = str(stream_id or ""), str(event_id or "")
         identity = (stream_id, event_id)
         previous_identity = self._identities.get(slot)
+        # New event/URL invalidates a former match EVEN when the watermark
+        # is not yet visible on the first frame of the new broadcast.
         if previous_identity is not None and identity != previous_identity:
             self.clear(slot)
         self._identities[slot] = identity
+        logo = bein_logo_number(on_screen_logo)
+        if logo is None:
+            return None
         if not isinstance(confidence, (float, int)) or not (self.min_confidence <= confidence <= 1):
             return None
         existing = self._assignments.get(slot)
