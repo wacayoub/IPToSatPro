@@ -16,3 +16,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Inspect exact shipped dashboard XML and bindings
         run: python3 scripts/audit_r711_home.py
+      - name: Test full Neo Home implementation and 22-channel inherited matcher
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r711_home.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_ui.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r711-neo-home.py
+          python3 scripts/check_locked_fast_guard.py r71.1-neo-home-beta.ipk
+          python3 -m py_compile scripts/build-r711-neo-home.py scripts/test_r711_home.py
+      - name: Upload beta candidate without installing or publishing
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r711-neo-home-beta-not-hardware-tested
+          path: r71.1-neo-home-beta.ipk
+          retention-days: 14
+
