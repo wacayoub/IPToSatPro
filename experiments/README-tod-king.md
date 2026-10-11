@@ -88,3 +88,10 @@ python3 -m unittest discover -s experiments -p 'test_*.py' -v
 - Offline cross-frame white-mask Dice overlap for a manually selected 52x11 logo ROI was 0.9362 and 0.9371 relative to frame 1. Its tiny dark-digit mask overlapped 1.0 on the other two images. This is REPEATABILITY on one on-air logo only, NOT cross-channel precision/recall.
 - The exact King provider ID, TOD 1-14 slot and actual ability to recognize any other beIN number could not be inferred from the screenshots (source_verified=false). A provisional calibration bundle stays private to the current conversation, not deployed to the box or committed as pixels.
 - Critical safety gate: the experimental auto-mapping worker now refuses ALL screenshot-driven routes until independently verified samples for beIN 1 through 10 are present. A single 7 template alone could match the common beIN SPORTS banner from 6 or 8. Read-only offline diagnostics remain possible. This safety gate is covered by regression tests.
+
+
+## 11 Oct 2026 — receiver-confirmed TOD slot correction
+
+- The receiver owner clarified the source channel of the three captured images was **King TOD Sports 3, NOT TOD Sports 7**. The upper-right broadcaster watermark visibly identified **beIN SPORTS 7 LIVE**. Correct field observation: **TOD Sports 3 → beIN Sports 7**, only during that observed event; do not persist it as a fixed mapping.
+- The two numerals have distinct meanings: **TOD 3 is the IPTV slot** and **beIN 7 is the on-air broadcaster logo**. They need not match, and the TOD slot may later carry beIN 1/6/8 or another beIN channel as events change.
+- The channel slot was explicitly supplied by the receiver owner after capture; `report.json` did not itself verify the slot or King's exact provider ID. This one-off observation is calibration-only. Existing mappings, `main`, IPK, and receiver settings remain untouched.
