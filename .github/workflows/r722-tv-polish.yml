@@ -1,0 +1,35 @@
+name: R72.2 TV Screenshot Polish CI
+on:
+  push:
+    branches: [feature/r72-2-tv-polish]
+    paths:
+      - 'scripts/build-r722-tv-polish.py'
+      - 'scripts/test_r722_tv_polish.py'
+      - '.github/workflows/r722-tv-polish.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python and icon raster prerequisites (build only)
+        run: python3 -m pip install -q pillow
+      - name: Test real R72.2 native GUI source and unchanged playback
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r722_tv_polish.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r721_icons.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r72_live_monitor.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r722-tv-polish.py
+          python3 scripts/check_locked_fast_guard.py r722-tv-polish-beta.ipk
+          python3 -m py_compile scripts/build-r722-tv-polish.py scripts/test_r722_tv_polish.py
+      - name: Upload opt-in R72.2 beta for later visual validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r722-tv-polish-beta
+          path: r722-tv-polish-beta.ipk
+          retention-days: 14
