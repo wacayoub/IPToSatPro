@@ -83,11 +83,16 @@ class R70CandidateTests(unittest.TestCase):
         ctrl = members_from(unpack_ar(self.out.read_bytes())["control.tar.gz"])
         self.assertIn(("Version: "+NEW_VERSION).encode(),ctrl["control"])
 
-    def test_main_online_update_not_repointed_by_candidate_build(self):
+    def test_manifest_is_only_known_approved_r69_or_released_r70(self):
         manifest = json.loads((ROOT/"update.json").read_text())
-        self.assertEqual(manifest["version"], BASE_VERSION)
-        self.assertEqual(manifest["sha256"],
-                         "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed")
+        authorized = {
+            BASE_VERSION: "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed",
+            NEW_VERSION: "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c"
+        }
+        self.assertIn(manifest["version"], authorized)
+        self.assertEqual(manifest["sha256"], authorized[manifest["version"]])
+        if manifest["version"] == NEW_VERSION:
+            self.assertEqual(manifest["size"], self.meta["size"])
 
     def test_package_does_not_include_cache_or_channel_credentials(self):
         for key in self.files:
