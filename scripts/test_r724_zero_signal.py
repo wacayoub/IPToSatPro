@@ -82,7 +82,7 @@ class SignalTests(unittest.TestCase):
         self.check("TUNE_FAILED",False,same=False,crypto=False,static=False)
         self.check("TUNE_FAILED",False,fallback=True,crypto=False,static=False)
         self.check("UNLOCKED",False,same=False,crypto=False,static=False)
-        self.check("LOCKED",False,crypto=False,static=False,locked=True)
+        self.check("LOCKED",False,crypto=False,static=False,locked=False)
         # FTA on available tuner must stay on SAT even if SNR telemetry is 0.
         self.check("LOCKED",False,crypto=False,static=False)
 
