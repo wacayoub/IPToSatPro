@@ -1,0 +1,56 @@
+name: Stage R72.6 Digi24 Safe Match BETA
+on:
+  push:
+    branches: [feature/r726-digi24-safe-match]
+    paths:
+      - '.github/workflows/stage-r726-digi24.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r726-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retest 71-point precise Romanian Digi24 safeguard
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r726_safe_match.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r725_fuzzy.py' -v
+          python3 scripts/build-r726-safe-match.py
+          echo '9b7efbef03368c9a97b86c265574dbd9389401b7d5b014a50e427eaaf267859b  r726-digi24-safe-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r726-digi24-safe-beta.ipk
+      - name: Stage verified read-only installer
+        run: |
+          set -eu
+          python3 scripts/stage-r726-digi24.py
+          sh -n download-r726-digi24.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json
+          m=json.loads(Path('staging/r726-digi24-safe.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r726-digi24-safe.b64').read_bytes())
+          assert len(raw)==m['size']==405038
+          assert hashlib.sha256(raw).hexdigest()==m['sha256']
+          assert not m['hardware_tested'] and not m['published_to_main']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          print('R726_VERIFIED_PRODUCTION_UPDATE_UNCHANGED')
+          PY
+      - name: Publish R72.6 branch beta only
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r726-digi24-safe.b64 staging/r726-digi24-safe.update.json download-r726-digi24.sh
+          if git diff --cached --quiet; then
+            echo 'R72.6 already staged'
+          else
+            git commit -m 'Stage SHA256-verified R72.6 Romanian Digi24 no-signal beta'
+            git push origin HEAD:feature/r726-digi24-safe-match
+          fi
