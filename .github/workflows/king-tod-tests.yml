@@ -1,0 +1,25 @@
+name: Experimental King TOD routing tests
+on:
+  push:
+    branches:
+      - feature/fast-zap-tod-king-v1
+    paths:
+      - 'experiments/**'
+      - '.github/workflows/king-tod-tests.yml'
+  pull_request:
+    paths:
+      - 'experiments/**'
+      - '.github/workflows/king-tod-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile routing module
+        run: python3 -m py_compile experiments/king_tod_router.py
+      - name: Check isolated policy and blacklist behavior
+        run: python3 -m unittest discover -s experiments -p 'test_*.py' -v
