@@ -81,12 +81,35 @@ def _dice(a, b):
     return 2.0 * common / float(left + right)
 
 
-class VideoLogoMatcher:
-    """Only evaluate manually verified beIN templates, never guessed logos.
+def top_corner_rois(width=.25, height=.18, horizontal_margin=.02, top_margin=.02):
+    """Initial left/right screen regions, NOT calibrated logo coordinates.
 
-    templates: {6: {"roi": (x,y,w,h), "bmp": cropped_bmp_bytes}, ...}
-    Reference BMP contains ONLY the watermark ROI at capture resolution.
-    Fails closed if confidence or separation from second place is low.
+    Keep the regions near the top corners. A real receiver capture must be used
+    to crop and verify the actual logo before enabling automatic assignments.
+    """
+    if not (0 < width <= .40 and 0 < height <= .30 and
+            0 <= horizontal_margin <= .10 and 0 <= top_margin <= .10 and
+            2 * (width + horizontal_margin) < 1 and
+            top_margin + height <= .35):
+        raise ValueError("invalid upper-screen corner ROI dimensions")
+    return {
+        "left": (horizontal_margin, top_margin, width, height),
+        "right": (1 - horizontal_margin - width, top_margin, width, height),
+    }
+
+
+class VideoLogoMatcher:
+    """Compare actual decoded screenshots with manually verified beIN watermarks.
+
+    Each logo can have TWO or more top-corner positions. Matching is by
+    watermark IMAGE, not by IPTV name/EPG or position alone. Supports:
+        {6: {"roi": one_roi, "bmp": reference_bmp}}  # legacy
+        {6: {"rois": {"left": left_roi, "right": right_roi},
+             "bmp": reference_bmp}}                 # same watermark both sides
+        {6: {"placements": [{"roi": left_roi, "bmp": left_reference},
+                              {"roi": right_roi, "bmp": right_reference}]}}
+    References must be genuine cropped broadcaster screenshots, sized exactly
+    like the configured ROI crop. No such references are bundled.
     """
     def __init__(self, templates, confidence_floor=.93, margin=.07):
         if not (.85 <= confidence_floor <= 1.0) or margin < .03:
@@ -97,38 +120,85 @@ class VideoLogoMatcher:
         for num, item in templates.items():
             if type(num) is not int or not 1 <= num <= 10:
                 raise ValueError("only beIN Sports 1-10 supported")
-            if not isinstance(item, dict) or "roi" not in item or "bmp" not in item:
-                raise ValueError("verified cropped BMP template required")
-            ref = load_bmp(item["bmp"])
-            mask = white_mask(ref[2])
-            if sum(mask) < 12 or sum(mask) > .65 * len(mask):
-                raise ValueError("ambiguous reference watermark mask")
-            self.references[num] = (tuple(item["roi"]), ref[0], ref[1], mask)
+            if not isinstance(item, dict):
+                raise ValueError("verified BMP watermark configuration required")
+            if "placements" in item:
+                placements = item["placements"]
+                if not isinstance(placements, (list, tuple)) or not placements:
+                    raise ValueError("at least one logo placement required")
+            elif "rois" in item:
+                rois = item["rois"]
+                if isinstance(rois, dict):
+                    placements = [
+                        {"roi": roi, "bmp": item.get("bmp"), "corner": corner}
+                        for corner, roi in rois.items()
+                    ]
+                elif isinstance(rois, (tuple, list)):
+                    placements = [
+                        {"roi": roi, "bmp": item.get("bmp")}
+                        for roi in rois
+                    ]
+                else:
+                    raise ValueError("invalid logo ROI collection")
+            elif "roi" in item:
+                placements = [item]
+            else:
+                raise ValueError("logo ROI missing")
+
+            checked = []
+            for place in placements:
+                if not isinstance(place, dict) or "roi" not in place or "bmp" not in place:
+                    raise ValueError("verified BMP template and ROI required")
+                roi = tuple(place["roi"])
+                if len(roi) != 4:
+                    raise ValueError("invalid watermark ROI")
+                # Run validation even without a real video frame.
+                x, y, w, h = roi
+                if not (0 <= x < 1 and 0 <= y < 1 and w > 0 and h > 0 and
+                        x + w <= 1.00001 and y + h <= 1.00001):
+                    raise ValueError("invalid watermark ROI")
+                ref = load_bmp(place["bmp"])
+                mask = white_mask(ref[2])
+                if sum(mask) < 12 or sum(mask) > .65 * len(mask):
+                    raise ValueError("ambiguous reference watermark mask")
+                corner = place.get("corner")
+                if corner not in (None, "left", "right"):
+                    raise ValueError("invalid watermark corner")
+                corner = corner or ("left" if x + w * .5 < .5 else "right")
+                checked.append((roi, ref[0], ref[1], mask, corner))
+            self.references[num] = tuple(checked)
 
     def classify(self, actual_video_bmp):
-        """Return dict with number/confidence/digest or None.
+        """Return {number, confidence, corner, capture_digest} or None.
 
-        Digest identifies full capture for caller to discard repeated old frames.
-        A screenshot cannot prove whether the decoder produced a NEW frame.
+        Evaluates both top corners, ranking once PER CHANNEL (not per ROI).
+        Rejects competing channel logos when confidence margin is too small.
+        Digest lets the caller reject repeated/stale screenshots. An identical
+        capture can NEVER count as an independent confirmation.
         """
         if not self.references:
             return None
         frame = load_bmp(actual_video_bmp)
         ranked = []
-        for num, (roi, w, h, reference) in self.references.items():
-            cut = crop_rows(frame, roi)
-            if len(cut) != h or len(cut[0]) != w:
-                continue
-            score = _dice(white_mask(cut), reference)
-            ranked.append((score, num))
+        for num, placements in self.references.items():
+            best = (0.0, None)
+            for roi, w, h, reference, corner in placements:
+                cut = crop_rows(frame, roi)
+                if len(cut) != h or len(cut[0]) != w:
+                    continue
+                score = _dice(white_mask(cut), reference)
+                if score > best[0]:
+                    best = (score, corner)
+            ranked.append((best[0], num, best[1]))
         if not ranked:
             return None
         ranked.sort(reverse=True)
-        score, number = ranked[0]
+        score, number, corner = ranked[0]
         second = ranked[1][0] if len(ranked) > 1 else 0
         if score < self.confidence_floor or score - second < self.margin:
             return None
         return dict(number=number, confidence=round(score, 4),
+                    corner=corner,
                     capture_digest=hashlib.sha256(actual_video_bmp).hexdigest())
 
 
