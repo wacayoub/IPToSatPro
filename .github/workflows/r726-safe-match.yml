@@ -18,3 +18,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Read source ranking and score rejection of installed R72.5
         run: python3 scripts/audit-r726-digi.py
+      - name: Validate exact Digi24 71-point safe exception and untouched player
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r726_safe_match.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r725_fuzzy.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r724_zero_signal.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r726-safe-match.py
+          python3 scripts/check_locked_fast_guard.py r726-digi24-safe-beta.ipk
+      - name: Upload trial IPK only after full tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r726-digi24-safe-beta
+          path: r726-digi24-safe-beta.ipk
+          retention-days: 14
+
