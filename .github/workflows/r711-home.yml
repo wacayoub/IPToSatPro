@@ -1,0 +1,18 @@
+name: R71.1 Home inspection and release gate
+on:
+  push:
+    branches: [feature/r71-1-neo-home]
+    paths:
+      - 'scripts/*r711*'
+      - '.github/workflows/r711-home.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact shipped dashboard XML and bindings
+        run: python3 scripts/audit_r711_home.py
