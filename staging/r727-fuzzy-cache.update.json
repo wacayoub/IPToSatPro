@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72.7-fuzzy-cache-beta",
+  "size": 405774,
+  "sha256": "cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r727-fast-playback-audit/payload/r727-fuzzy-cache.b64"
+  ],
+  "notes": "R72.7 performance BETA: cache exactly scored expensive fuzzy SmartMatch for 90 seconds, max 16 SAT identities, same user language/market/provider/quality context, invalidation on measured resolution updates. No changes to score, manual mappings, receiver playback, PAT, audio, Timeshift, direct Fast Zap. Cold searches and slow IPTV upstream still can exceed 2 seconds.",
+  "hardware_tested": false,
+  "production_published": false
+}
