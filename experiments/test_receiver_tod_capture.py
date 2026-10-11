@@ -2,13 +2,16 @@
 import json
 import os
 import stat
+import struct
 import tempfile
 import types
 import unittest
 import zipfile
 from unittest import mock
 
-from receiver_tod_capture import bmp_decode, bmp_encode, collect, checked_tmp_parent
+from receiver_tod_capture import (bmp_decode, bmp_encode, collect,
+                                  checked_tmp_parent, crop_raw_bmp, bmp_metadata,
+                                  CORNER_ROIS)
 
 
 def fake_bmp(seed):
@@ -73,6 +76,65 @@ class ReadOnlyCaptureTests(unittest.TestCase):
         self.assertEqual(stat.S_IMODE(os.stat(folder).st_mode), 0o700)
         self.assertEqual(stat.S_IMODE(os.stat(os.path.join(folder, "report.json")).st_mode), 0o600)
 
+    def test_cropped_raw_bmp_equals_legacy_pixel_crop(self):
+        from receiver_tod_capture import extract_corner
+        raw = fake_bmp(2)
+        frame = bmp_decode(raw)
+        for roi in CORNER_ROIS.values():
+            self.assertEqual(crop_raw_bmp(raw, roi), extract_corner(frame, roi))
+
+    def test_memory_bounded_crop_accepts_32bit_and_top_down_bmp(self):
+        original = fake_bmp(2)
+        w, h, rows = bmp_decode(original)
+        row_stride = w * 4
+        pixels = bytearray()
+        # Windows BMP top-down encoding; uses BGRA 32-bit source.
+        for row in rows:
+            for red, green, blue in row:
+                pixels.extend((blue, green, red, 127))
+        bmp32 = (b"BM" + struct.pack("<IHHI", 54 + len(pixels), 0, 0, 54) +
+                 struct.pack("<IiiHHIIiiII", 40, w, -h, 1, 32, 0,
+                             len(pixels), 0, 0, 0, 0) + pixels)
+        self.assertEqual(bmp_metadata(bmp32)[:2], (w, h))
+        from receiver_tod_capture import extract_corner
+        for roi in CORNER_ROIS.values():
+            self.assertEqual(crop_raw_bmp(bmp32, roi),
+                             extract_corner((w, h, rows), roi))
+
+    def test_optional_960_requests_only_current_picture(self):
+        def make_960(seed):
+            width, height = 960, 540
+            row = b"\x10\x20\x30" * width
+            pixels = bytearray(row * height)
+            pixels[seed] = 100 + seed
+            return (b"BM" +
+                    struct.pack("<IHHI", 54 + len(pixels), 0, 0, 54) +
+                    struct.pack("<IiiHHIIiiII", 40, width, height,
+                                1, 24, 0, len(pixels), 0, 0, 0, 0) +
+                    pixels)
+
+        def runner(args, **kwargs):
+            self.commands.append((args, kwargs))
+            with open(args[-1], "wb") as out:
+                out.write(make_960(len(self.commands)))
+            return types.SimpleNamespace(returncode=0)
+
+        folder, report = collect(grab_path=self.grab, parent=self.tmp.name,
+                                 width=960, run_command=runner,
+                                 sleep_fn=lambda _: None)
+        self.assertEqual(report["requested_width"], 960)
+        self.assertEqual(report["captured"], 3)
+        self.assertEqual(report["distinct_images"], 3)
+        self.assertEqual([item["width"] for item in report["samples"]],
+                         [960, 960, 960])
+        self.assertTrue(all(call[0][1:4] == ["-v", "-r", "960"]
+                            for call in self.commands))
+        for roi in CORNER_ROIS.values():
+            _ = roi
+        with open(os.path.join(folder, "frame-01-right.bmp"), "rb") as f:
+            w, h, *_ = bmp_metadata(f.read())
+        self.assertEqual((w, h), (307, 130))
+
     def test_identical_frames_are_not_three_independent_samples(self):
         def runner(args, **kwargs):
             with open(args[-1], "wb") as handle:
@@ -135,6 +197,10 @@ class ReadOnlyCaptureTests(unittest.TestCase):
             collect(grab_path=self.grab, parent=self.tmp.name, count=14)
         with self.assertRaises(ValueError):
             collect(grab_path=self.grab, parent=self.tmp.name, spacing=.1)
+        with self.assertRaises(ValueError):
+            collect(grab_path=self.grab, parent=self.tmp.name, width=1920)
+        with self.assertRaises(ValueError):
+            collect(grab_path=self.grab, parent=self.tmp.name, width=True)
 
     def test_error_does_not_touch_receiver_settings_or_network(self):
         def failing(args, **kwargs):
