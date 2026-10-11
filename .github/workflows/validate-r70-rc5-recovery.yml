@@ -9,6 +9,7 @@ on:
       - 'scripts/check_r70_baseline.py'
       - 'scripts/receiver-build-r70-test.sh'
       - 'scripts/check_receiver_bootstrap_sources.py'
+      - 'scripts/check_rc5_package_equivalence.py'
       - 'tests/test_fta_runtime_rc3.py'
       - 'tests/test_no_signal_policy.py'
       - 'tests/test_preview_autotest_rc4.py'
@@ -66,10 +67,8 @@ jobs:
           set -euo pipefail
           sh scripts/receiver-build-r70-test.sh
           test -s /tmp/iptosat-r70-rc5.ipk
-          test "$(sha256sum /tmp/iptosat-r70-rc5.ipk | cut -d' ' -f1)" = "$(sha256sum r70-candidate.ipk | cut -d' ' -f1)" || {
-            echo "Different archive bytes may be caused by gzip timestamps; checking version and files instead."
-            ar p /tmp/iptosat-r70-rc5.ipk control.tar.gz | tar -xzOf - ./control | grep -Fx 'Version: 1.0.46-r70-rc5'
-          }
+          python3 scripts/check_rc5_package_equivalence.py \
+            r70-candidate.ipk /tmp/iptosat-r70-rc5.ipk
       - name: Keep short-lived RC5 test artifact (NOT A RELEASE)
         uses: actions/upload-artifact@v4
         with:
