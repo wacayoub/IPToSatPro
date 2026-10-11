@@ -51,6 +51,27 @@ def main():
     assert functions(cand["monitor.py"]) == functions(monitor), (
         "Existing monitor method/locked fast-open AST changed"
     )
+    # Validate the *real receiver engine*, not only FakeMonitor unit tests.
+    # A missing method silently disables attach_recovery() without breaking CI.
+    live_hooks = set(functions(monitor))
+    critical_rc5 = {"_playback_plan", "_current_player_override",
+                    "_audio_safe_serviceapp_required"}
+    missing_rc5 = sorted(critical_rc5 - live_hooks)
+    print("RC5 baseline hooks present:", sorted(critical_rc5 & live_hooks))
+    print("RC5 baseline hooks missing:", missing_rc5)
+    assert not missing_rc5, (
+        "RC5 decoder adapter would be silently inactive/incompatible: "
+        + ", ".join(missing_rc5)
+    )
+    baseline_tree = ast.parse(monitor)
+    plan_call_sites = sum(
+        1 for n in ast.walk(baseline_tree)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Attribute)
+        and n.func.attr == "_playback_plan"
+    )
+    print("RC5 original playback plan call sites:", plan_call_sites)
+    assert plan_call_sites > 0, "RC5 playback plan is never called by monitor"
     for name in ("core.py", "timeshift_seek_patch.py", "neo_theme.py"):
         assert cand[name] == base[name], name + " changed"
     assert new_bridge == base_bridge, "Relay changed"
