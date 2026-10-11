@@ -4,6 +4,7 @@ import unittest
 
 from video_logo_probe import (
     VideoLogoMatcher, crop_rows, grab_video_bmp, load_bmp, white_mask,
+    top_corner_rois,
 )
 
 
@@ -75,6 +76,55 @@ class LogoProbeTests(unittest.TestCase):
 
     def test_missing_grab_returns_no_evidence(self):
         self.assertIsNone(grab_video_bmp("/usr/bin/definitely-no-grab-exists"))
+
+
+    def test_recognize_same_logo_in_left_or_right_corner(self):
+        """A broadcaster can place the SAME watermark on either side."""
+        rois = {"left": (0.0, 0.0, .5, .5),
+                "right": (.5, 0.0, .5, .5)}
+        templates = {
+            n: {"rois": rois, "bmp": self.templates[n]["bmp"]}
+            for n in (6, 8)
+        }
+        matcher = VideoLogoMatcher(templates)
+
+        def at_left(number):
+            rows = scene(None)
+            original = scene(number)
+            for y in range(16):
+                rows[y][:24] = original[y][24:48]
+            return bmp(rows)
+
+        self.assertEqual(matcher.classify(bmp(scene(6)))["number"], 6)
+        self.assertEqual(matcher.classify(bmp(scene(6)))["corner"], "right")
+        self.assertEqual(matcher.classify(at_left(6))["number"], 6)
+        self.assertEqual(matcher.classify(at_left(6))["corner"], "left")
+        self.assertEqual(matcher.classify(at_left(8))["number"], 8)
+        self.assertEqual(matcher.classify(at_left(8))["corner"], "left")
+        self.assertNotEqual(matcher.classify(at_left(6))["capture_digest"],
+                            matcher.classify(bmp(scene(6)))["capture_digest"])
+
+        # Two equally strong DIFFERENT logos: never guess the winner.
+        both = scene(6)
+        left_eight = scene(8)
+        for y in range(16):
+            both[y][:24] = left_eight[y][24:48]
+        self.assertIsNone(matcher.classify(bmp(both)))
+        self.assertIsNone(matcher.classify(bmp(scene("unknown"))))
+
+    def test_top_corner_rois_are_bounded_and_require_verified_templates(self):
+        rois = top_corner_rois()
+        self.assertEqual(set(rois), {"left", "right"})
+        self.assertLess(rois["left"][0] + rois["left"][2], .5)
+        self.assertGreater(rois["right"][0], .5)
+        self.assertLess(rois["left"][1] + rois["left"][3], .35)
+        for kwargs in ({"width": .6}, {"height": .7}, {"top_margin": .3}):
+            with self.assertRaises(ValueError):
+                top_corner_rois(**kwargs)
+        with self.assertRaises(ValueError):
+            VideoLogoMatcher({6: {"rois": rois}})
+        with self.assertRaises(ValueError):
+            VideoLogoMatcher({6: {"rois": {}, "bmp": self.templates[6]["bmp"]}})
 
 
 if __name__ == "__main__":
