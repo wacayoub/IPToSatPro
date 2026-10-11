@@ -79,6 +79,32 @@ def read_session(folder):
     return images
 
 
+def session_diagnostics(images):
+    """Read-only image-quality metrics, not a broadcaster classification.
+
+    Reveals which of the 3 images diverged in the 5x5 pixel numeral area.
+    A tiny mask change may be compression/background or another channel.
+    """
+    first = images[0]
+    masks = [image["digit"] for image in images]
+    white_masks = [image["whites"] for image in images]
+    return {
+        "digit_dark_pixels": [sum(m) for m in masks],
+        "digit_flipped_pixels_from_first": [
+            sum(a != b for a, b in zip(masks[0], mask)) for mask in masks
+        ],
+        "digit_max_pairwise_flips": max(
+            sum(a != b for a, b in zip(left, right))
+            for left in masks for right in masks
+        ),
+        "banner_similarity_from_first": [
+            round(dice(white_masks[0], white), 4) for white in white_masks
+        ],
+        "banner_white_pixels": [image["white_count"] for image in images],
+        "numeral_mask_stable": all(mask == masks[0] for mask in masks),
+    }
+
+
 def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
     """Return an offline conservative RESULT; never a routing Assignment."""
     if type(slot) is not int or not 1 <= slot <= 14:
@@ -95,6 +121,8 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
         "classification": "UNKNOWN",
         "reason": "insufficient or incompatible image evidence",
         "scores": [],
+        "reference_health": None,
+        "current_health": None,
     }
     try:
         references = read_session(reference)
@@ -102,6 +130,9 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
     except (OSError, ValueError) as exc:
         outcome["reason"] = str(exc)
         return outcome
+
+    outcome["reference_health"] = session_diagnostics(references)
+    outcome["current_health"] = session_diagnostics(samples)
 
     if set(item["hash"] for item in references) & set(item["hash"] for item in samples):
         outcome["reason"] = "reference and current reuse identical full screenshots"
@@ -112,7 +143,18 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
     ref_digit = references[0]["digit"]
     if not (5 <= sum(ref_digit) <= 17 and
             all(other["digit"] == ref_digit for other in references)):
-        outcome["reason"] = "reference numeral not independently stable"
+        instability = outcome["reference_health"]["digit_max_pairwise_flips"]
+        outcome["reason"] = (
+            "reference numeral not independently stable; "
+            "%d/25 maximum changed pixels between reference frames; "
+            "UNKNOWN is protective and does not disprove the labelled beIN 7"
+            % instability)
+        if outcome["current_health"]["numeral_mask_stable"]:
+            outcome["next_step"] = (
+                "The current set has a stable 5x5 numeral mask. If its "
+                "beIN logo was manually verified, it can be the reference "
+                "for a future shadow comparison; never assign a mapping.")
+
         return outcome
     if any(dice(references[0]["whites"], r["whites"]) < .88
            for r in references[1:]):
