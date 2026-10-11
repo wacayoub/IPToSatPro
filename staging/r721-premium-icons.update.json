@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72.1-premium-icons-beta",
+  "size": 358772,
+  "sha256": "5da1148476b471a000f9b2064f0b2e01d4db131f946783b24a70c098ebd97092",
+  "notes": "R72.1 premium Enigma2 icons for SAT/IPTV, six metric cards and Preview/Update actions. Decoder-measured SAT and IPTV SD/HD/FHD/4K icons with '?' on unverified. Keeps playback, timeshift, source mapping, R72 live status byte-identical except native labels/background.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r72-1-premium-icons/payload/r721-premium-icons.b64"
+  ],
+  "field_tested": false,
+  "production_published": false
+}
