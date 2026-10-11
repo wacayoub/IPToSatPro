@@ -1,0 +1,52 @@
+name: Stage IPToSatPro R70 opt-in candidate
+on:
+  push:
+    branches:
+      - feature/iptosatpro-final-r70
+    paths:
+      - 'scripts/stage-r70-package.py'
+      - '.github/workflows/r70-stage-candidate.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r70-final-candidate-staging
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Rebuild and verify r70 is byte-identical in playback behavior
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_r70_candidate.py' -v
+          python3 scripts/test_r70_preview_logic.py
+      - name: Create staged downloadable package and SHA256 manifest
+        run: |
+          python3 scripts/stage-r70-package.py
+          sh -n download-r70-final.sh
+          python3 - <<'PY'
+          import json,base64,hashlib
+          from pathlib import Path
+          m=json.loads(Path('staging/r70-final.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r70-final.b64').read_bytes())
+          assert len(raw)==m['size']
+          assert hashlib.sha256(raw).hexdigest()==m['sha256']
+          assert m['published_to_main'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r69-beta'
+          print('STAGING_CONTENTS_VERIFIED',m['version'],m['size'],m['sha256'])
+          PY
+      - name: Commit opt-in candidate to isolated branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r70-final.b64 staging/r70-final.update.json download-r70-final.sh
+          if git diff --cached --quiet; then
+            echo "Candidate already staged and verified."
+          else
+            git commit -m "Stage r70 final candidate with checksum and no production auto-update"
+            git push origin HEAD:feature/iptosatpro-final-r70
+          fi
