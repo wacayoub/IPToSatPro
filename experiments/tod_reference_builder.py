@@ -116,7 +116,7 @@ def load_verified_templates(manifest_path):
             raise ValueError("reference path escaped calibration directory")
         with open(filename, "rb") as stream:
             bmp = stream.read(8000001)
-        reference_crop(bmp, (0, 0, 1, 1), corner, number) if False else load_bmp(bmp)
+        load_bmp(bmp)
         if len(bmp) > 8000000:
             raise ValueError("reference too large")
         templates.setdefault(number, {"placements": []})["placements"].append(
