@@ -53,7 +53,9 @@ class BlackScreenTests(unittest.TestCase):
                                     black_ratio=1.0, audio_present=False))
         self.assertIsNone(d.observe(1, 6, decoded_frames=2,
                                     black_ratio=1.0, audio_present=False))
-        self.assertEqual(d.observe(1, 9, decoded_frames=3,
+        self.assertIsNone(d.observe(1, 10, decoded_frames=3,
+                                    black_ratio=1.0, audio_present=False))
+        self.assertEqual(d.observe(1, 14, decoded_frames=4,
                                    black_ratio=1.0, audio_present=False).reason,
                          "confirmed_dark_and_silent")
 
