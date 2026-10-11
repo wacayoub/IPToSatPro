@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r71.1-neo-home-beta",
+  "size": 279792,
+  "sha256": "e6108f374ac7aa5a5ac8f06bb0c707e94c1932754f75ee62b25091609bef68ff",
+  "notes": "R71.1 Neo Home FHD 1660x900: live SAT SNR bar, real IPTV catalog/status, stream identity/quality and persisted manual-lock status. GREEN Preview All, YELLOW Online Update, BLUE Logs, MENU Settings. Fast Zap/Preview/audio/timeshift unchanged. Rendering on receiver NOT verified.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r71-1-neo-home/payload/r711-neo-home-beta.b64"
+  ],
+  "published_to_main": false,
+  "receiver_tested": false
+}
