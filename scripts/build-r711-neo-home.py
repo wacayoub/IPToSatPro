@@ -125,7 +125,7 @@ def patch_plugin(raw):
     # Keep all existing snapshot computations and failover logic as-is. The old
     # widgets can remain unskinned to make all established methods work.
     anchor='''        self["version"] = Label(PLUGIN_VERSION)
-'''
+        self["card_auto_title"]'''
     inject='''        self["home_status"] = Label("STARTING")
         self["home_channel_caption"] = Label("CURRENT CHANNEL")
         self["home_sat_name"] = Label("No SAT channel")
@@ -152,7 +152,8 @@ def patch_plugin(raw):
         self._r711_lock_checked_at = 0.0
         self._r711_lock_active = False
 '''
-    s=replace_once(s,anchor,anchor+inject)
+    s=replace_once(s,anchor,'''        self["version"] = Label(PLUGIN_VERSION)
+'''+inject+'''        self["card_auto_title"]''')
     s=replace_once(s,'self["subtitle"] = Label("NEO DARK  •  COMFORTABLE  •  SMARTMATCH  [P] [B1] [B2]" if cfg.ui_theme.value == "neo" and cfg.ui_density.value == "comfortable" else "SAT / IPTV  •  SMARTMATCH  [P] [B1] [B2]")',
                     'self["subtitle"] = Label("R71.1  •  SMART SAT / IPTV  •  NEO HOME")')
     s=replace_once(s,'self["key_red"] = Label("EXIT"); self["key_green"] = Label("PREVIEW"); self["key_yellow"] = Label("SMART MATCH"); self["key_blue"] = Label("EVENT LOG")',
