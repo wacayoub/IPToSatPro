@@ -16,5 +16,22 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+      - name: Install optional image build dependency
+        run: python3 -m pip install -q pillow
       - name: Audit exact R72.3 no signal failure and fallback guard source
         run: python3 scripts/audit-r724-zero-signal.py
+      - name: Test FTA and encrypted no-signal fallback with healthy SAT protections
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r724_zero_signal.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r723_fusion.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r724-zero-signal.py
+          python3 scripts/check_locked_fast_guard.py r724-zero-signal-beta.ipk
+          python3 -m py_compile scripts/build-r724-zero-signal.py scripts/test_r724_zero_signal.py
+      - name: Package experimental IPK without modifying production
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r724-zero-signal-beta
+          path: r724-zero-signal-beta.ipk
+          retention-days: 14
