@@ -64,6 +64,7 @@ class LogoCatalogLabTests(unittest.TestCase):
         self.assertTrue(item["internally_stable"])
         self.assertEqual(item["digit_dark_pixels"], [7, 7, 7])
         self.assertEqual(item["digit_max_pixel_flips"], 0)
+        self.assertEqual(item["hd_mixed_2x2_mask_blocks"], [None, None, None])
         data = audit({7: folder})
         self.assertEqual(data["resolution"], [480, 270])
         self.assertEqual(data["labels_seen"], [7])
@@ -81,10 +82,30 @@ class LogoCatalogLabTests(unittest.TestCase):
         self.assertEqual(observed["resolution"], [960, 540])
         self.assertEqual(observed["digit_dark_pixels"], [28, 28, 28])
         self.assertEqual(observed["digit_max_pixel_flips"], 0)
+        self.assertEqual(observed["hd_mixed_2x2_mask_blocks"], [0, 0, 0])
         self.assertTrue(observed["internally_stable"])
         summary = audit({7: folder})
         self.assertEqual(summary["resolution"], [960, 540])
         self.assertFalse(summary["mapping_enabled"])
+
+    def test_native_hd_like_subpixel_edges_reported_not_identified(self):
+        folder = self.folder("native", 960)
+        for i in range(1, 4):
+            path = os.path.join(folder, "frame-%02d.bmp" % i)
+            data = bytearray(open(path, "rb").read())
+            # 960x540, bottom-up, 24bpp; alter one dark pixel of a
+            # previously uniformly white 2x2 cell inside the digit ROI.
+            w, h = 960, 540
+            x, y = 449 * 2, 21 * 2
+            offset = 54 + (h - 1 - y) * (w * 3) + x * 3
+            data[offset:offset + 3] = b"\x10\x10\x10"
+            with open(path, "wb") as out:
+                out.write(data)
+        item = evaluate_label(folder)
+        self.assertEqual(item["resolution"], [960, 540])
+        self.assertEqual(item["hd_mixed_2x2_mask_blocks"], [1, 1, 1])
+        self.assertTrue(item["internally_stable"])
+        self.assertFalse(audit({7: folder})["mapping_enabled"])
 
     def test_one_pixel_logo_change_refuses_stable_reference(self):
         folder = self.folder("flicker", variant_at=2)
