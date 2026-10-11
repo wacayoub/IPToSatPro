@@ -28,6 +28,16 @@ jobs:
           python3 scripts/audit_r70_baseline.py fast
       - name: Score real core for preview FR, IT, PL and CANAL+ Golf
         run: python3 scripts/test_r70_preview_logic.py
+      - name: Build r70 final candidate without modifying any playback logic
+        run: |
+          python3 scripts/build-r70-final.py
+          python3 -m unittest discover -s scripts -p 'test_r70_candidate.py' -v
+      - name: Upload r70 offline candidate for inspection only
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r70-final-candidate-not-validated
+          path: r70-final.ipk
+          retention-days: 14
       - name: Source syntax checks
         run: |
           python3 -m py_compile scripts/audit_r70_baseline.py
