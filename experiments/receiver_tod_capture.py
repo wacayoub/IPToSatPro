@@ -20,6 +20,7 @@ import struct
 import subprocess
 import tempfile
 import time
+import zipfile
 
 MAX_BYTES = 8000000
 CORNER_ROIS = {
@@ -174,6 +175,13 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
         with open(path, "w", encoding="utf-8") as out:
             json.dump(report, out, indent=2, ensure_ascii=False)
         os.chmod(path, 0o600)
+        # Convenience bundle stays local; never uploads images or logs.
+        bundle_path = os.path.join(folder, "tod-images.zip")
+        with zipfile.ZipFile(bundle_path, "w", zipfile.ZIP_DEFLATED) as bundle:
+            for filename in sorted(os.listdir(folder)):
+                if filename.endswith(".bmp") or filename == "report.json":
+                    bundle.write(os.path.join(folder, filename), arcname=filename)
+        os.chmod(bundle_path, 0o600)
         return folder, report
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
@@ -193,6 +201,7 @@ def main(argv=None):
     print("DIAGNOSTIC:", folder)
     print("FRAMES:", report["captured"], "DISTINCT:", report["distinct_images"])
     print("CHECK:", folder + "/report.json")
+    print("OPTIONAL SHARE FILE:", folder + "/tod-images.zip")
     print("No plugin setting/mapping changed; no images were uploaded.")
     return 0 if report["captured"] == 3 else 2
 
