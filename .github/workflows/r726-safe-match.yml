@@ -1,0 +1,20 @@
+name: R72.6 Safe Digi 24 Audit
+on:
+  push:
+    branches: [feature/r726-digi24-safe-match]
+    paths:
+      - '.github/workflows/r726-safe-match.yml'
+      - 'scripts/audit-r726-digi.py'
+      - 'scripts/build-r726-safe-match.py'
+      - 'scripts/test_r726_safe_match.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read source ranking and score rejection of installed R72.5
+        run: python3 scripts/audit-r726-digi.py
