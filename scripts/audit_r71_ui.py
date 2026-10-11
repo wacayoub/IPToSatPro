@@ -30,8 +30,8 @@ for filename, raw in sorted(before.items()):
         if ("all source" in line.lower() or "all_source" in line.lower() or "all sources" in line.lower() or "preview browser" in line.lower()):
             print("LITERAL",filename.removeprefix(m.PREFIX),i,line[:220])
 for name, regions in [
-    ("plugin.py",[(3513,3570),(3610,3695),(3775,3827),(4818,4990),(5929,5995),(6050,6110),(6252,6362),(7106,7120),(8185,8270)]),
-    ("core.py",[(3314,3473)]),
+    ("plugin.py",[(1490,1558),(2050,2130),(2250,2320),(3570,3610),(3695,3745),(4990,5090),(5950,5992),(6364,6415),(8170,8185)]),
+    ("core.py",[(3123,3194),(3474,3595)]),
 ]:
     lines=before[m.PREFIX+name].decode("utf-8").splitlines()
     for start,end in regions:
