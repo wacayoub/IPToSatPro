@@ -63,3 +63,12 @@ python3 -m unittest discover -s experiments -p 'test_*.py' -v
 - Conflicting different broadcaster logos return NO assignment. Do not infer a channel from playlist text, EPG or the location of a crop alone.
 - Offline tests cover right-to-left logo moves, competing logos, stale/duplicate screenshots, event changes and wrong provider; these are not real King signal or Vu+ Zero 4K measurements.
 - Still missing: manually verified genuine beIN 1-10 on-air screenshot reference crops, a non-blocking worker scheduler with GUI handoff, actual decoder/audio-state telemetry for black-screen recovery and hardware acceptance. No live deployment or automatic release.
+
+## 11 Oct 2026 — opt-in screenshot worker + verified template preparation
+
+- Experimental tod_screenshot_worker.py now supports ONE screenshot in flight; only the subprocess video-only grab and BMP classification happen on a background Python thread. All Enigma2 bridge state access and recognition decisions happen on the GUI thread through an owner-controlled eTimer. No import or startup schedules any screenshot.
+- Requests use an initial 2-second grace period, a >=0.65-second interval and at most 8 attempts per selected event. They stop after a verified watermark match, and never scan all 14 TOD channels. Nothing runs without actual verified logo references.
+- Pending captures are rejected if the service reference or provider/event identity changes, or if manual lock, recording, timeshift or parental blocking applies. On unsupported decoder/grab, do nothing; an empty screenshot is NOT black-screen evidence.
+- Experimental tod_reference_builder.py prepares actual manually verified watermark BMPs from on-air video-only screenshots, with distinct upper-left/right ROIs. It never guesses the channel from playlist names. Its --verified input is a human assertion; it does not verify the real broadcast or calibrate the watermark automatically.
+- Offline tests cover one-in-flight behavior, GUI nonblocking, TTL and event changes, protected playback, manual validation and dual-corner synthetic reference crops. GitHub CI passing DOES NOT establish real Vu+ compatibility or the accuracy of any real beIN on-air logo.
+- Still missing: real King source ID, genuine beIN Sports 1-10 calibrated logo samples, actual receiver-owned GUI context binding, instrumented decoded frame/audio evidence, end-to-end hardware tests, rollback and an optional receiver package. The test worker is NOT installed or attached to the existing IPToSatPro fast-zap runtime.
