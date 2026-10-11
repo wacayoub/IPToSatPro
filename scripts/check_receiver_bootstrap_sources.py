@@ -25,6 +25,12 @@ for path in required:
         raise AssertionError("Missing source in repository: " + path)
     if not re.search(r"(?m)^    " + re.escape(path) + r"\s*(?:\\)?$", boot):
         raise AssertionError("Receiver bootstrap omits: " + path)
+# Prevent green offline CI from concealing a non-existent receiver source ref.
+expected_base = ("BASE=https://raw.githubusercontent.com/wacayoub/IPToSatPro/"
+                 "feature/r70-rc5-failed-player-recovery")
+assert boot.count("BASE=") == 1 and expected_base in boot, (
+    "RC5 receiver bootstrap GitHub source must match the RC5 branch"
+)
 assert '"1.0.46-r70-rc5"' in builder
 assert "1.0.46-r70-rc5" in boot
 assert "r70_preview_patch.py" in builder
