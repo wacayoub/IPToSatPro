@@ -123,7 +123,7 @@ def skin():
               "font":f"Regular;{font}","foregroundColor":color,"transparent":"1"}
         if align!="left":attr["halign"]=align
         if name=="home_snr_bar":
-            del attr["font"];del attr["halign"] if "halign" in attr else None
+            attr.pop("font",None);attr.pop("halign",None)
             attr["foregroundColor"]="#49D6B1";attr["backgroundColor"]="#36526A"
         ET.SubElement(root,"widget",attr)
     ret=ET.tostring(root,encoding="unicode")
@@ -193,8 +193,11 @@ def patch_plugin(raw):
         self["r72_sat_position"].setText("%s  •  %s" % (sat[:40], orbital[:18] if orbital else ""))
         self["r72_sat_provider"].setText("Provider: %s" % provider[:36])
         self["r72_sat_signal"].setText("%d%%" % snr_numeric if snr_numeric is not None else "N/A")
-        sw = int(snap.get("sat_width") or 0)
-        sh = int(snap.get("sat_height") or 0)
+        try:
+            sw = int(snap.get("sat_width") or 0)
+            sh = int(snap.get("sat_height") or 0)
+        except Exception:
+            sw=sh=0
         sat_res = ("%dx%d (reported)" % (sw,sh)) if sw and sh else "resolution unknown"
         sat_audio = "/".join(str(v) for v in (snap.get("sat_audio_languages") or [])[:3]) or "?"
         self["r72_sat_foot"].setText("Video %s  •  Audio SAT %s" % (sat_res, sat_audio))
