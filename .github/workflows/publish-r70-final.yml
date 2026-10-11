@@ -1,0 +1,79 @@
+name: Publish IPToSatPro R70 FINAL online
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-r70-final.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-online-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify existing official r69 and reproducible r70 candidate
+        run: |
+          set -e
+          python3 -m unittest discover -s scripts -p 'test_r70_candidate.py' -v
+          python3 scripts/test_r70_preview_logic.py
+          python3 scripts/build-r70-final.py
+          echo '471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c  r70-final.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r70-final.ipk
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,json,hashlib
+          ipk=Path('r70-final.ipk').read_bytes()
+          manifest=json.loads(Path('staging/r70-final.update.json').read_text())
+          staged=base64.b64decode(Path('payload/r70-final.b64').read_bytes())
+          assert ipk==staged and len(staged)==277002
+          assert manifest['sha256']==hashlib.sha256(staged).hexdigest()
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r69-beta'
+          print('R70_FINAL_VERIFIED_BEFORE_PUBLICATION')
+          PY
+      - name: Publish signed/hashed IPK via in-plugin Online Update
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,base64,json
+          raw=base64.b64decode(Path('payload/r70-final.b64').read_bytes())
+          sha=hashlib.sha256(raw).hexdigest()
+          assert sha=='471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c'
+          assert len(raw)==277002
+          manifest={
+            'version':'1.0.46-r70-final',
+            'size':len(raw),'sha256':sha,
+            'notes':('R70 FINAL, verified stable packaging of existing r69 playback code. '
+                     'Fast MANUAL LOCK, Preview matcher, audio, timeshift, quality guard and TS relay unchanged. '
+                     'No TOD dynamic module. No receiver speed or UHD/audio improvement claimed without hardware validation. '
+                     'Rollback: download-r69-beta.sh.'),
+            'parts':['https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r70-final.b64']
+          }
+          Path('update.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+          Path('latest-version.txt').write_text(manifest['version']+'\n')
+          old=Path('download-r70-final.sh').read_text()
+          published=(old
+            .replace('feature/iptosatpro-final-r70/payload/', 'main/payload/')
+            .replace('/tmp/iptosatpro-r70-final.ipk', '/tmp/iptosatpro.ipk')
+            .replace('Verified candidate:', 'Verified official online package:'))
+          assert sha in published and str(len(raw)) in published
+          assert 'main/payload/r70-final.b64' in published
+          Path('download-latest.sh').write_text(published)
+          Path('download-r70-final.sh').write_text(published)
+          print('R70_FINAL_MANIFEST_READY',len(raw),sha)
+          PY
+          python3 scripts/check_locked_fast_guard.py r70-final.ipk
+          python3 scripts/check_locked_fast_guard.py
+          sh -n download-latest.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json latest-version.txt download-latest.sh download-r70-final.sh
+          git commit -m "Publish R70 FINAL via checksum-verified online updater"
+          git push
