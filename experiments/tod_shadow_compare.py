@@ -103,6 +103,10 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
         outcome["reason"] = str(exc)
         return outcome
 
+    if set(item["hash"] for item in references) & set(item["hash"] for item in samples):
+        outcome["reason"] = "reference and current reuse identical full screenshots"
+        return outcome
+
     # Reject poorly marked/ambiguous references rather than learning a wrong
     # number from the label alone. 5x5 at 480px remains a fragile signal.
     ref_digit = references[0]["digit"]
