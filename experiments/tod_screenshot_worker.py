@@ -131,6 +131,15 @@ class TodScreenshotWorker:
         refs = getattr(self.matcher, "references", None)
         if not isinstance(refs, dict) or not set(range(1, 11)).issubset(refs):
             return assignment
+        # Ten placeholder templates can have distinct shapes and still be
+        # factually wrong. A complete OFFLINE V7 report must never activate
+        # receiver capture or transient routing. This independent explicit
+        # guard is FALSE by default on all production VideoLogoMatchers.
+        # Approval is an integration decision after REAL held-out live events,
+        # receiver audio/video validation, and operator opt-in, NOT CI success.
+        if (getattr(self.matcher, "receiver_validated", False) is not True or
+                getattr(self.matcher, "live_mapping_approved", False) is not True):
+            return assignment
         self._attempts += 1
         self.stats["attempts"] += 1
         self._next_at = now + self.interval
