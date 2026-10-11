@@ -22,6 +22,7 @@ jobs:
         run: |
           python3 scripts/audit_r70_baseline.py
           python3 scripts/audit_r70_baseline.py candidate
+          python3 scripts/audit_r70_baseline.py __focused__
           python3 scripts/audit_r70_baseline.py score
           python3 scripts/audit_r70_baseline.py fast
       - name: Source syntax checks
