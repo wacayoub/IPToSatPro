@@ -1,0 +1,35 @@
+name: R72.3 Neo Classic Premium fusion CI
+on:
+  push:
+    branches: [feature/r723-neo-classic-fusion]
+    paths:
+      - 'scripts/build-r723-classic-fusion.py'
+      - 'scripts/test_r723_fusion.py'
+      - '.github/workflows/r723-classic-fusion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build-time PNG support only
+        run: python3 -m pip install -q pillow
+      - name: Validate Classic restoration, decoder truth, 44 matching assertions, and locked Fast Zap
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r723_fusion.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r722_tv_polish.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r721_icons.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r723-classic-fusion.py
+          python3 scripts/check_locked_fast_guard.py r723-neo-classic-fusion-beta.ipk
+          python3 -m py_compile scripts/build-r723-classic-fusion.py scripts/test_r723_fusion.py
+      - name: Upload optional R72.3 beta archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r723-neo-classic-icons-beta
+          path: r723-neo-classic-fusion-beta.ipk
+          retention-days: 14
