@@ -105,6 +105,37 @@ def session_diagnostics(images):
     }
 
 
+def cross_session_diagnostics(references, samples):
+    """Compare all 3x3 frame pairs without making a classification.
+
+    Majority masks suppress a single flickering pixel for ANALYSIS ONLY.
+    No routing logic may consume consensus results from this shadow tool.
+    """
+    ref_masks = [item["digit"] for item in references]
+    new_masks = [item["digit"] for item in samples]
+
+    def majority(masks):
+        return tuple(sum(pixel) >= 2 for pixel in zip(*masks))
+
+    ref_majority, new_majority = majority(ref_masks), majority(new_masks)
+    distances = [[sum(a != b for a, b in zip(ref, new))
+                  for new in new_masks] for ref in ref_masks]
+    banners = [[round(dice(ref["whites"], new["whites"]), 4)
+                for new in samples] for ref in references]
+    return {
+        "digit_pairwise_differences_3x3": distances,
+        "digit_min_pixel_difference": min(min(row) for row in distances),
+        "digit_max_pixel_difference": max(max(row) for row in distances),
+        "digit_majority_pixel_difference": sum(
+            a != b for a, b in zip(ref_majority, new_majority)),
+        "digit_majority_dark_pixels": [sum(ref_majority), sum(new_majority)],
+        "digit_reference_uncertain_pixels": sum(
+            len(set(bits)) > 1 for bits in zip(*ref_masks)),
+        "banner_similarity_3x3": banners,
+        "diagnostic_only": True,
+    }
+
+
 def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
     """Return an offline conservative RESULT; never a routing Assignment."""
     if type(slot) is not int or not 1 <= slot <= 14:
@@ -123,6 +154,7 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
         "scores": [],
         "reference_health": None,
         "current_health": None,
+        "cross_session_health": None,
     }
     try:
         references = read_session(reference)
@@ -133,6 +165,7 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
 
     outcome["reference_health"] = session_diagnostics(references)
     outcome["current_health"] = session_diagnostics(samples)
+    outcome["cross_session_health"] = cross_session_diagnostics(references, samples)
 
     if set(item["hash"] for item in references) & set(item["hash"] for item in samples):
         outcome["reason"] = "reference and current reuse identical full screenshots"
@@ -147,8 +180,8 @@ def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
         outcome["reason"] = (
             "reference numeral not independently stable; "
             "%d/25 maximum changed pixels between reference frames; "
-            "UNKNOWN is protective and does not disprove the labelled beIN 7"
-            % instability)
+            "UNKNOWN is protective and does not disprove the manually labelled beIN %d"
+            % (instability, reference_logo))
         if outcome["current_health"]["numeral_mask_stable"]:
             outcome["next_step"] = (
                 "The current set has a stable 5x5 numeral mask. If its "
