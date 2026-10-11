@@ -9,9 +9,15 @@ import unittest
 from pathlib import Path
 
 from audit_r70_baseline import load_release, PREFIX
-from build_r70_final import (ROOT, build, unpack_ar, members_from,
-                             NEW_VERSION, BASE_VERSION, VERSION_PATHS,
-                             CHANGELOG)
+import importlib.util
+_builder_path = Path(__file__).with_name("build-r70-final.py")
+_spec = importlib.util.spec_from_file_location("r70_builder", _builder_path)
+_module = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_module)
+ROOT, build = _module.ROOT, _module.build
+unpack_ar, members_from = _module.unpack_ar, _module.members_from
+NEW_VERSION, BASE_VERSION = _module.NEW_VERSION, _module.BASE_VERSION
+VERSION_PATHS, CHANGELOG = _module.VERSION_PATHS, _module.CHANGELOG
 
 
 class R70CandidateTests(unittest.TestCase):
