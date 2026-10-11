@@ -54,3 +54,12 @@ python3 -m unittest discover -s experiments -p 'test_*.py' -v
 6. Only after hardware acceptance, create an opt-in test package with an install and rollback route. Do not modify `main`, `update.json`, latest version or publish an automatic IPK before then.
 
 **As of this commit:** simulator CI passed for new modules, but actual on-air beIN watermark accuracy and receiver hooks are NOT validated. No user installation required.
+
+## 11 Oct 2026 — static screenshots in BOTH upper corners
+
+- No video recording: use individual screenshots of the live decoded picture with Enigma2 grab -v -r 480; -v excludes GUI/OSD overlays. Worker integration is not yet deployed.
+- The beIN number watermark may be UPPER-RIGHT or UPPER-LEFT. VideoLogoMatcher now accepts verified reference watermarks with rois for left and right or individually calibrated placements. The top_corner_rois() helper is only an initial search region: real coordinates need broadcaster screenshot calibration.
+- TodScreenshotSession checks exact service reference, navigation generation, provider ID, TOD slot, stream and event across each capture. Duplicate SHA-256 screenshot digests, stale events, rapid repeats and wrong providers are rejected. Distinct accepted captures must be >=0.45 seconds apart and the downstream router still requires 3 matching observations.
+- Conflicting different broadcaster logos return NO assignment. Do not infer a channel from playlist text, EPG or the location of a crop alone.
+- Offline tests cover right-to-left logo moves, competing logos, stale/duplicate screenshots, event changes and wrong provider; these are not real King signal or Vu+ Zero 4K measurements.
+- Still missing: manually verified genuine beIN 1-10 on-air screenshot reference crops, a non-blocking worker scheduler with GUI handoff, actual decoder/audio-state telemetry for black-screen recovery and hardware acceptance. No live deployment or automatic release.
