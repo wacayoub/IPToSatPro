@@ -14,5 +14,23 @@ jobs:
     timeout-minutes: 14
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect current Settings menu and theme mechanics
+      - name: Generate native pixel assets for target screen
+        run: python3 -m pip install -q pillow
+      - name: Audit actual Settings menu and theme mechanics
         run: python3 scripts/audit-r711-cleanup.py
+      - name: Build/retest final R71.1 Neo Home + 22 baseline match scenarios
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r711_cleanup.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r711_home.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_ui.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r711-cleanup-beta.py
+          python3 scripts/check_locked_fast_guard.py r711-neo-cleanup-beta.ipk
+          python3 -m py_compile scripts/build-r711-cleanup-beta.py scripts/test_r711_cleanup.py
+      - name: Upload safe experimental package
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r711-cleanup-beta
+          path: r711-neo-cleanup-beta.ipk
+          retention-days: 14
