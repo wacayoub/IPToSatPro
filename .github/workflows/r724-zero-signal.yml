@@ -1,0 +1,20 @@
+name: R72.4 No Signal Fallback Audit
+on:
+  push:
+    branches: [feature/r724-zero-signal-fallback]
+    paths:
+      - '.github/workflows/r724-zero-signal.yml'
+      - 'scripts/audit-r724-zero-signal.py'
+      - 'scripts/build-r724-zero-signal.py'
+      - 'scripts/test_r724_zero_signal.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit exact R72.3 no signal failure and fallback guard source
+        run: python3 scripts/audit-r724-zero-signal.py
