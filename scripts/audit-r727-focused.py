@@ -12,7 +12,7 @@ for fname in ("core.py","monitor.py"):
  tree=ast.parse(src)
  for n in ast.walk(tree):
   if not isinstance(n,ast.FunctionDef):continue
-  if n.name not in {"rank_matches","fast_rank_matches","match_score_details","_fast_cache_key","_fast_cache_get","_fast_cache_put","_candidate_pool","_fast_candidate_pool",
+  if n.name not in {"rank_matches","fast_rank_matches","match_score_details","_fast_cache_key","_fast_cache_get","_fast_cache_put","_candidate_pool","_fast_candidate_pool","set_observed_quality","load_sources",
     "_smartmatch_poll","_accept_verified_video","_verify_iptv","_schedule_next_candidate",
     "_record_health","_video_timeout_ms","_fallback_if_matched","_set_state","_schedule_resolution_followup","_resolution_followup_tick"}:continue
   print("=== METHOD",fname,n.name,n.lineno,n.end_lineno)
