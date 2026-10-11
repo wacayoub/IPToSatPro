@@ -29,13 +29,13 @@ def main():
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in wanted:
                 print("\n=== R71 INSPECT", module, node.name, node.lineno, node.end_lineno)
-                print("\n".join(lines[node.lineno-1:node.end_lineno])[:14000])
+                print("\n".join(lines[node.lineno-1:node.end_lineno])[:40000])
             if isinstance(node, ast.ClassDef):
                 for child in node.body:
                     fullname = node.name + "." + getattr(child, "name", "")
                     if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)) and fullname in CLASS_FUNCTIONS[module]:
                         print("\n=== R71 INSPECT", module, fullname, child.lineno, child.end_lineno)
-                        print("\n".join(lines[child.lineno-1:child.end_lineno])[:12000])
+                        print("\n".join(lines[child.lineno-1:child.end_lineno])[:22000])
     print("R71_READ_ONLY_AUDIT_OK")
 
 if __name__ == "__main__":
