@@ -1,0 +1,20 @@
+name: R72.5 Fuzzy Failover Audit
+on:
+  push:
+    branches: [feature/r725-fuzzy-no-signal-stability]
+    paths:
+      - '.github/workflows/r725-fuzzy.yml'
+      - 'scripts/audit-r725-fuzzy.py'
+      - 'scripts/build-r725-fuzzy.py'
+      - 'scripts/test_r725_fuzzy.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit installed R72.4 matching and repeated tune-fail flow
+        run: python3 scripts/audit-r725-fuzzy.py
