@@ -26,6 +26,9 @@ class Nav:
         self.event = []
         self.ref = Ref("4097:KING:TOD3")
 
+    def getCurrentlyPlayingServiceReference(self):
+        return self.ref
+
 
 class ScreenshotSessionTests(unittest.TestCase):
     def setUp(self):
