@@ -233,10 +233,10 @@ def patched(raw):
     # visual buttons are native Labels over painted pixel-art rounded cards.
     s=replace_exact(s,'self["home_selected_badges"] = Label("Resolution —   •   Source —   •   Speed —")',
         'self["home_selected_badges"] = Label("Resolution —   •   Source —   •   Speed —")'+
-        '\\n        self["home_quality_chip"] = Label("?")'+
-        '\\n        self["home_audio_chip"] = Label("Audio ?")'+
-        '\\n        self["home_role_chip"] = Label("—")'+
-        '\\n        self["home_speed_chip"] = Label("Zap —")')
+        '\n        self["home_quality_chip"] = Label("?")'+
+        '\n        self["home_audio_chip"] = Label("Audio ?")'+
+        '\n        self["home_role_chip"] = Label("—")'+
+        '\n        self["home_speed_chip"] = Label("Zap —")')
     s=replace_exact(s,'self["home_preview_action"] = Label("PREVIEW BROWSER")',
                     'self["home_preview_action"] = Label("Preview Browser")')
     s=replace_exact(s,'self["home_update_action"] = Label("ONLINE UPDATE")',
