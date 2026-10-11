@@ -80,6 +80,24 @@ class ShadowTests(unittest.TestCase):
         result = compare_sessions(self.ref, self.cur)
         self.assertEqual(result["classification"], "UNKNOWN")
         self.assertIn("numeral not independently stable", result["reason"])
+        self.assertGreater(result["reference_health"]["digit_max_pairwise_flips"], 0)
+        self.assertTrue(result["current_health"]["numeral_mask_stable"])
+        self.assertIn("next_step", result)
+        self.assertFalse(result["mapping_enabled"])
+
+    def test_health_report_does_not_change_pass_fail_policy(self):
+        self.write_three(self.ref, seedbase=0)
+        self.write_three(self.cur, seedbase=20)
+        verdict = compare_sessions(self.ref, self.cur)
+        for label in ("reference_health", "current_health"):
+            health = verdict[label]
+            self.assertEqual(len(health["digit_dark_pixels"]), 3)
+            self.assertEqual(health["digit_max_pairwise_flips"], 0)
+            self.assertEqual(health["digit_flipped_pixels_from_first"], [0, 0, 0])
+            self.assertTrue(health["numeral_mask_stable"])
+            self.assertEqual(len(health["banner_similarity_from_first"]), 3)
+        self.assertEqual(verdict["classification"], "CONSISTENT_WITH_REFERENCE")
+        self.assertFalse(verdict["mapping_enabled"])
 
     def test_only_480_bmp_supported_and_no_partial_results(self):
         self.write_three(self.ref)
