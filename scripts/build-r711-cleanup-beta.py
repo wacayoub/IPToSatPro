@@ -78,17 +78,17 @@ def background():
     rect(40,716,765,104,"#1F4146",24)
     rect(825,716,795,104,"#24334B",24)
     # scanner/preview icon (no fonts or icon dependencies)
-    line([(381,745),(381,734),(391,734)],"#67E8CD",3)
-    line([(425,745),(425,734),(415,734)],"#67E8CD",3)
-    line([(381,761),(381,772),(391,772)],"#67E8CD",3)
-    line([(425,761),(425,772),(415,772)],"#67E8CD",3)
-    circle(403,752,8,"#67E8CD",2)
-    circle(403,752,2,"#67E8CD",2)
+    line([(388,739),(388,728),(396,728)],"#67E8CD",3)
+    line([(418,739),(418,728),(410,728)],"#67E8CD",3)
+    line([(388,743),(388,752),(396,752)],"#67E8CD",3)
+    line([(418,743),(418,752),(410,752)],"#67E8CD",3)
+    circle(403,740,7,"#67E8CD",2)
+    circle(403,740,2,"#67E8CD",2)
     # Update icon
-    arc(1189,734,32,32,200,345,"#D7E1F4",3)
+    arc(1192,724,28,28,200,345,"#D7E1F4",3)
     arc(1189,734,32,32,20,165,"#D7E1F4",3)
-    line([(1217,732),(1223,738),(1214,739)],"#D7E1F4",3)
-    line([(1191,767),(1185,761),(1194,759)],"#D7E1F4",3)
+    line([(1216,723),(1222,730),(1213,730)],"#D7E1F4",3)
+    line([(1191,753),(1185,747),(1194,745)],"#D7E1F4",3)
     # Footer uses understated blue / MENU only
     # Transparent/flat text zones are native Enigma2 Labels.
     img=img.resize((W,H),Image.Resampling.LANCZOS)
@@ -189,7 +189,14 @@ def source_skin():
             w.set("foregroundColor","#A0B5CA")
     # Enigma2 XML parser accepts self-closing native component tags.
     xml=ET.tostring(root,encoding="unicode")
-    original.inspect_skin(xml)
+    parsed=ET.fromstring(xml)
+    assert parsed.attrib.get("size")=="1660,900"
+    for component in parsed:
+        if component.tag not in ("ePixmap","widget"):
+            raise AssertionError("Unsupported component "+component.tag)
+        x,y=map(int,component.get("position").split(","))
+        w,h=map(int,component.get("size").split(","))
+        assert x>=0 and y>=0 and w>0 and h>0 and x+w<=1660 and y+h<=900
     return xml
 
 def replace_exact(src,old,new,number=1):
