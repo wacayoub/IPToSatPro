@@ -8,6 +8,7 @@ on:
       - 'scripts/audit-r727-focused.py'
       - 'scripts/build-r727-fast.py'
       - 'scripts/test_r727_fast.py'
+      - 'scripts/r727-speed-audit.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +31,8 @@ jobs:
           python3 scripts/build-r727-fast.py
           python3 scripts/check_locked_fast_guard.py r727-fuzzy-cache-beta.ipk
           python3 -m py_compile scripts/build-r727-fast.py scripts/test_r727_fast.py
+      - name: Check read-only receiver speed diagnostics against observed log examples
+        run: python3 scripts/r727-speed-audit.py --self-test
       - name: Upload beta candidate only after checks
         uses: actions/upload-artifact@v4
         with:
