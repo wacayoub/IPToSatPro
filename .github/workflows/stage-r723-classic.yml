@@ -1,0 +1,58 @@
+name: Stage R72.3 Neo Classic Premium BETA
+on:
+  push:
+    branches: [feature/r723-neo-classic-fusion]
+    paths:
+      - '.github/workflows/stage-r723-classic.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r723-classic-premium-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Build and retest original R71.1 Home with new premium icons and Fast Zap safety
+        run: |
+          set -eu
+          python3 -m pip install -q pillow
+          python3 -m unittest discover -s scripts -p 'test_r723_fusion.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r723-classic-fusion.py
+          echo 'b76e9fb551cef1d0422d6303f3d74e38b94cadae6fda6b6f90d6eecf7739afa3  r723-neo-classic-fusion-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r723-neo-classic-fusion-beta.ipk
+      - name: Produce release script with verified SHA
+        run: |
+          set -eu
+          python3 scripts/stage-r723-classic-fusion.py
+          sh -n download-r723-classic-premium.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,base64,json
+          m=json.loads(Path('staging/r723-neo-classic-premium.update.json').read_text())
+          data=base64.b64decode(Path('payload/r723-neo-classic-premium.b64').read_bytes())
+          assert len(data)==m['size']==402536
+          assert hashlib.sha256(data).hexdigest()==m['sha256']
+          assert not m['field_tested'] and not m['published_to_main']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R723_SAFE_STAGE_MAIN_R70_UNCHANGED')
+          PY
+      - name: Push only opt-in files on R72.3 feature branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r723-neo-classic-premium.b64 staging/r723-neo-classic-premium.update.json download-r723-classic-premium.sh
+          if git diff --cached --quiet; then
+            echo 'R72.3 already staged'
+          else
+            git commit -m 'Stage SHA-verified R72.3 Neo Classic Premium beta without production changes'
+            git push origin HEAD:feature/r723-neo-classic-fusion
+          fi
