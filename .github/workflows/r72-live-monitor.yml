@@ -18,3 +18,18 @@ jobs:
         run: python3 -m pip install -q pillow
       - name: Audit real Enigma2 status fields
         run: python3 scripts/audit-r72-snapshot.py
+      - name: Build and validate R72 Live Monitor and protected Fast Zap
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r72_live_monitor.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r711_cleanup.py' -v
+          python3 scripts/build-r72-live-monitor.py
+          python3 scripts/check_locked_fast_guard.py r72-live-monitor-beta.ipk
+          python3 -m py_compile scripts/build-r72-live-monitor.py scripts/test_r72_live_monitor.py
+      - name: Upload R72 beta package only if all checks pass
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r72-live-monitor-beta-NOT-field-validated
+          path: r72-live-monitor-beta.ipk
+          retention-days: 14
