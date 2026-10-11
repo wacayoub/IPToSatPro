@@ -14,6 +14,7 @@ on:
       - 'tests/test_no_signal_policy.py'
       - 'tests/test_preview_autotest_rc4.py'
       - 'tests/test_player_recovery_rc5.py'
+      - 'tests/test_rc5_packaged_integration.py'
       - '.github/workflows/validate-r70-rc5-recovery.yml'
   workflow_dispatch:
 permissions:
@@ -47,6 +48,8 @@ jobs:
         run: |
           python3 scripts/build-r70-candidate.py
           python3 scripts/check_r70_baseline.py
+      - name: Simulate actual packaged monitor failure and retry paths
+        run: python3 tests/test_rc5_packaged_integration.py
       - name: Verify candidate, version and updater hold
         shell: bash
         run: |
