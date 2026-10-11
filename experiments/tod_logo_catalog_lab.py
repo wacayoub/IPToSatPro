@@ -61,10 +61,28 @@ def read_masks(path, digit_rect=DIGIT, banner_rect=BANNER):
                                 max(r, g, b) - min(r, g, b) <= 30)
         return tuple(mask)
 
+    digit = rectangle_mask(digit_rect, "dark")
+    nonuniform_blocks = None
+    if scale == 2:
+        roi_width = (digit_rect[2] - digit_rect[0]) * scale
+        roi_height = (digit_rect[3] - digit_rect[1]) * scale
+        nonuniform_blocks = 0
+        for by in range(0, roi_height, 2):
+            for bx in range(0, roi_width, 2):
+                group = (
+                    digit[by * roi_width + bx],
+                    digit[by * roi_width + bx + 1],
+                    digit[(by + 1) * roi_width + bx],
+                    digit[(by + 1) * roi_width + bx + 1],
+                )
+                if any(bit != group[0] for bit in group[1:]):
+                    nonuniform_blocks += 1
+
     return {
         "size": (w, h),
         "sha": hashlib.sha256(raw).hexdigest(),
-        "digit": rectangle_mask(digit_rect, "dark"),
+        "digit": digit,
+        "hd_mixed_2x2_mask_blocks": nonuniform_blocks,
         "banner": rectangle_mask(banner_rect, "white"),
     }
 
@@ -103,6 +121,8 @@ def evaluate_label(folder, digit_rect=DIGIT, banner_rect=BANNER):
         "capture_count": 3,
         "independent_full_frames": independent,
         "digit_dark_pixels": dark_counts,
+        "hd_mixed_2x2_mask_blocks": [item["hd_mixed_2x2_mask_blocks"] for item in images],
+        "hd_detail_note": "mixed 2x2 blocks may reflect detail OR compression; zero does not prove upscale",
         "digit_max_pixel_flips": flips,
         "banner_dice_from_first": scores,
         "internally_stable": bool(stable),
