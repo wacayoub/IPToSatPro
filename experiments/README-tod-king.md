@@ -37,3 +37,20 @@ python3 -m unittest discover -s experiments -p 'test_*.py' -v
 - Not installed; no IPK available for this feature.
 - No `main`, `update.json`, `latest-version.txt`, package payload or receiver file was changed.
 - Do not use this as automatic TOD logo switching until video capture, detection and actual integration are present.
+
+
+## 11 Oct 2026 — additional isolated prototype
+
+- `enigma2_tod_event_bridge.py`: optional `nav.event` handler for real Enigma2 evStart, evEnd, evEOF, evUpdatedEventInfo. It monitors only the exact configured King source ID and TOD slot; video-logo callbacks are bound to the current service reference and navigation generation. Event/stream changes invalidate routes, including when no new logo is yet recognizable. On verified EOF it may **propose** backup recovery; timeshift/recording/manual-LOCK bypass it. It does NOT call playService or install a hook automatically.
+- `video_logo_probe.py`: bounded **video-only** `grab -v -r 480` BMP capture using only stdlib, plus confidence/margin-gated white-watermark shape comparison against explicit manually verified cropped beIN logo templates. **No logo templates supplied yet; no real beIN recognition in production.** Different ROI/capture sizes and uncertain/ambiguous matches fail closed. This conservative recognizer may often return no result until actual broadcaster frames and ROIs are calibrated.
+- `test_enigma2_tod_event_bridge.py`, `test_video_logo_probe.py`: fake navigation events and synthetic BMP frames, **not receiver evidence**.
+
+### Integration and release gate
+1. Determine exact provider ID from the real source configuration, and wire monitor-owned service context and lifecycle to the bridge; refuse title/EPG inference.
+2. Obtain at least three **real, independent** decoded-video frames per actual logo from King at 480-pixel width; calibrate source-specific ROI/contrast and manually verify authentic beIN 1–10 templates. Do not misinterpret screenshot errors as black-screen evidence.
+3. Call `grab_video_bmp` OFF the GUI thread, rate-limited to the currently selected TOD; discard identical capture digests, stale generation, switched reference or event changes before passing classifier output to the bridge. Never scan all 14 simultaneously.
+4. Wire a **separate** reliable current decoder frame counter and independent audio state before enabling the no-picture/dark recovery rules. The current bridge only safely handles a verified EOF proposal; no automatic navigation is enabled.
+5. Preserve explicit manual mappings, parental controls, timeshift, recordings and existing fast-LOCK path; validate 20 real channels, 4K/audio and fallback interactions on Vu+ Zero 4K OpenATV 8.0.1.
+6. Only after hardware acceptance, create an opt-in test package with an install and rollback route. Do not modify `main`, `update.json`, latest version or publish an automatic IPK before then.
+
+**As of this commit:** simulator CI passed for new modules, but actual on-air beIN watermark accuracy and receiver hooks are NOT validated. No user installation required.
