@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r71.1-neo-cleanup-beta",
+  "size": 308552,
+  "sha256": "ae70b0e84827a5bb0edc8b79abf5ebaf1e98e4ccb64fe10c1f8b5b05cb66cedd",
+  "notes": "R71.1 Neo Cleanup: dashboard screenshot-like rounded PNG cards, real SAT SNR, IPTV source/catalog and candidate metrics, 4 separated badge tiles, GREEN Preview, YELLOW Online Update, BLUE Logs, MENU Settings/Tools. Deep classic Mapping, SmartMatch Test, Player Lock, Auto Scan, Diagnostics moved into Tools. No old features deleted. R70 lock/player/audio/timeshift + R71 Preview matcher untouched. NOT hardware-tested.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r711-neo-cleanup/payload/r711-neo-cleanup.b64"
+  ],
+  "published_to_main": false,
+  "receiver_tested": false
+}
