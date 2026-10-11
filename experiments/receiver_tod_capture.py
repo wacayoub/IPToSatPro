@@ -84,6 +84,25 @@ def extract_corner(frame, roi):
     return bmp_encode([row[x0:x1] for row in rows[y0:y1]])
 
 
+def checked_tmp_parent(parent):
+    """Accept OpenATV's /tmp symlink while rejecting paths outside its target.
+
+    Many Enigma2 images map /tmp to /var/volatile/tmp. Compare the resolved
+    parent with the resolved /tmp root rather than the literal '/tmp' string.
+    """
+    tmp_root = os.path.realpath("/tmp")
+    real_parent = os.path.realpath(parent)
+    try:
+        inside = os.path.commonpath((tmp_root, real_parent)) == tmp_root
+    except ValueError:
+        inside = False
+    if not inside:
+        raise ValueError("temporary output must stay under /tmp")
+    if not os.path.isdir(real_parent):
+        raise ValueError("missing /tmp output directory")
+    return real_parent
+
+
 def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
             run_command=None, sleep_fn=None):
     """Capture 3 distinct frames on selected service; never changes service.
@@ -93,11 +112,7 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
     """
     if count != 3 or spacing < .5 or spacing > 3:
         raise ValueError("safe collector supports only 3 spaced captures")
-    real_parent = os.path.realpath(parent)
-    if real_parent != "/tmp" and not real_parent.startswith("/tmp/"):
-        raise ValueError("temporary output must stay under /tmp")
-    if not os.path.isdir(real_parent):
-        raise ValueError("missing /tmp output directory")
+    real_parent = checked_tmp_parent(parent)
     grab_path = grab_path or shutil.which("grab")
     if not grab_path or not os.path.isfile(grab_path):
         raise RuntimeError("Enigma2 'grab' unavailable (no capture attempted)")
