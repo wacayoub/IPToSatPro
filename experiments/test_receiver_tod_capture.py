@@ -113,7 +113,7 @@ class ReadOnlyCaptureTests(unittest.TestCase):
                                  run_command=failing, sleep_fn=lambda _: None)
         self.assertEqual(len(self.commands), 3)
         self.assertEqual(report["captured"], 0)
-        self.assertEqual(sorted(os.listdir(folder)), ["report.json"])
+        self.assertEqual(sorted(os.listdir(folder)), ["report.json", "tod-images.zip"])
         for call in self.commands:
             self.assertEqual(call[0], self.grab)
             self.assertNotIn("wget", " ".join(call))
