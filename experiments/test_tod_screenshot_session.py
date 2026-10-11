@@ -67,7 +67,7 @@ class ScreenshotSessionTests(unittest.TestCase):
         self.assertIsNone(self.evidence(6, 3, 1.75))  # less than .45 s
         self.assertFalse(self.ctrl.resolve_bein(
             source_id="provider-king-007", bein_channel=6, now=2))
-        self.assertIsNone(self.evidence(6, 4, 2.3))
+        self.assertEqual(self.evidence(6, 4, 2.3).bein, 6)
         self.assertEqual(self.evidence(6, 5, 2.9).bein, 6)
 
     def test_old_event_capture_rejected_even_if_number_is_correct(self):
