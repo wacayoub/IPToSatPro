@@ -5,6 +5,7 @@ import stat
 import tempfile
 import types
 import unittest
+import zipfile
 
 from receiver_tod_capture import bmp_decode, bmp_encode, collect
 
@@ -61,6 +62,13 @@ class ReadOnlyCaptureTests(unittest.TestCase):
             self.assertEqual(kwargs["timeout"], 3)
         with open(os.path.join(folder, "report.json"), encoding="utf-8") as handle:
             self.assertEqual(json.load(handle)["distinct_images"], 3)
+        with zipfile.ZipFile(os.path.join(folder, "tod-images.zip")) as package:
+            names = set(package.namelist())
+            self.assertIn("report.json", names)
+            self.assertIn("frame-01.bmp", names)
+            self.assertIn("frame-03-right.bmp", names)
+            self.assertEqual(len(names), 10)
+        self.assertEqual(stat.S_IMODE(os.stat(os.path.join(folder, "tod-images.zip")).st_mode), 0o600)
         self.assertEqual(stat.S_IMODE(os.stat(folder).st_mode), 0o700)
         self.assertEqual(stat.S_IMODE(os.stat(os.path.join(folder, "report.json")).st_mode), 0o600)
 
@@ -85,7 +93,7 @@ class ReadOnlyCaptureTests(unittest.TestCase):
         self.assertEqual(report["captured"], 0)
         self.assertEqual(report["distinct_images"], 0)
         self.assertTrue(all("NOT screen black" in s["status"] for s in report["samples"]))
-        self.assertEqual(sorted(os.listdir(folder)), ["report.json"])
+        self.assertEqual(sorted(os.listdir(folder)), ["report.json", "tod-images.zip"])
 
     def test_rejects_unsafe_location_and_missing_grab(self):
         with self.assertRaises(ValueError):
