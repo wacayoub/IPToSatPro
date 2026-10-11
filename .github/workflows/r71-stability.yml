@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Audit REAL released matching and player source
         run: python3 scripts/audit_r71_focus.py
+      - name: Catalog actual Home and Preview handlers
+        run: python3 scripts/audit_r71_ui.py
       - name: Verify inherited matching baseline
         run: python3 scripts/test_r70_preview_logic.py
       - name: Build R71 BETA + execute actual 22-channel regression suite
