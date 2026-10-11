@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/r727-fast.yml'
       - 'scripts/audit-r727-playback.py'
+      - 'scripts/audit-r727-focused.py'
       - 'scripts/build-r727-fast.py'
       - 'scripts/test_r727_fast.py'
   workflow_dispatch:
@@ -17,4 +18,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Inspect exact shipped playback and slow fallback paths
-        run: python3 scripts/audit-r727-playback.py
+        run: |
+          python3 scripts/audit-r727-focused.py
