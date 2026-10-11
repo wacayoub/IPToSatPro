@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r71-beta",
+  "size": 277614,
+  "sha256": "2fe47964933906522680114f7d3ac23aee928caf4dd7e02554a8cd183d2980f3",
+  "notes": "R71 BETA isolated test candidate: exact-name FR/SAT audio group mismatch matching only. All R70 player, locked fast path, audio, timeshift and relay unchanged. 22 offline service scenarios tested in preview and automatic mode. No receiver performance validation. NO TOD.",
+  "published_to_main": false,
+  "receiver_tested": false,
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r71-stability/payload/r71-beta.b64"
+  ]
+}
