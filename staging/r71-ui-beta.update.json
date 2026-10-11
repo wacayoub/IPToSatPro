@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r71-ui-beta",
+  "size": 278240,
+  "sha256": "f61fda976653ef3b17c717f8798cd96277437ec9984402b75bed5c4389634b56",
+  "notes": "R71 UI BETA Home GREEN direct Preview; Preview All Sources P/B1/B2 automatic 48 candidates and YELLOW deeper 72, manual source screen on 4; unchanged R71 matching and R70 player/locked zap/audio/timeshift. Receiver UI not field-verified.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r71-stability/payload/r71-ui-beta.b64"
+  ],
+  "production_published": false,
+  "receiver_tested": false
+}
