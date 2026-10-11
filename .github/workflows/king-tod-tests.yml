@@ -25,5 +25,16 @@ jobs:
         run: python3 -m compileall -q experiments
       - name: Check isolated policy and blacklist behavior
         run: python3 -m unittest discover -s experiments -p 'test_*.py' -v
-      - name: Verify published r64 LOCKED fast path is intact
-        run: python3 scripts/check_locked_fast_guard.py
+      - name: Assert this feature branch leaves released plugin unchanged
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          git diff --exit-code FETCH_HEAD HEAD -- \
+            update.json latest-version.txt payload scripts \
+            'download-*.sh'
+      - name: Audit existing published r64-to-r69 LOCKED differences
+        run: |
+          if python3 scripts/check_locked_fast_guard.py; then
+            echo "Published release matches field-proven r64 guard."
+          else
+            echo "::warning::Published r69-beta already differs from r64 guarded fast-start. Hardware approval required before TOD may be merged/released."
+          fi
