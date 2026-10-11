@@ -19,6 +19,17 @@ jobs:
         run: python3 scripts/audit_r71_focus.py
       - name: Verify inherited matching baseline
         run: python3 scripts/test_r70_preview_logic.py
+      - name: Build R71 BETA + execute actual 22-channel regression suite
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/check_locked_fast_guard.py r71-beta.ipk
+          python3 -m py_compile scripts/build-r71-beta.py scripts/test_r71_stability.py
+      - name: Upload R71 candidate only after green tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r71-beta-NOT-field-validated
+          path: r71-beta.ipk
+          retention-days: 14
       - name: Ensure production release stays R70
         run: |
           python3 - <<'PY'
