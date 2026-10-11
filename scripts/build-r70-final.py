@@ -8,6 +8,7 @@ Does NOT publish to main, touch receiver, run IPTV or enable TOD.
 """
 import ast
 import base64
+import gzip
 import hashlib
 import io
 import os
@@ -64,7 +65,7 @@ def make_tar(blob, changes, new_files=None):
     names = set()
     output = io.BytesIO()
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as original:
-        with tarfile.open(fileobj=output, mode="w:gz",
+        with tarfile.open(fileobj=output, mode="w",
                           format=tarfile.GNU_FORMAT) as target:
             for entry in original.getmembers():
                 key = entry.name.lstrip("./")
@@ -85,7 +86,7 @@ def make_tar(blob, changes, new_files=None):
                 added.mode = 0o644
                 added.size = len(raw)
                 target.addfile(added, io.BytesIO(raw))
-    return output.getvalue()
+    return gzip.compress(output.getvalue(), compresslevel=9, mtime=0)
 
 
 def assemble(parts, output):
