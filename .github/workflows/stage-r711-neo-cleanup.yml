@@ -1,0 +1,58 @@
+name: Stage R71.1 Neo Cleanup beta
+on:
+  push:
+    branches: [feature/r711-neo-cleanup]
+    paths:
+      - '.github/workflows/stage-r711-neo-cleanup.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r711-cleanup-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Prepare pixel assets and run guarded unit tests
+        run: |
+          set -eu
+          python3 -m pip install -q pillow
+          python3 -m unittest discover -s scripts -p 'test_r711_cleanup.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r711-cleanup-beta.py
+          echo 'ae70b0e84827a5bb0edc8b79abf5ebaf1e98e4ccb64fe10c1f8b5b05cb66cedd  r711-neo-cleanup-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r711-neo-cleanup-beta.ipk
+      - name: Stage verified beta only (not production updater)
+        run: |
+          set -eu
+          python3 scripts/stage-r711-neo-cleanup.py
+          sh -n download-r711-neo-cleanup.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json
+          m=json.loads(Path('staging/r711-neo-cleanup.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r711-neo-cleanup.b64').read_bytes())
+          assert len(raw)==m['size']==308552
+          assert hashlib.sha256(raw).hexdigest()==m['sha256']
+          assert not m['published_to_main'] and not m['receiver_tested']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('CLEANUP_BETA_STAGED_R70_MAIN_UNCHANGED')
+          PY
+      - name: Push only to feature/r711-neo-cleanup
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r711-neo-cleanup.b64 staging/r711-neo-cleanup.update.json download-r711-neo-cleanup.sh
+          if git diff --cached --quiet; then
+            echo 'Already staged'
+          else
+            git commit -m 'Stage verified R71.1 Neo Cleanup UI beta, production unchanged'
+            git push origin HEAD:feature/r711-neo-cleanup
+          fi
