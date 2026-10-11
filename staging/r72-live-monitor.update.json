@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r72-live-monitor-beta",
+  "size": 314512,
+  "sha256": "6bb68ed906637c19e8e22a33a66165db53044a759258d19e39ec1898dee2c8d0",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r72-sat-iptv-live-monitor/payload/r72-live-monitor.b64"
+  ],
+  "description": "R72 BETA two separate SAT/IPTV current channel cards; SAT SNR, providers, source role, manual mapping lock vs confirmed first video, decoded resolution vs claimed, real first-image speed, SAT audio language and IPTV catalog language; audio/video codec explicitly N/A until supported. Preview/fast zap/player unchanged.",
+  "field_tested": false,
+  "published_to_main": false
+}
