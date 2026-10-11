@@ -54,7 +54,8 @@ def patch_monitor(raw):
             same_job = (str(pending[1]) == sat_ref and str(pending[2]) == name
                         and str(pending[3]) == qmode)
             higher_stage_inflight = str(pending[4]) == "fuzzy" and stage == "fast"
-            if same_job and (str(pending[4]) == stage or higher_stage_inflight):
+            same_catalog = getattr(self, "_r725_pending_catalog_id", None) == id(catalog)
+            if same_job and same_catalog and (str(pending[4]) == stage or higher_stage_inflight):
                 self._log("MATCH_BG_REUSE",
                           "sat='%s' requested=%s already=%s (no restart)" %
                           (self.current_sat_name, stage, pending[4]))
@@ -79,6 +80,7 @@ def patch_monitor(raw):
 
         self.smartmatch_generation += 1
         generation = int(self.smartmatch_generation)
+        self._r725_pending_catalog_id = id(catalog)
         languages = list(self._user_languages() or [])
         context = dict(self.sat_context or {})
         self.smartmatch_pending = (generation, sat_ref, name, qmode, stage)'''
