@@ -29,6 +29,65 @@ CORNER_ROIS = {
 }
 
 
+def bmp_metadata(raw):
+    """Validate small uncompressed BMP without building per-pixel Python rows."""
+    if not isinstance(raw, bytes) or not (54 <= len(raw) <= MAX_BYTES):
+        raise ValueError("missing/oversized BMP")
+    if raw[:2] != b"BM":
+        raise ValueError("not a BMP; grab tool may be configured for PNG")
+    dib = struct.unpack_from("<I", raw, 14)[0]
+    if dib < 40 or len(raw) < 14 + dib:
+        raise ValueError("unsupported BMP header")
+    offset = struct.unpack_from("<I", raw, 10)[0]
+    w, signed_h, planes, bits, compression = struct.unpack_from("<iiHHI", raw, 18)
+    h = abs(signed_h)
+    if not (planes == 1 and bits in (24, 32) and compression == 0 and
+            8 <= w <= 1920 and 8 <= h <= 1080):
+        raise ValueError("unsupported BMP geometry/encoding")
+    stride = ((w * (bits // 8)) + 3) & ~3
+    if offset < 14 + dib or offset + stride * h > len(raw):
+        raise ValueError("truncated BMP payload")
+    return w, h, signed_h, bits, offset, stride
+
+
+def crop_raw_bmp(raw, roi):
+    """Memory-bounded ROI crop; no full 960x540 tuple-of-pixels expansion.
+
+    Emits a standard bottom-up 24bpp BMP, even when input is top-down / 32bpp.
+    This ONLY processes an existing in-memory BMP, never reads receiver settings.
+    """
+    w, h, signed_h, bits, offset, stride = bmp_metadata(raw)
+    x, y, width, height = roi
+    if not (0 <= x < 1 and 0 <= y < 1 and width > 0 and height > 0 and
+            x + width <= 1.00001 and y + height <= 1.00001):
+        raise ValueError("invalid corner crop ROI")
+    x0, y0 = int(x * w), int(y * h)
+    x1, y1 = min(w, int((x + width) * w)), min(h, int((y + height) * h))
+    cw, ch = x1 - x0, y1 - y0
+    if cw < 8 or ch < 8:
+        raise ValueError("capture too small to crop")
+    out_stride = (cw * 3 + 3) & ~3
+    padding = b"\0" * (out_stride - cw * 3)
+    step = bits // 8
+    pixel_data = bytearray()
+    for yy in range(y1 - 1, y0 - 1, -1):
+        source_y = yy if signed_h < 0 else h - 1 - yy
+        start = offset + source_y * stride + x0 * step
+        row = raw[start:start + cw * step]
+        if bits == 24:
+            pixel_data.extend(row)
+        else:
+            for k in range(0, len(row), 4):
+                pixel_data.extend(row[k:k + 3])
+        pixel_data.extend(padding)
+    header = (
+        b"BM" + struct.pack("<IHHI", 54 + len(pixel_data), 0, 0, 54) +
+        struct.pack("<IiiHHIIiiII", 40, cw, ch, 1, 24, 0,
+                    len(pixel_data), 0, 0, 0, 0)
+    )
+    return header + pixel_data
+
+
 def bmp_decode(raw):
     """Strict 24/32bpp uncompressed Windows BMP. Return (w, h, rows)."""
     if not isinstance(raw, bytes) or not (54 <= len(raw) <= MAX_BYTES):
@@ -104,7 +163,7 @@ def checked_tmp_parent(parent):
 
 
 def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
-            run_command=None, sleep_fn=None):
+            run_command=None, sleep_fn=None, width=480):
     """Capture 3 distinct frames on selected service; never changes service.
 
     Injectable capture runner/sleeper are used for synthetic offline tests.
@@ -112,6 +171,8 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
     """
     if count != 3 or spacing < .5 or spacing > 3:
         raise ValueError("safe collector supports only 3 spaced captures")
+    if type(width) is not int or width not in (480, 960):
+        raise ValueError("only bounded 480 and 960 capture widths are supported")
     real_parent = checked_tmp_parent(parent)
     grab_path = grab_path or shutil.which("grab")
     if not grab_path or not os.path.isfile(grab_path):
@@ -124,6 +185,7 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
         "purpose": "capture only current tuned TV picture; verify King TOD manually",
         "source_verified": False,
         "capture_count": count,
+        "requested_width": width,
         "captured": 0,
         "distinct_images": 0,
         "image_identity": "full-screen digest, NOT decoder-frame counter",
@@ -143,14 +205,14 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
             destination = os.path.join(folder, name)
             try:
                 result = runner(
-                    [grab_path, "-v", "-r", "480", destination],
+                    [grab_path, "-v", "-r", str(width), destination],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                     timeout=3.0, check=False)
                 if result.returncode != 0:
                     raise ValueError("grab failed (nonzero exit)")
                 with open(destination, "rb") as handle:
                     raw = handle.read(MAX_BYTES + 1)
-                frame = bmp_decode(raw)
+                frame = bmp_metadata(raw)
                 digest = hashlib.sha256(raw).hexdigest()
                 sample = {
                     "index": i + 1,
@@ -167,7 +229,7 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
                     corner_name = "frame-%02d-%s.bmp" % (i + 1, corner)
                     corner_path = os.path.join(folder, corner_name)
                     with open(corner_path, "wb") as out:
-                        out.write(extract_corner(frame, roi))
+                        out.write(crop_raw_bmp(raw, roi))
                     sample["corners"][corner] = corner_name
                 report["samples"].append(sample)
                 os.chmod(destination, 0o600)
@@ -206,10 +268,12 @@ def collect(grab_path=None, parent="/tmp", count=3, spacing=0.85,
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--grab", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--width", type=int, choices=(480, 960), default=480,
+                        help="optional video-only screenshot width (default 480)")
     args = parser.parse_args(argv)
     print("Make sure CURRENT channel is King TOD 1-14; diagnostic does NOT zap.")
     try:
-        folder, report = collect(grab_path=args.grab)
+        folder, report = collect(grab_path=args.grab, width=args.width)
     except (RuntimeError, ValueError, OSError) as exc:
         print("CAPTURE UNSUPPORTED:", exc)
         return 1
