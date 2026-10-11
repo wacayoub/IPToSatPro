@@ -1,0 +1,56 @@
+name: Stage R71.1 Neo Home beta on isolated branch
+on:
+  push:
+    branches: [feature/r71-1-neo-home]
+    paths:
+      - '.github/workflows/stage-r711-neo-home.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r711-home-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Confirm screen, runtime and pinned package are reproducible
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r711_home.py' -v
+          python3 scripts/build-r711-neo-home.py
+          echo 'e6108f374ac7aa5a5ac8f06bb0c707e94c1932754f75ee62b25091609bef68ff  r71.1-neo-home-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r71.1-neo-home-beta.ipk
+      - name: Stage isolated SHA-verified downloadable IPK
+        run: |
+          set -eu
+          python3 scripts/stage-r711-neo-home.py
+          sh -n download-r711-neo-home.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json
+          m=json.loads(Path('staging/r711-neo-home.update.json').read_text())
+          package=base64.b64decode(Path('payload/r711-neo-home-beta.b64').read_bytes())
+          assert len(package)==m['size']==279792
+          assert hashlib.sha256(package).hexdigest()==m['sha256']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          assert m['receiver_tested'] is False and m['published_to_main'] is False
+          print('R711_NEO_HOME_STAGED_WITH_PRODUCTION_R70_UNCHANGED')
+          PY
+      - name: Commit versioned files ONLY to feature branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r711-neo-home-beta.b64 staging/r711-neo-home.update.json download-r711-neo-home.sh
+          if git diff --cached --quiet; then
+            echo 'R71.1 stage already published'
+          else
+            git commit -m 'Publish R71.1 Neo Home beta to opt-in GitHub branch only'
+            git push origin HEAD:feature/r71-1-neo-home
+          fi
