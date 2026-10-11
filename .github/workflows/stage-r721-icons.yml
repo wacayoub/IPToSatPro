@@ -1,0 +1,58 @@
+name: Stage R72.1 Premium Icons for Vu+ (beta)
+on:
+  push:
+    branches: [feature/r72-1-premium-icons]
+    paths:
+      - '.github/workflows/stage-r721-icons.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r721-icons-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Build native icon assets and test actual Enigma2 package
+        run: |
+          set -eu
+          python3 -m pip install -q pillow
+          python3 -m unittest discover -s scripts -p 'test_r721_icons.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r72_live_monitor.py' -v
+          python3 scripts/build-r721-icons.py
+          echo '5da1148476b471a000f9b2064f0b2e01d4db131f946783b24a70c098ebd97092  r721-premium-icons-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r721-premium-icons-beta.ipk
+      - name: Publish checksum-pinned download-only release
+        run: |
+          set -eu
+          python3 scripts/stage-r721-icons.py
+          sh -n download-r721-premium-icons.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json
+          m=json.loads(Path('staging/r721-premium-icons.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r721-premium-icons.b64').read_bytes())
+          assert len(raw)==m['size']==358772
+          assert hashlib.sha256(raw).hexdigest()==m['sha256']
+          assert not m['field_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R721_BETA_VERIFIED_PRODUCTION_R70_UNCHANGED')
+          PY
+      - name: Commit download files only to R72.1 feature branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r721-premium-icons.b64 staging/r721-premium-icons.update.json download-r721-premium-icons.sh
+          if git diff --cached --quiet; then
+            echo 'R72.1 beta already staged'
+          else
+            git commit -m 'Stage SHA256-verified R72.1 premium icons beta with read-only download'
+            git push origin HEAD:feature/r72-1-premium-icons
+          fi
