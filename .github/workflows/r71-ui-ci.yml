@@ -1,0 +1,31 @@
+name: R71 Home + Preview All Sources guarded UI
+on:
+  push:
+    branches: [feature/r71-stability]
+    paths:
+      - 'scripts/build-r71-ui-beta.py'
+      - 'scripts/test_r71_ui.py'
+      - '.github/workflows/r71-ui-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test R71 UI + 22 original matching scenarios
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r71_ui.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r71-ui-beta.py
+          python3 scripts/check_locked_fast_guard.py r71-ui-beta.ipk
+          python3 -m py_compile scripts/build-r71-ui-beta.py scripts/test_r71_ui.py
+      - name: Upload non-production, read-only first release
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r71-ui-beta-NOT-installed
+          path: r71-ui-beta.ipk
+          retention-days: 14
