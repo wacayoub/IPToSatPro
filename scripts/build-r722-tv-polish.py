@@ -73,8 +73,10 @@ def patch_plugin(binary):
     # Enigma2 Screen.setTitle controls the native OpenATV header.
     s=only(s,'self.setTitle("%s %s" % (PLUGIN_NAME, PLUGIN_VERSION))',
              'self.setTitle("IPToSat Pro")')
-    s=only(s,'self["version"] = Label(PLUGIN_VERSION)',
-             'self["version"] = Label("R72.2 BETA")')
+    s=only(s,'''self["channel_hint"] = Label("CH+  NEXT CHANNEL   •   CH-  PREVIOUS")
+        self["version"] = Label(PLUGIN_VERSION)''',
+             '''self["channel_hint"] = Label("CH+  NEXT CHANNEL   •   CH-  PREVIOUS")
+        self["version"] = Label("R72.2 BETA")''')
     s=only(s,'self["r721_iptv_res_badge"] = Label("?")',
              'self["r721_iptv_res_badge"] = Label("?")\n        self["r722_footer_hint"] = Label("BLUE • Event Log    |    MENU • Settings / Tools")')
     # Give genuine long provider/channel names enough room on two rows rather
