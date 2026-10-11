@@ -99,6 +99,35 @@ class ShadowTests(unittest.TestCase):
         self.assertEqual(verdict["classification"], "CONSISTENT_WITH_REFERENCE")
         self.assertFalse(verdict["mapping_enabled"])
 
+    def test_different_masks_display_cross_comparison_but_never_auto_map(self):
+        self.write_three(self.ref, seedbase=0)
+        other = DARK_7[:-1] + ((1, 4),)
+        self.write_three(self.cur, mask=other, seedbase=20)
+        verdict = compare_sessions(self.ref, self.cur, slot=3, reference_logo=7)
+        cross = verdict["cross_session_health"]
+        self.assertEqual(verdict["classification"], "UNKNOWN")
+        self.assertFalse(verdict["mapping_enabled"])
+        self.assertEqual(cross["digit_majority_pixel_difference"], 2)
+        self.assertEqual(cross["digit_min_pixel_difference"], 2)
+        self.assertEqual(cross["digit_max_pixel_difference"], 2)
+        self.assertEqual(cross["digit_majority_dark_pixels"], [7, 7])
+        self.assertEqual(len(cross["digit_pairwise_differences_3x3"]), 3)
+        self.assertEqual(len(cross["banner_similarity_3x3"]), 3)
+        self.assertTrue(cross["diagnostic_only"])
+
+    def test_one_reference_flicker_reports_consensus_only(self):
+        self.write_three(self.ref)
+        self.write_three(self.cur, seedbase=20)
+        with open(os.path.join(self.ref, "frame-02.bmp"), "wb") as out:
+            out.write(frame(seed=2, number_mask=DARK_7[:-1]))
+        verdict = compare_sessions(self.ref, self.cur)
+        cross = verdict["cross_session_health"]
+        self.assertEqual(verdict["classification"], "UNKNOWN")
+        self.assertEqual(cross["digit_reference_uncertain_pixels"], 1)
+        self.assertEqual(cross["digit_majority_pixel_difference"], 0)
+        self.assertEqual(cross["digit_min_pixel_difference"], 0)
+        self.assertFalse(verdict["mapping_enabled"])
+
     def test_only_480_bmp_supported_and_no_partial_results(self):
         self.write_three(self.ref)
         self.write_three(self.cur, seedbase=10)
