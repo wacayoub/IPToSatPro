@@ -16,7 +16,7 @@ from pathlib import Path
 
 def members(ipk):
     raw = Path(ipk).read_bytes()
-    if not raw.startswith(b"!<arch>\\n"):
+    if not raw.startswith(b"!<arch>\n"):
         raise AssertionError("Not an ar package: " + str(ipk))
     manifest = {}
     for kind in ("control", "data"):
@@ -37,7 +37,7 @@ def members(ipk):
                     item.linkname, item.size, digest
                 )
     debian = subprocess.check_output(["ar", "p", str(ipk), "debian-binary"])
-    if debian != b"2.0\\n":
+    if debian != b"2.0\n":
         raise AssertionError("Unexpected Debian package version")
     if ("control", "./control") not in manifest:
         raise AssertionError("Missing control file")
