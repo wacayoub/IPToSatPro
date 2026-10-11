@@ -1,0 +1,56 @@
+name: Stage R71 UI beta download (safe)
+on:
+  push:
+    branches: [feature/r71-stability]
+    paths:
+      - '.github/workflows/stage-r71-ui-beta.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r71-ui-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retest R71 candidate with player guard
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r71_ui.py' -v
+          python3 scripts/build-r71-ui-beta.py
+          echo 'f61fda976653ef3b17c717f8798cd96277437ec9984402b75bed5c4389634b56  r71-ui-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r71-ui-beta.ipk
+      - name: Prepare read-only beta download
+        run: |
+          set -eu
+          python3 scripts/stage-r71-ui-beta.py
+          sh -n download-r71-ui-beta.sh
+          python3 - <<'PY'
+          import json,hashlib,base64
+          from pathlib import Path
+          m=json.loads(Path('staging/r71-ui-beta.update.json').read_text())
+          data=base64.b64decode(Path('payload/r71-ui-beta.b64').read_bytes())
+          assert len(data)==m['size']==278240
+          assert hashlib.sha256(data).hexdigest()==m['sha256']
+          assert m['production_published'] is False and m['receiver_tested'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R71_UI_BETA_VERIFY_BRANCH_ONLY')
+          PY
+      - name: Publish files to R71 feature branch only
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r71-ui-beta.b64 staging/r71-ui-beta.update.json download-r71-ui-beta.sh
+          if git diff --cached --quiet; then
+            echo 'No changes required'
+          else
+            git commit -m 'Stage verified R71 UI beta for download (main still R70)'
+            git push origin HEAD:feature/r71-stability
+          fi
