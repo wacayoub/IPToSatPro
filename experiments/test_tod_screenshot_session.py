@@ -54,7 +54,12 @@ class ScreenshotSessionTests(unittest.TestCase):
         return self.session.accept(data, token, at)
 
     def test_three_independent_captures_assign_tod(self):
+        self.assertIsNotNone(self.bridge.screenshot_token())
         self.assertIsNone(self.evidence(6, 1, 1.0))
+        self.assertEqual(len(self.ctrl.routes._observed.get(3, ())), 1,
+                         "first screenshot discarded: token=%r last=%r seen=%r" %
+                         (self.bridge.screenshot_token(), self.session._last_at,
+                          self.session._digests))
         self.assertIsNone(self.evidence(6, 2, 1.5))
         route = self.evidence(6, 3, 2.0)
         self.assertEqual(route.bein, 6)
