@@ -45,6 +45,9 @@ class InlineThread:
 class Matcher:
     def __init__(self):
         self.references = {n: 1 for n in range(1, 11)}
+        # Synthetic controls only; these are NOT true receiver approvals.
+        self.receiver_validated = True
+        self.live_mapping_approved = True
         self.samples = 0
         self.logo = 6
 
@@ -129,6 +132,32 @@ class WorkerTests(unittest.TestCase):
             self.ctx[flag] = False
         self.assertEqual(self.calls, [])
 
+    def test_ten_unapproved_templates_never_trigger_receiver_capture(self):
+        worker = self.make_worker()
+        self.matcher.receiver_validated = False
+        for when in (1., 2., 3., 4.):
+            self.tick(worker, when)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(worker.stats["attempts"], 0)
+        self.assertFalse(self.ctrl.resolve_bein(
+            source_id="provider-king-real-ID", bein_channel=6, now=4))
+
+    def test_receiver_validated_without_operator_approval_is_still_off(self):
+        worker = self.make_worker()
+        self.matcher.live_mapping_approved = False
+        for when in (1., 2., 3.):
+            self.tick(worker, when)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(worker.stats["attempts"], 0)
+
+    def test_both_approvals_must_be_exact_true(self):
+        worker = self.make_worker()
+        self.matcher.receiver_validated = "yes"
+        self.matcher.live_mapping_approved = 1
+        self.tick(worker, 1.)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(worker.stats["attempts"], 0)
+
     def test_single_real_logo7_never_activates_auto_mapping(self):
         """One stable genuine watermark is not proof against other beIN digits."""
         worker = self.make_worker()
@@ -177,6 +206,8 @@ class WorkerTests(unittest.TestCase):
     def test_never_more_than_max_attempts(self):
         class Unknown:
             references = {n: 1 for n in range(1, 11)}
+            receiver_validated = True
+            live_mapping_approved = True
             def classify(self, data):
                 return None
         self.matcher = Unknown()
