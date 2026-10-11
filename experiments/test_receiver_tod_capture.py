@@ -6,8 +6,9 @@ import tempfile
 import types
 import unittest
 import zipfile
+from unittest import mock
 
-from receiver_tod_capture import bmp_decode, bmp_encode, collect
+from receiver_tod_capture import bmp_decode, bmp_encode, collect, checked_tmp_parent
 
 
 def fake_bmp(seed):
@@ -94,6 +95,36 @@ class ReadOnlyCaptureTests(unittest.TestCase):
         self.assertEqual(report["distinct_images"], 0)
         self.assertTrue(all("NOT screen black" in s["status"] for s in report["samples"]))
         self.assertEqual(sorted(os.listdir(folder)), ["report.json", "tod-images.zip"])
+
+    def test_openatv_tmp_symlink_target_is_allowed(self):
+        """On OpenATV /tmp commonly resolves to /var/volatile/tmp."""
+        root = os.path.join(self.tmp.name, "volatile-tmp")
+        os.mkdir(root)
+        sub = os.path.join(root, "captures")
+        os.mkdir(sub)
+        original_realpath = os.path.realpath
+
+        def emulate_openatv_realpath(path):
+            if path == "/tmp":
+                return root
+            if path == "/tmp/captures":
+                return sub
+            return original_realpath(path)
+
+        with mock.patch("receiver_tod_capture.os.path.realpath",
+                        side_effect=emulate_openatv_realpath):
+            self.assertEqual(checked_tmp_parent("/tmp"), root)
+            self.assertEqual(checked_tmp_parent("/tmp/captures"), sub)
+            with self.assertRaises(ValueError):
+                checked_tmp_parent("/etc")
+
+    def test_path_resolution_rejects_symlink_escape(self):
+        escape = tempfile.TemporaryDirectory(dir="/var/tmp")
+        self.addCleanup(escape.cleanup)
+        link = os.path.join(self.tmp.name, "escape-link")
+        os.symlink(escape.name, link)
+        with self.assertRaises(ValueError):
+            checked_tmp_parent(link)
 
     def test_rejects_unsafe_location_and_missing_grab(self):
         with self.assertRaises(ValueError):
