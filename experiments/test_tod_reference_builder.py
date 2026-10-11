@@ -26,8 +26,8 @@ def screenshot(corner):
 
 class ReferenceCalibrationTests(unittest.TestCase):
     def setUp(self):
-        self.right = (.75, 0, .25, .3333333)
-        self.left = (.05, 0, .25, .3333333)
+        self.right = (.75, 0, .25, .28)
+        self.left = (.05, 0, .25, .28)
 
     def test_verified_logo_crop_and_load_two_corners(self):
         with tempfile.TemporaryDirectory() as outdir:
