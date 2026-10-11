@@ -1,0 +1,59 @@
+name: Stage R72 SAT-IPTV Live Monitor BETA
+on:
+  push:
+    branches: [feature/r72-sat-iptv-live-monitor]
+    paths:
+      - '.github/workflows/stage-r72-live-monitor.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r72-live-monitor-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retest real Enigma2 Live Monitor and all protected playback paths
+        run: |
+          set -eu
+          python3 -m pip install -q pillow
+          python3 -m unittest discover -s scripts -p 'test_r72_live_monitor.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r71_stability.py' -v
+          python3 scripts/build-r72-live-monitor.py
+          echo '6bb68ed906637c19e8e22a33a66165db53044a759258d19e39ec1898dee2c8d0  r72-live-monitor-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r72-live-monitor-beta.ipk
+      - name: Stage R72 safe download with SHA checksum
+        run: |
+          set -eu
+          python3 scripts/stage-r72-live-monitor.py
+          sh -n download-r72-live-monitor.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json
+          m=json.loads(Path('staging/r72-live-monitor.update.json').read_text())
+          raw=base64.b64decode(Path('payload/r72-live-monitor.b64').read_bytes())
+          assert len(raw)==m['size']==314512
+          assert hashlib.sha256(raw).hexdigest()==m['sha256']
+          assert m['field_tested'] is False
+          assert m['published_to_main'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R72_BETA_PINNED_STAGED_MAIN_UNCHANGED')
+          PY
+      - name: Push staged IPK payload only to experimental branch
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r72-live-monitor.b64 staging/r72-live-monitor.update.json download-r72-live-monitor.sh
+          if git diff --cached --quiet; then
+            echo 'R72 beta already staged'
+          else
+            git commit -m 'Publish checksum-verified R72 live monitor beta on feature branch only'
+            git push origin HEAD:feature/r72-sat-iptv-live-monitor
+          fi
