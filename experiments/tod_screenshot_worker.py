@@ -30,12 +30,12 @@ class TodScreenshotWorker:
         self.bridge = bridge
         self.matcher = matcher
         self.capture = capture or grab_video_bmp
-        self.session = session or TodScreenshotSession(bridge)
+        self.clock = clock or time.monotonic
+        self.session = session or TodScreenshotSession(bridge, clock=self.clock)
         self.enabled = bool(enabled)
         self.startup_delay = float(startup_delay)
         self.interval = float(interval)
         self.max_attempts = max_attempts
-        self.clock = clock or time.monotonic
         self.thread_factory = thread_factory or threading.Thread
         self._pending = queue.Queue(maxsize=1)
         self._busy = False
@@ -77,10 +77,13 @@ class TodScreenshotWorker:
         except queue.Empty:
             return None
         self._busy = False
-        if self._closed:
+        if self._closed or not self.enabled:
             return None
         current = self.bridge.screenshot_token()
-        if current != token or current is None:
+        ctx = self.bridge._current()
+        if (current != token or current is None or ctx is None or
+                any(ctx.get(k) for k in (
+                    "manual_lock", "timeshift", "recording", "parental_blocked"))):
             self.stats["stale"] += 1
             return None
         self.stats["captures"] += 1
