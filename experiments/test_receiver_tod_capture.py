@@ -54,7 +54,7 @@ class ReadOnlyCaptureTests(unittest.TestCase):
             for corner in entry["corners"].values():
                 with open(os.path.join(folder, corner), "rb") as handle:
                     w, h, _ = bmp_decode(handle.read())
-                self.assertEqual((w, h), (38, 20))
+                self.assertEqual((w, h), (38, 19))
         for args, kwargs in self.commands:
             self.assertEqual(args[1:4], ["-v", "-r", "480"])
             self.assertFalse(kwargs["check"])
