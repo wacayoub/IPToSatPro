@@ -126,14 +126,14 @@ def _r748_explicit_country(name):
     for code,aliases in _R748_COUNTRY_LABELS.items():
         for alias in sorted(aliases,key=len,reverse=True):
             norm_alias=_strip_accents(alias)
-            pat=r"(?i)^(.*?)\\s*(?:\\(\\s*%s\\s*\\)|\\[\\s*%s\\s*\\]|\\s+%s)\\s*$"%(re.escape(norm_alias),re.escape(norm_alias),re.escape(norm_alias))
+            pat=r"(?i)^(.*?)\s*(?:\(\s*%s\s*\)|\[\s*%s\s*\]|\s+%s)\s*$"%(re.escape(norm_alias),re.escape(norm_alias),re.escape(norm_alias))
             m=re.match(pat,raw_ascii)
             if m and m.group(1).strip():
                 base=raw[:len(m.group(1))].strip(" :-_|/[]()")
                 if base and any(c.isalpha() for c in base):
                     return code,base
     # Prefix code from IPTV labels: AT: TLC HD, DE TLC HD or (AT) TLC HD.
-    p=re.match(r"^\\s*(?:\\[([A-Z]{2})\\]|\\(([A-Z]{2})\\)|([A-Z]{2})(?=[:|\\s_-]))[\\s:|_-]*(\\S.*)$",raw)
+    p=re.match(r"^\s*(?:\[([A-Z]{2})\]|\(([A-Z]{2})\)|([A-Z]{2})(?=[:|\s_-]))[\s:|_-]*(\S.*)$",raw)
     if p:
         code=p.group(1) or p.group(2) or p.group(3)
         rest=p.group(4).strip()
@@ -143,7 +143,7 @@ def _r748_explicit_country(name):
     # Full country at start only when explicit delimiter follows the country.
     for code,aliases in _R748_COUNTRY_LABELS.items():
         for alias in sorted(aliases,key=len,reverse=True):
-            m=re.match(r"(?i)^\\s*%s\\s*[:|]\\s*(\\S.*)$"%re.escape(_strip_accents(alias)),raw_ascii)
+            m=re.match(r"(?i)^\s*%s\s*[:|]\s*(\S.*)$"%re.escape(_strip_accents(alias)),raw_ascii)
             if m:
                 return code,raw[len(raw)-len(m.group(1)):]
     return "",raw
