@@ -148,22 +148,98 @@ class R74Tests(unittest.TestCase):
         self.assertIn("fast_preview_mega_matches",core)
 
 
-    def test_safe_fr_candidate_wins_over_foreign_higher_fuzzy_score(self):
-        node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=="_r736_choose_best_safe")
+    def _origin_language_ranker(self, monitor=None):
         env={
-            "cfg":SimpleNamespace(match_threshold=SimpleNamespace(value=82)),
+            "cfg":SimpleNamespace(match_threshold=SimpleNamespace(value=82),
+                                  languages=SimpleNamespace(value="FR,AR,EN")),
             "channel_fingerprint":lambda ch:ch["id"],
             "match_decision":lambda score,detail,threshold:"SAFE",
             "quality_fit_key":lambda *args:(1,0,0,0,0),
-            "MONITOR":None,
+            "MONITOR":monitor,
         }
-        exec(compile(ast.fix_missing_locations(ast.Module(body=[node],type_ignores=[])),
+        wanted={"_r74_normalize_lang","_r74_sat_original_languages","_r736_choose_best_safe"}
+        nodes=[n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name in wanted]
+        self.assertEqual(len(nodes),3)
+        exec(compile(ast.fix_missing_locations(ast.Module(body=nodes,type_ignores=[])),
                      "rank-r74","exec"),env)
-        vip=({"id":"vip","name":"VIP NICKELODEON HD","market":"EN","language":"EN"},148,{"name":100})
-        strong=({"id":"fr","name":"FR NICKELODEON HD","market":"FR","language":"FR"},142,{"name":100})
+        return env
+
+    def _candidate(self, code, language, score=140, market="UNKNOWN"):
+        return ({"id":code,"name":"Same channel HD","market":market,
+                 "language":language},score,{"name":100})
+
+    def test_original_fr_audio_beats_foreign_higher_score(self):
+        env=self._origin_language_ranker()
+        en=self._candidate("en","EN",148,"FR")
+        fr=self._candidate("fr","FRA",142,"DE")
         selected=env["_r736_choose_best_safe"]("sat","Nickelodeon HD",{
-            "market_preferences":["FR"],"language_priorities":["FR"]},[vip,strong])
+            "audio_language_set":["fre"],"market_preferences":["EN"],
+            "language_priorities":["EN"]},[en,fr])
         self.assertEqual(selected[0]["id"],"fr")
+        self.assertEqual(selected[2]["r74_sat_language"],"FR")
+        self.assertEqual(selected[2]["r74_language_evidence"],"DVB_AUDIO")
+
+    def test_original_ar_audio_priority_even_when_market_is_fr(self):
+        monitor=SimpleNamespace(current_sat_ref_string="sat",
+                                sat_audio_languages=["ara"],stream_health={})
+        env=self._origin_language_ranker(monitor)
+        en=self._candidate("en","EN",150,"FR")
+        ar=self._candidate("ar","AR",136,"US")
+        selected=env["_r736_choose_best_safe"]("sat","Original SAT",{
+            "audio_language_set":["eng"],"language_priorities":["FR"]},[en,ar])
+        self.assertEqual(selected[0]["id"],"ar")
+        self.assertEqual(selected[2]["r74_sat_language"],"AR")
+
+    def test_original_en_audio_beats_global_fr_config(self):
+        env=self._origin_language_ranker()
+        fr=self._candidate("fr","FR",150)
+        en=self._candidate("en","ENG",142)
+        selected=env["_r736_choose_best_safe"]("sat","Original SAT",{
+            "audio_language_set":["EN"]},[fr,en])
+        self.assertEqual(selected[0]["id"],"en")
+
+    def test_unknown_sat_language_neutral_score_wins(self):
+        env=self._origin_language_ranker()
+        fr=self._candidate("fr","FR",140)
+        en=self._candidate("en","EN",148)
+        selected=env["_r736_choose_best_safe"]("sat","Unknown SAT",{
+            "market_preferences":["FR"],"language_priorities":["FR"]},[en,fr])
+        self.assertEqual(selected[0]["id"],"en")
+        self.assertEqual(selected[2]["r74_sat_language"],"UNKNOWN")
+
+    def test_multilingual_sat_accepts_both_audio_variants(self):
+        env=self._origin_language_ranker()
+        en=self._candidate("en","EN",148)
+        fr=self._candidate("fr","FR",142)
+        selected=env["_r736_choose_best_safe"]("sat","Multiaudio",{
+            "audio_language_set":["ENG","fre"]},[en,fr])
+        self.assertEqual(selected[0]["id"],"en")
+
+    def test_measured_single_audio_explicit_mismatch_requires_review(self):
+        env=self._origin_language_ranker()
+        en=self._candidate("en","EN",160)
+        ch,score,details,review=env["_r736_choose_best_safe"]("sat","SAT FR",{
+            "audio_language_set":["FRA"]},[en])
+        self.assertIsNone(ch)
+        self.assertTrue(review)
+
+    def test_identity_language_hint_only_when_audio_unknown(self):
+        env=self._origin_language_ranker()
+        en=self._candidate("en","EN",151)
+        ru=self._candidate("ru","RUS",130)
+        selected=env["_r736_choose_best_safe"]("sat","Russian channel",{
+            "channel_language":"RU","market_preferences":["FR"]},[en,ru])
+        self.assertEqual(selected[0]["id"],"ru")
+        self.assertEqual(selected[2]["r74_language_evidence"],"CHANNEL_IDENTITY")
+
+    def test_preview_and_bulk_ranker_do_not_pass_global_languages(self):
+        names={"_expand_selected_sat_candidates","_scan_one"}
+        sections=[ast.get_source_segment(self.src,n) for n in ast.walk(self.tree)
+                  if isinstance(n,ast.FunctionDef) and n.name in names]
+        self.assertEqual(len(sections),2)
+        for section in sections:
+            self.assertIn("_r74_sat_original_languages(raw,ctx)",section)
+            self.assertNotIn("cfg.languages.value",section)
 
     def test_server_safe_and_language_filters_keep_full_cache(self):
         base=[
