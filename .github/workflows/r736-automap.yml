@@ -1,0 +1,29 @@
+name: R73.6 Automatic SAFE SAT Mapping
+on:
+  push:
+    branches: [feature/r736-autolock-all-safe]
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test automatic mapping end-to-end on built plugin
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r736_automap.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+      - name: Verify locked zap and all existing user files unchanged
+        run: |
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r736-automatic-safe-mapping-beta.ipk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          print('R736_PRODUCTION_SAFE')
+          PY
