@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.5-generic-match-engine-beta",
+  "size": 414684,
+  "sha256": "78f890b365a2d0971c3e2cb685893546e77a92e29ea5dd609d84bbd1824f3dbb",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r735-generic-match-engine/payload/r735-generic-match-engine.b64"
+  ],
+  "notes": "R73.5 generic matching engine: prefer exact SAFE identities across P/B1/B2, demote mismatched numbered LIVE services to REVIEW, block REVIEW/REJECT Auto Scan locks, preserve manual verified lock priority, rescore stale AUTO locks, set Preview right header total correctly. R73.4 fast discovery/resolution preserved. Player, timeshift and mappings unchanged. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
