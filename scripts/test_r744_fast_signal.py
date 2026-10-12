@@ -43,6 +43,9 @@ class R744FastSignalPolicyTests(unittest.TestCase):
                 fallback_no_signal=SimpleNamespace(value=True)),
         )
         self.m._r745_cached_failure_active=lambda:False
+        self.m._r746_black_active=lambda:False
+        self.m._r746_stable_black=lambda:False
+        self.m._r746_native_picture=lambda:bool(self.m.video_event_seen)
         self.m._same_sat_still_playing=lambda:self.m.current_sat_ref_string==self.ref
         self.m._sat_tuner_state=lambda:self.m.tuner_state
         self.m._is_crypted=lambda:self.live
