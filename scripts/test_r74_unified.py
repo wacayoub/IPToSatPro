@@ -108,6 +108,7 @@ class R74Tests(unittest.TestCase):
         class L:
             def moveToIndex(self,idx):calls.append(("move",idx))
         class Fake:
+            session=None
             _sat_rows_loaded=False;_r74_roster_mode="BOUQUET";_r74_bouquet_name=""
             sat_ref_string="1:0:1:TWO";input_sat_ref="1:0:1:TWO"
             _suppress_sat_change=False
