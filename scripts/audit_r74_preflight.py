@@ -59,3 +59,14 @@ with tempfile.TemporaryDirectory() as td:
     for n in ast.walk(tree):
         if isinstance(n,ast.FunctionDef) and any(tag in n.name.lower() for tag in ("crypt","fast_map","guard","tuner","sat_check","isfta","signal","dvb")):
             print("CRYPT_AUDIT_FUNCTION",n.name,n.lineno,n.end_lineno)
+
+    for n in ast.walk(tree):
+        if isinstance(n,ast.FunctionDef) and n.name in (
+            "_static_crypted_state_fast","_encrypted_fallback_allowed_once",
+            "_is_crypted","_start","_check","_sat_tuner_state",
+            "_fast_map_fire","_manual_lock_saved_access","_native_pat_guard_remaining_ms",
+            "_dvb_access_key","_on_tuned","_fallback_with_native_pat_guard"):
+            snippet=ast.get_source_segment(monitor,n) or ""
+            print("CRYPT_FULL_FUNCTION",n.name,"BEGIN")
+            print(snippet[:18500])
+            print("CRYPT_FULL_FUNCTION",n.name,"END")
