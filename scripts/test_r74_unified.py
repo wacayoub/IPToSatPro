@@ -134,6 +134,9 @@ class R74Tests(unittest.TestCase):
 
     def test_action_is_wired_and_new_skin_is_used(self):
         self.assertIn('"7": self._r74_switch_roster',self.src)
+        self.assertIn('"8": self._r74_cycle_server',self.src)
+        self.assertIn('"9": self._r74_toggle_safe',self.src)
+        self.assertIn('"3": self._r74_cycle_metadata',self.src)
         self.assertIn("from .preview_theme_r74 import PREVIEW_R74_FHD",self.src)
         self.assertIn("R74_BOUQUET_ROSTER",self.src)
         self.assertIn("AUTO_PLAY_START",self.src)
@@ -143,6 +146,54 @@ class R74Tests(unittest.TestCase):
         self.assertIn("budget=48",core)
         self.assertIn("for i in range(48)",core)
         self.assertIn("fast_preview_mega_matches",core)
+
+
+    def test_safe_fr_candidate_wins_over_foreign_higher_fuzzy_score(self):
+        node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=="_r736_choose_best_safe")
+        env={
+            "cfg":SimpleNamespace(match_threshold=SimpleNamespace(value=82)),
+            "channel_fingerprint":lambda ch:ch["id"],
+            "match_decision":lambda score,detail,threshold:"SAFE",
+            "quality_fit_key":lambda *args:(1,0,0,0,0),
+            "MONITOR":None,
+        }
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[node],type_ignores=[])),
+                     "rank-r74","exec"),env)
+        vip=({"id":"vip","name":"VIP NICKELODEON HD","market":"EN","language":"EN"},148,{"name":100})
+        strong=({"id":"fr","name":"FR NICKELODEON HD","market":"FR","language":"FR"},142,{"name":100})
+        selected=env["_r736_choose_best_safe"]("sat","Nickelodeon HD",{
+            "market_preferences":["FR"],"language_priorities":["FR"]},[vip,strong])
+        self.assertEqual(selected[0]["id"],"fr")
+
+    def test_server_safe_and_language_filters_keep_full_cache(self):
+        base=[
+            {"id":"a","server_role":"PRIMARY","market":"EN","language":"EN","quality":"HD"},
+            {"id":"b","server_role":"BACKUP2","market":"FR","language":"FR","quality":"FHD"},
+            {"id":"c","server_role":"BACKUP2","market":"AR","language":"AR","quality":"UHD"},
+        ]
+        events=[]
+        class Fake:
+            def __init__(self):
+                self._r74_role_filter="BACKUP2"
+                self._r74_meta_filter="FR"
+                self._r74_safe_only=True
+                self._r732_auto_rows=base
+                self._r732_auto_page=3
+                self.focus="right"
+            def _candidate_decision(self,ch):
+                return "REVIEW" if ch["id"]=="c" else "SAFE"
+            def _r74_filters_active(self):return True
+            def _render_source_list(self,keep_index=False):events.append("redraw")
+            def _set_focus(self,which):events.append("focus")
+            def __getitem__(self,key):return SimpleNamespace(setText=lambda x:None)
+        f=Fake()
+        fn=self.isolate("_r74_apply_filters",{"_startup_log":lambda *a:None})
+        fn(f)
+        self.assertEqual([x["id"] for x in f.channels],["b"])
+        self.assertEqual(len(f._r732_auto_rows),3)
+        self.assertEqual(f._r732_auto_page,0)
+        self.assertEqual([x["id"] for x in f._r74_filtered_rows],["b"])
+        self.assertIn("redraw",events)
 
     def test_player_and_monitor_unmodified(self):
         self.assertTrue(self.meta["monitor_unchanged"])
