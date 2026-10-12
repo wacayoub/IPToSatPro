@@ -168,8 +168,8 @@ def patch_core(src):
 def patch_plugin(src):
     # The only Preview ranking pass returns 192 catalogued results at once.
     # No instant/expanded/re-expanded panels or Enigma2 work in worker thread.
-    src=one(src,'        self._r731_search_active = False\n        self._r731_search_result = None',
-        '        self._r731_search_active = False\n        self._r732_auto_rows = []\n        self._r732_auto_page = 0\n        self._r731_search_result = None')
+    src=one(src,'        self._r731_search_active = False\n        self._r731_search_result = None\n        self._r731_search_worker = None\n        self._r731_search_timer = eTimer()',
+        '        self._r731_search_active = False\n        self._r732_auto_rows = []\n        self._r732_auto_page = 0\n        self._r731_search_result = None\n        self._r731_search_worker = None\n        self._r731_search_timer = eTimer()')
     src=one(src,'        try: self.sat_change_timer.start(110, True)\n        except Exception: self._load_selected_sat_candidates()',
         '''        # No first-paint 10-candidate pass; one indexed 192-candidate job.
         try: self.candidate_expand_timer.start(20, True)
