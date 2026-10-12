@@ -65,33 +65,33 @@ def patch_plugin(src):
         channels = [dict(x or {}) for x in list(channels or [])]''')
     src=one(src,
 '''                  item = dict(locked)
-                  item["_preview_score"] = float((manual or {}).get("auto_scan_score") or 0.0)
-                  item["_preview_details"] = {
-                      "allow_reason": "auto scan lock" if (manual or {}).get("auto_best_lock") else "manual lock",
-                      "manual": not bool((manual or {}).get("auto_best_lock")),
-                      "auto_best_lock": bool((manual or {}).get("auto_best_lock")),
-                  }
-                  channels.insert(0, item)''',
+                item["_preview_score"] = float((manual or {}).get("auto_scan_score") or 0.0)
+                item["_preview_details"] = {
+                  "allow_reason": "auto scan lock" if (manual or {}).get("auto_best_lock") else "manual lock",
+                  "manual": not bool((manual or {}).get("auto_best_lock")),
+                  "auto_best_lock": bool((manual or {}).get("auto_best_lock")),
+                }
+                channels.insert(0, item)''',
 '''                  item = dict(locked)
-                  is_auto = bool((manual or {}).get("auto_best_lock"))
-                  item["_r735_verified_manual_lock"] = not is_auto
-                  item["_r735_old_auto_lock"] = is_auto
-                  if is_auto:
-                      # The original AUTO score may be stale or based on a
-                      # wrong variant. Treat it like other new nominations.
-                      try:
-                          languages=[x.strip().upper() for x in cfg.languages.value.split(",") if x.strip()]
-                          score,details = match_score_details(sat_name or self.sat_name,
-                              item,languages,dict(context or {}),cfg.quality_mode.value,preview=True)
-                          item["_preview_score"] = float(score)
-                          item["_preview_details"] = dict(details or {})
-                      except Exception:
-                          item["_preview_score"] = 0.0
-                          item["_preview_details"] = {"review_reason":"old AUTO lock requires re-verification"}
-                  else:
-                      item["_preview_score"] = float((manual or {}).get("auto_scan_score") or 0.0)
-                      item["_preview_details"] = {"manual":True}
-                  channels.insert(0, item)''')
+                is_auto = bool((manual or {}).get("auto_best_lock"))
+                item["_r735_verified_manual_lock"] = not is_auto
+                item["_r735_old_auto_lock"] = is_auto
+                if is_auto:
+                    # The original AUTO score may be stale or based on a
+                    # wrong variant. Treat it like other new nominations.
+                    try:
+                        languages=[x.strip().upper() for x in cfg.languages.value.split(",") if x.strip()]
+                        score,details = match_score_details(sat_name or self.sat_name,
+                            item,languages,dict(context or {}),cfg.quality_mode.value,preview=True)
+                        item["_preview_score"] = float(score)
+                        item["_preview_details"] = dict(details or {})
+                    except Exception:
+                        item["_preview_score"] = 0.0
+                        item["_preview_details"] = {"review_reason":"old AUTO lock requires re-verification"}
+                else:
+                    item["_preview_score"] = float((manual or {}).get("auto_scan_score") or 0.0)
+                    item["_preview_details"] = {"manual":True}
+                channels.insert(0, item)''')
     src=one(src,
 '''        channels = self._merge_locked_candidate(key, channels)
         channels = self._sort_candidates_with_cached_evidence(channels, context=ctx)[:192]''',
