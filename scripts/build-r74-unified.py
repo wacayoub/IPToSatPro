@@ -11,7 +11,7 @@ b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
 pp=importlib.util.spec_from_file_location("r74patch",ROOT/"scripts/r74_unified_patch.py")
 p=importlib.util.module_from_spec(pp);pp.loader.exec_module(p)
 OLD=b.NEW
-NEW="1.0.46-r74.1-original-audio-beta"
+NEW="1.0.46-r74.2-preview-close-hotfix-beta"
 P=b.b.P
 PLUGIN=b.b.PLUGIN
 CORE=b.b.CORE
@@ -64,7 +64,7 @@ def build(destination=None):
         theme_bytes=(ROOT/"scripts/r74_preview_theme.py").read_bytes()
         _validate_skin(theme_bytes.decode())
         changes={PLUGIN:plugin.encode(),CORE:core.encode(),UPDATER:updater.encode()}
-        desc=("R74.1 original-SAT-audio Preview beta: native CURRENT bouquet with original Enigma2 "
+        desc=("R74.2 no-crash Preview-close hotfix beta: native CURRENT bouquet with original Enigma2 "
             "service order including DVB FTA and encrypted TV, numeric 7 switches to "
             "current satellite, fast list load, a legible Neo Dark screen, 48 "
             "bounded all-server scored candidates, visible catalog-versus-measured "
