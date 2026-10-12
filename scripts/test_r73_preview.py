@@ -65,7 +65,7 @@ class R73PreviewTests(unittest.TestCase):
         self.assertEqual(added_removed, {"_r73_page_focused"})
         self.assertEqual(modified, {
             "_sort_candidates_with_cached_evidence", "_preview_catalog_token",
-            "_merge_locked_candidate", "__init__", "_blue_action",
+            "_merge_locked_candidate", "_poll_expanded_candidates", "_blue_action",
             "_page_sat_next", "_page_sat_previous", "_expand_selected_sat_candidates",
             "_all_sources"
         })
@@ -107,7 +107,7 @@ class R73PreviewTests(unittest.TestCase):
         self.assertIn('def _r73_page_focused(self, step):',self.source)
         self.assertIn('self._r73_page_focused(+1)',self.source)
         self.assertIn('self._r73_page_focused(-1)',self.source)
-        blue=self.source.split("    def _blue_action(self):",1)[1].split("\\n    def _preferred_modes",1)[0]
+        blue=self.source.split("    def _blue_action(self):",1)[1].split("    def _preferred_modes",1)[0]
         self.assertNotIn('self._preview_selected()',blue)
         self.assertNotIn('playService(',blue)
         self.assertIn('type=MessageBox.TYPE_INFO',blue)
