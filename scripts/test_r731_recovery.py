@@ -117,6 +117,8 @@ class RecoveryTests(unittest.TestCase):
             def __init__(self):
                 self.finished=False;self.preview_ok=False;self.current_result="OPENING"
                 self.PREVIEW_MODE_MAX_MS=1900;self.PREVIEW_TOTAL_MAX_MS=2000;self.PREVIEW_POLL_MS=80
+                self.PREVIEW_MIN_CONFIRM_MS=180;self.PREVIEW_DIFF_DIMS_CONFIRM_MS=240
+                self.PREVIEW_SAME_DIMS_PTS_CONFIRM_MS=420;self.PREVIEW_SAME_DIMS_CONFIRM_MS=850
                 self.started_at=time.monotonic()-0.35
                 self.attempt_started_at=time.monotonic()-0.35
                 self.attempt_pre_dims=(0,0)
