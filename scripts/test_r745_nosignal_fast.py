@@ -169,7 +169,7 @@ class NoSignalFastTests(unittest.TestCase):
 
     def test_native_pat_pmt_crash_guard_is_preserved(self):
         self.assertIn("NATIVE_PAT_GUARD_MS = 1250",self.source)
-        self.assertIn('RECOVERED_DURING_PMTPAT_GUARD',self.source)
+        self.assertIn('NATIVE_VIDEO_RECOVERED',self.source)
         self.assertIn('NO_SIGNAL_CACHE_ALLOW',self.source)
         self.assertTrue(self.meta["monitor_cached_no_signal"])
         self.assertFalse(self.meta["receiver_tested"])
