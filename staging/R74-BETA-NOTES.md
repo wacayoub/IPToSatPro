@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.7-preview-complete-candidates-beta`
+**Build**: `1.0.46-r74.8-country-code-matcher-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.8 SAT country name ↔ IPTV country code
+
+- Normalizes explicitly identified region qualifiers across all IPTV server sources without hardcoding only TLC: `TLC HD Austria` ↔ `AT: TLC HD`, `TLC Germany` ↔ `DE: TLC HD`, plus France/FR, Spain/ES, Britain/UK, etc. Allows provider conventions `AR` for Arabic/MENA, `AF` for Africa, `AL` for Albania (AF is NOT treated as Afghanistan in these IPTV labels; it has its own `AFG` alias).
+- Uses the SAME explicit country identity in the fast 192-candidate multi-server nomination stage and in scored Preview/SmartMatch, not merely as a screen display alias.
+- Different explicit countries on otherwise identical brands (`TLC Austria` versus `DE TLC`) are REJECT rather than incorrect Auto Lock.
+- Country terms do not replace real SAT DVB audio language. Country/region metadata and channel variant/numbers remain independent.
+- Maintains source duplicates, original provider ordering and manual locks. Test set spans >25 country cases and contradictory feed identities.
+- No receiver-time API changes, player/monitor modifications or boot-time work added.
 
 ## R74.7 Preview initial single source bug
 
