@@ -54,7 +54,9 @@ with tempfile.TemporaryDirectory() as td:
     print(score[:34000])
     print("R748_SCORE_FULL_END")
 
-    if label=="core":
+    if True:
+        src=base
+        functions=[n for n in ast.walk(tree) if isinstance(n,ast.FunctionDef)]
         for n in functions:
             if n.name in ("_preview_numbers","extract_numbers","_identity_anchor_tokens","_enrich_channel","_preview_decorated_source_name"):
                 print("R749_FUNC",n.name,"BEGIN")
