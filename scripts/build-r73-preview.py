@@ -21,8 +21,8 @@ PLUGIN = P + "plugin.py"
 UPDATER = P + "updater.py"
 CORE = P + "core.py"
 OLD = "1.0.46-r72.7-fuzzy-cache-beta"
-NEW = "1.0.46-r73.3-turbo-candidates-beta"
-CHANGELOG = P + "CHANGELOG-r733-TURBO-CANDIDATES.txt"
+NEW = "1.0.46-r73.4-instant-preview-resolution-beta"
+CHANGELOG = P + "CHANGELOG-r734-INSTANT-PREVIEW-RESOLUTION.txt"
 B64 = ROOT/"payload/r727-fuzzy-cache.b64"
 BASE_SHA256 = "cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62"
 
@@ -37,6 +37,10 @@ megasp.loader.exec_module(r732)
 turbosp = importlib.util.spec_from_file_location("r733",ROOT/"scripts/r733_turbo_patch.py")
 r733 = importlib.util.module_from_spec(turbosp)
 turbosp.loader.exec_module(r733)
+
+qsp=importlib.util.spec_from_file_location("r734",ROOT/"scripts/r734_preview_fix.py")
+r734=importlib.util.module_from_spec(qsp)
+qsp.loader.exec_module(r734)
 
 def exactly(src, old, new):
     n = src.count(old)
@@ -174,6 +178,7 @@ def patch_plugin(data):
     src = r731.patch_plugin_r731(src)
     src = r732.patch_plugin(src)
     src = r733.patch_plugin(src)
+    src = r734.patch_plugin(src)
     src = exactly(src, 'PLUGIN_VERSION = "'+OLD+'"', 'PLUGIN_VERSION = "'+NEW+'"')
     compile(src, PLUGIN, "exec")
     return src.encode("utf-8")
@@ -218,7 +223,7 @@ def build(path=None):
     changes[UPDATER] = exactly(up, 'CURRENT_VERSION = "'+OLD+'"',
                                    'CURRENT_VERSION = "'+NEW+'"').encode()
     description = (
-        "R73.3: 192 candidates in one indexed pass, 18 detailed scores; title memoization and phase timings; manual catalogue search "
+        "R73.4: prioritize complete IPTV candidates before SAT roster; retain fast 192 candidate pass and extend resolution polling in VERIFY "
         "(48-row paging, no progressive UI); FTA SAT option; preview country REVIEW, "
         "keep hard number/audio safety checks; native Neo Dark theme, "
         "focused SAT/IPTV pagination and read-only BLUE details. LIVE player, monitor, timeshift and user data unchanged. "
@@ -241,7 +246,7 @@ def build(path=None):
     parts["data.tar.gz"] = base.pack.make_tar(parts["data.tar.gz"], changes,
         {CHANGELOG:description, P+"preview_theme_r73.py":theme_source})
     parts["control.tar.gz"] = base.pack.make_tar(parts["control.tar.gz"], {"control":new_control})
-    dest = Path(path) if path else ROOT/"r733-turbo-candidates-beta.ipk"
+    dest = Path(path) if path else ROOT/"r734-instant-preview-resolution-beta.ipk"
     if dest.exists(): dest.unlink()
     built = base.pack.assemble(parts, dest)
     rebuilt = base.pack.members_from(base.pack.unpack_ar(built)["data.tar.gz"])
@@ -253,7 +258,7 @@ def build(path=None):
         "version":NEW, "size":len(built), "sha256":hashlib.sha256(built).hexdigest(),
         "changed": sorted(changes), "protected_unmodified":len(original)-len(changes),
         "production_published":False, "receiver_tested":False,
-        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"one_shot_192_turbo_18scored_plus_manual"
+        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"turbo_192_first_paint_delayed_sat_roster_late_video_poll"
     }
     print("R73_PREVIEW_STAGE_OK", json.dumps(metadata, sort_keys=True))
     return metadata
