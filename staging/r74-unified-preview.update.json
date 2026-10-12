@@ -1,7 +1,7 @@
 {
   "version": "1.0.46-r74.3-dvb-access-recheck-beta",
-  "size": 424362,
-  "sha256": "97b5b19eb0c487965d5e9f3793da19bc78b26a5a8ac2625cbb0726746d51d494",
+  "size": 424592,
+  "sha256": "d91a9bfb62ac02ebcbc43a8fec35fb3931cf9a7ecf70da1dc225dc9902df7b99",
   "beta": true,
   "receiver_tested": false,
   "production_published": false
