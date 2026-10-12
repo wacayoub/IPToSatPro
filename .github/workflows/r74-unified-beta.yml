@@ -1,0 +1,30 @@
+name: R74 Unified Preview Beta
+on:
+  push:
+    branches: [feature/r74-unified-preview-actual-bouquet]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  r74:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build actual R74 IPK and verify protected module equality
+        run: python3 scripts/build-r74-unified.py /tmp/iptosatpro-r74-unified-beta.ipk
+      - name: R74 actual bouquet, interface and navigation tests
+        run: python3 -m unittest discover -s scripts -p 'test_r74_unified.py' -v
+      - name: Safe Auto Play and Preview backward regression
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_r738_auto_open.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r736_automap.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r737_video_visible.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r74-unified-preview-beta
+          path: /tmp/iptosatpro-r74-unified-beta.ipk
+          retention-days: 14
