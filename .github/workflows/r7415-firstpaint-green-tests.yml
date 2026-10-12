@@ -1,0 +1,32 @@
+name: R7415 First Paint and GREEN without OK
+on:
+  push:
+    branches: [fix/r7415-firstpaint-green-any-focus]
+  workflow_dispatch:
+jobs:
+  actual-r74-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: R7415 real package first paint and GREEN tests
+        run: |
+          python3 -m py_compile scripts/r7415_firstpaint_green_any_focus.py
+          python3 -m unittest discover -s scripts -p test_r7415_firstpaint_green.py -v
+      - name: Prior R74 regression and manual lock tests
+        run: |
+          python3 -m unittest discover -s scripts -p test_r7414_fast_candidates_manual_lock.py -v
+          python3 -m unittest discover -s scripts -p test_r7413_preview_inline.py -v
+          python3 -m unittest discover -s scripts -p test_r7412_preview_shortlist.py -v
+          python3 -m unittest discover -s scripts -p test_r7411_preview_priority.py -v
+      - name: Ensure production updater untouched
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v=str(json.loads(Path('update.json').read_text()).get('version',''))
+          assert 'r70' in v.lower(),v
+          print('NO_PRODUCTION_UPDATE',v)
+          PY
