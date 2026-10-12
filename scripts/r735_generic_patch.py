@@ -67,9 +67,9 @@ def patch_plugin(src):
 '''                item = dict(locked)
                 item["_preview_score"] = float((manual or {}).get("auto_scan_score") or 0.0)
                 item["_preview_details"] = {
-                  "allow_reason": "auto scan lock" if (manual or {}).get("auto_best_lock") else "manual lock",
-                  "manual": not bool((manual or {}).get("auto_best_lock")),
-                  "auto_best_lock": bool((manual or {}).get("auto_best_lock")),
+                    "allow_reason": "auto scan lock" if (manual or {}).get("auto_best_lock") else "manual lock",
+                    "manual": not bool((manual or {}).get("auto_best_lock")),
+                    "auto_best_lock": bool((manual or {}).get("auto_best_lock")),
                 }
                 channels.insert(0, item)''',
 '''                item = dict(locked)
@@ -77,8 +77,7 @@ def patch_plugin(src):
                 item["_r735_verified_manual_lock"] = not is_auto
                 item["_r735_old_auto_lock"] = is_auto
                 if is_auto:
-                    # The original AUTO score may be stale or based on a
-                    # wrong variant. Treat it like other new nominations.
+                    # Re-score the old AUTO candidate using current engine rules.
                     try:
                         languages=[x.strip().upper() for x in cfg.languages.value.split(",") if x.strip()]
                         score,details = match_score_details(sat_name or self.sat_name,
