@@ -1,0 +1,48 @@
+name: R7417 Live FTA / Signal Monitor Audit
+on:
+  push:
+    branches: [fix/r7417-fta-signal-keep-native]
+  workflow_dispatch:
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Extract patched monitor actual FTA fallbacks
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          p=Path("scripts/build-r74-unified.py")
+          spec=importlib.util.spec_from_file_location("r74",p)
+          b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
+          with tempfile.TemporaryDirectory() as td:
+            dst=Path(td)/"r74.ipk";b.build(dst)
+            pk=b.b.b.base.pack
+            files=pk.members_from(pk.unpack_ar(dst.read_bytes())["data.tar.gz"])
+            src=files[b.MONITOR].decode()
+            tree=ast.parse(src)
+            names={
+              "_fallback_with_native_pat_guard","_encrypted_fallback_allowed_once",
+              "_r745_no_signal_once","_r745_cached_probe","_r745_arm_cached_nosignal",
+              "_r744_access_check","_r743_crypto_retry","_r743_crypto_pending",
+              "_native_pat_guard_fire","_sat_tuner_state","_is_crypted",
+              "_static_crypted_state_fast","_manual_lock_saved_access",
+              "_same_sat_still_playing","_on_service_event","_on_event",
+              "_start_fallback","_fallback_now","_on_native_event",
+              "_on_timer","_r745_discard_bad_tp","_try_fallback",
+              "_fallback","_on_sat_service_start","_start_monitor",
+              "_do_fallback","_play_match"
+            }
+            for node in ast.walk(tree):
+              if isinstance(node,ast.FunctionDef) and (
+                      node.name in names or any(token in node.name for token in
+                      ("native_pat","tune_fail","fallback","crypted","signal","video_event","service_start"))):
+                txt=ast.get_source_segment(src,node)
+                print("METHOD_START",node.name,"LEN",len(txt))
+                print(txt[:14000])
+                print("METHOD_END",node.name)
+          PY
