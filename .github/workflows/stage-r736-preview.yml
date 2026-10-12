@@ -1,0 +1,60 @@
+name: Stage R73.6 Automatic SAFE Mapping BETA
+on:
+  push:
+    branches: [feature/r736-autolock-all-safe]
+    paths:
+      - '.github/workflows/stage-r736-preview.yml'
+      - 'scripts/stage-r736-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r736-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate green candidate persistence and full AutoScan selector
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r736_automap.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+          python3 scripts/build-r73-preview.py
+          echo '9f0335e257ef0e6861efb710b3b41c2970381c3ec595c6c47940d63031c6bbca  r736-automatic-safe-mapping-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r736-automatic-safe-mapping-beta.ipk
+      - name: Generate verified opt-in online package
+        run: |
+          set -eu
+          python3 scripts/stage-r736-preview.py
+          sh -n download-r736-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r736-automatic-safe-mapping.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r736-automatic-safe-mapping.b64').read_bytes())
+          assert len(blob)==m['size']==415216
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert not m['hardware_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R736_SHA_VERIFIED_NO_PRODUCTION_CHANGE')
+          PY
+      - name: Publish isolated beta without automatic receiver installation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r736-automatic-safe-mapping.b64 staging/r736-automatic-safe-mapping.update.json download-r736-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.6 already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73.6 automatic SAFE mapping beta'
+            git push origin HEAD:feature/r736-autolock-all-safe
+          fi
