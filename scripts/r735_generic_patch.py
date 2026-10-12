@@ -20,8 +20,8 @@ def patch_core(src):
     """
     import re
     label=str(name or "")
-    label=re.sub(r"(?i)^\\\\s*(?:[A-Z]{2}\\\\s*:\\\\s*)?LIVE\\\\s*[:\\\\-]\\\\s*","",label)
-    return bool(re.search(r"(?i)(?:^|[^a-z0-9])live\\\\s*[-_]?\\\\s*\\\\d{1,3}(?!\\\\d)",label))
+    label=re.sub(r"(?i)^\\s*(?:[A-Z]{2}\\s*:\\s*)?LIVE\\s*[:\\-]\\s*","",label)
+    return bool(re.search(r"(?i)(?:^|[^a-z0-9])live\\s*[-_]?\\s*\\d{1,3}(?!\\d)",label))
 
 '''
     src=one(src,'def match_score_details(sat_name, channel, priorities=None, context=None, quality_mode="best", preview=False):',
@@ -106,8 +106,8 @@ def patch_plugin(src):
 '''        rows = [dict(x or {}) for x in list(channels or []) if isinstance(x, dict)]
         import re
         def core_identity(label):
-            val=re.sub(r"(?i)^\\\\s*(?:[a-z]{2,3}\\\\s*:\\\\s*)?LIVE\\\\s*[:\\\\-]\\\\s*", "",str(label or ""))
-            val=re.sub(r"(?i)^\\\\s*[a-z]{2,3}\\\\s*:\\\\s*","",val)
+            val=re.sub(r"(?i)^\\s*(?:[a-z]{2,3}\\s*:\\s*)?LIVE\\s*[:\\-]\\s*", "",str(label or ""))
+            val=re.sub(r"(?i)^\\s*[a-z]{2,3}\\s*:\\s*","",val)
             tokens=re.findall(r"[a-z0-9]+",val.lower())
             tech={"sd","hd","fhd","uhd","4k","8k","hevc","h264","h265",
                   "1080p","1080i","720p","2160p","3840p","mpeg4"}
