@@ -33,6 +33,12 @@ def patch_core(src):
         target_norm = normalize_name(sat_name or "")
         wanted_nums = tuple(_preview_numbers(sat_name or ""))
         wanted_tokens = set(target.split())
+        # Explicit public TV brand tokens prevent a false "same numbered
+        # SPORTS" collision where provider_family metadata is blank.
+        distinctive_brands = {"bein","dubai","osn","sky","canal","rotana",
+            "mbc","art","alkass","aljazeera","ushuaia","tve","rai",
+            "bbc","cnn","natgeo","discovery","fox","hbo","starz","stc"}
+        wanted_brands = wanted_tokens.intersection(distinctive_brands)
         wanted_fam = str(_effective_sat_provider_family(sat_name, context) or "")
         wanted_brand = str(_iptv_provider_family(sat_name or "") or "").upper()
         role_map = {}
@@ -49,6 +55,9 @@ def patch_core(src):
             if wanted_nums and nums and wanted_nums != nums:
                 return None
             tokens = set(norm.split())
+            candidate_brands = tokens.intersection(distinctive_brands)
+            if wanted_brands and candidate_brands and not wanted_brands.intersection(candidate_brands):
+                return None
             overlap = len(wanted_tokens.intersection(tokens))
             exact = int(bool(norm and norm == target))
             compact = int(bool(norm and "".join(norm.split()) == "".join(target.split())))
