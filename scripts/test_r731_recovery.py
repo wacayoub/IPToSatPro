@@ -116,6 +116,7 @@ class RecoveryTests(unittest.TestCase):
         class Fake:
             def __init__(self):
                 self.finished=False;self.preview_ok=False;self.current_result="OPENING"
+                self.PREVIEW_MODE_MAX_MS=1900;self.PREVIEW_TOTAL_MAX_MS=2000;self.PREVIEW_POLL_MS=80
                 self.started_at=time.monotonic()-0.35
                 self.attempt_started_at=time.monotonic()-0.35
                 self.attempt_pre_dims=(0,0)
