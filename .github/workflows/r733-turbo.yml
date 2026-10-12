@@ -1,0 +1,29 @@
+name: R73.3 Turbo Preview Regression
+on:
+  push:
+    branches: [feature/r733-turbo-candidate-index]
+  workflow_dispatch:
+jobs:
+  turbo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run real IPK P/B1/B2 fast-candidate tests
+        run: |
+          python3 -m unittest discover -s scripts -p test_r733_turbo.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
+      - name: Build once and protect working player
+        run: |
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r733-turbo-candidates-beta.ipk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path("update.json").read_text())["version"]=="1.0.46-r70-final"
+          assert Path("latest-version.txt").read_text().strip()=="1.0.46-r70-final"
+          print("R733_PRODUCTION_UNMODIFIED")
+          PY
