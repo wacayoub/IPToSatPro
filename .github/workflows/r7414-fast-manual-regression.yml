@@ -1,0 +1,31 @@
+name: R7414 Fast Preview First Paint and Manual Lock
+on:
+  push:
+    branches: [fix/r7414-fast-candidates-manual-lock]
+  workflow_dispatch:
+jobs:
+  real-r74-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Compile and test R7414 actual R74 Preview plugin
+        run: |
+          python3 -m py_compile scripts/r7414_fast_candidates_manual_lock.py
+          python3 -m unittest discover -s scripts -p test_r7414_fast_candidates_manual_lock.py -v
+      - name: Ensure earlier features still pass
+        run: |
+          python3 -m unittest discover -s scripts -p test_r7413_preview_inline.py -v
+          python3 -m unittest discover -s scripts -p test_r7412_preview_shortlist.py -v
+          python3 -m unittest discover -s scripts -p test_r7411_preview_priority.py -v
+      - name: No production publish
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v=str(json.loads(Path("update.json").read_text()).get("version",""))
+          assert "r70" in v.lower(),v
+          print("PRODUCTION_UPDATE_UNCHANGED",v)
+          PY
