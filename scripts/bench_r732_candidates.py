@@ -38,4 +38,10 @@ with tempfile.TemporaryDirectory() as tmp:
                 lib.match_score_details(target,enr,["FR"],ctx,"best",preview=True)
             print("PROFILE",target,"score",min(len(pool),size),"ms",round((time.perf_counter()-t)*1000,1))
         t=time.perf_counter();rows=catalog.fast_rank_matches_all_servers(target,["FR"],context=ctx,per_server=42,topn=144)
-        print("PROFILE",target,"full_rank",len(rows),"ms",round((time.perf_counter()-t)*1000,1))
+        old_ms=(time.perf_counter()-t)*1000
+        print("PROFILE",target,"full_rank",len(rows),"ms",round(old_ms,1))
+        t=time.perf_counter()
+        mega=catalog.fast_preview_mega_matches(target,["FR"],context=ctx,per_server=64,topn=192)
+        new_ms=(time.perf_counter()-t)*1000
+        print("PROFILE",target,"MEGA_192",len(mega),"ms",round(new_ms,1),
+              "speedup_vs_previous",round(old_ms/max(new_ms,0.001),2))
