@@ -1,0 +1,60 @@
+name: Stage R73.3 Turbo Candidates BETA
+on:
+  push:
+    branches: [feature/r733-turbo-candidate-index]
+    paths:
+      - '.github/workflows/stage-r733-preview.yml'
+      - 'scripts/stage-r733-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r733-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify all IPTV sources, scores and manually reviewed overflow
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p test_r733_turbo.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
+          python3 scripts/build-r73-preview.py
+          echo 'a8fe9396c077a41cd7e3e015fb921d52579e1ef72cff2964527e38d21a2c9bd1  r733-turbo-candidates-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r733-turbo-candidates-beta.ipk
+      - name: Stage checksum-verified beta only
+        run: |
+          set -eu
+          python3 scripts/stage-r733-preview.py
+          sh -n download-r733-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r733-turbo-candidates.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r733-turbo-candidates.b64').read_bytes())
+          assert len(blob)==m['size']==412848
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert m['hardware_tested'] is False and m['production_published'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R733_CHECKSUM_AND_PRODUCTION_OK')
+          PY
+      - name: Publish opt-in beta on isolated feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r733-turbo-candidates.b64 staging/r733-turbo-candidates.update.json download-r733-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.3 already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73.3 Turbo Preview beta'
+            git push origin HEAD:feature/r733-turbo-candidate-index
+          fi
