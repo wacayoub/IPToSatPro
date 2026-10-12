@@ -1,7 +1,7 @@
 {
   "version": "1.0.46-r74.6-dvb-black-picture-beta",
-  "size": 426626,
-  "sha256": "6b794151f4870167ee8523ce5138ac10cb7584f41d514f4bbc534e6a441e6276",
+  "size": 426852,
+  "sha256": "45f23e9f10da5d1807390999cd5a1752085eea188c3166bf1b9475b1d1d4594d",
   "beta": true,
   "receiver_tested": false,
   "production_published": false
