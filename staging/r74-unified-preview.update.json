@@ -1,7 +1,7 @@
 {
-  "version": "1.0.46-r74.4-fast-signal-policy-beta",
-  "size": 424592,
-  "sha256": "d91a9bfb62ac02ebcbc43a8fec35fb3931cf9a7ecf70da1dc225dc9902df7b99",
+  "version": "1.0.46-r74.5-nosignal-cache-fast-beta",
+  "size": 425810,
+  "sha256": "aa2158eb3912eb481f41145a77e236337facfb950097c7ff8e5758f507598a9f",
   "beta": true,
   "receiver_tested": false,
   "production_published": false
