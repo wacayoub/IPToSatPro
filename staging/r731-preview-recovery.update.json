@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.1-preview-recovery-beta",
+  "size": 409874,
+  "sha256": "2ed09630f46066e7376a47858edd4f425d2df0ef56227a66a067bccd0d91e85d",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r731-preview-core-recovery/payload/r731-preview-recovery.b64"
+  ],
+  "notes": "R73.1 Preview candidate recovery opt-in BETA: Neo Dark plus true indexed catalogue-wide manual search (48 per page), FTA opt-in list, Preview-only cautious country REVIEW, PTS motion required for automatic PLAYING, existing channel-number/audio protection. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
