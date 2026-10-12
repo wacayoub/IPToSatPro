@@ -125,6 +125,9 @@ def _r748_explicit_country(name):
     # Full word suffix, longest phrase first. Never interpret country word
     # when it is the first lexical token of a national channel brand.
     for code,aliases in _R748_COUNTRY_LABELS.items():
+        if code=="AR":
+            # "BBC Arabic" is a semantic service variant, not country suffix.
+            continue
         for alias in sorted(aliases,key=len,reverse=True):
             norm_alias=_strip_accents(alias)
             pat=r"(?i)^(.*?)\s*(?:\(\s*%s\s*\)|\[\s*%s\s*\]|\s+%s)\s*$"%(re.escape(norm_alias),re.escape(norm_alias),re.escape(norm_alias))
@@ -167,6 +170,19 @@ def _r748_country_relation(sat_name,iptv_name):
 
 def patch_core(src):
     src=one(src,'\nMARKET_TO_LANG = {', '\n'+HELPER+'MARKET_TO_LANG = {')
+    src=one(src,'''def market_from_text(text):
+    if not text:
+        return ""
+    raw = _strip_accents(text).lower()''',
+'''def market_from_text(text):
+    if not text:
+        return ""
+    # AT: TLC HD and other IPTV market tags must be recognized explicitly;
+    # old _tag_code only recognized some prefix syntaxes.
+    r748_code,_r748_base=_r748_explicit_country(text)
+    if r748_code:
+        return r748_code
+    raw = _strip_accents(text).lower()''')
     # Nominator: country-matched exact service from each server takes priority,
     # cannot be displaced from the budget by wrong regional feeds.
     src=one(src,'''            overlap = len(wanted_tokens.intersection(tokens))
