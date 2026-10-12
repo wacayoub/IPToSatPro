@@ -21,6 +21,8 @@ jobs:
         run: python3 -m unittest discover -s scripts -p 'test_r743_crypto_first_zap.py' -v
       - name: R74.4 no-signal and two-second FTA to encrypted policy regression
         run: python3 -m unittest discover -s scripts -p 'test_r744_fast_signal.py' -v
+      - name: R74.5 fast cached No Signal under 1 second and recovery safety regressions
+        run: python3 -m unittest discover -s scripts -p 'test_r745_nosignal_fast.py' -v
       - name: Regression for 20261012-170137 Enigma2 crash on zero-arg Preview close
         run: python3 -m unittest discover -s scripts -p 'test_r742_preview_close.py' -v
       - name: Safe Auto Play and Preview backward regression
@@ -38,7 +40,7 @@ jobs:
         run: |
           sh -n download-r74-beta.sh
           base64 -w0 /tmp/iptosatpro-r74-unified-beta.ipk > payload/r74-unified-preview.b64
-          python3 -c 'import hashlib,json,pathlib; p=pathlib.Path("/tmp/iptosatpro-r74-unified-beta.ipk"); b=p.read_bytes(); m={"version":"1.0.46-r74.4-fast-signal-policy-beta","size":len(b),"sha256":hashlib.sha256(b).hexdigest(),"beta":True,"receiver_tested":False,"production_published":False}; pathlib.Path("staging/r74-unified-preview.update.json").write_text(json.dumps(m,indent=2))'
+          python3 -c 'import hashlib,json,pathlib; p=pathlib.Path("/tmp/iptosatpro-r74-unified-beta.ipk"); b=p.read_bytes(); m={"version":"1.0.46-r74.5-nosignal-cache-fast-beta","size":len(b),"sha256":hashlib.sha256(b).hexdigest(),"beta":True,"receiver_tested":False,"production_published":False}; pathlib.Path("staging/r74-unified-preview.update.json").write_text(json.dumps(m,indent=2))'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add payload/r74-unified-preview.b64 staging/r74-unified-preview.update.json
