@@ -1,7 +1,7 @@
 {
   "version": "1.0.46-r74.2-preview-close-hotfix-beta",
-  "size": 422858,
-  "sha256": "08c0cf0a284449a9bb171b4f87e4cea6ec74377f64bd1c22c07a4d1d24985b29",
+  "size": 423764,
+  "sha256": "6dfd32dfa93668d8968e4c66bb8084f4624397bbdc75bfd8d1157e396b068172",
   "beta": true,
   "receiver_tested": false,
   "production_published": false
