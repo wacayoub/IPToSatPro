@@ -1,0 +1,61 @@
+name: Stage R73.7 Visible Video Preview BETA
+on:
+  push:
+    branches: [feature/r737-video-visible-preview]
+    paths:
+      - '.github/workflows/stage-r737-preview.yml'
+      - 'scripts/stage-r737-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r737-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify video visibility, automatic return and protected mappings
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p test_r737_video_visible.py -v
+          python3 -m unittest discover -s scripts -p test_r736_automap.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
+          python3 scripts/build-r73-preview.py
+          echo 'd5ebcfad771207ca572ff32613ff01c5f83432c45d6e4e2d99bd05cedd9f5d62  r737-visible-video-preview-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r737-visible-video-preview-beta.ipk
+      - name: Stage verified R73.7 experimental download only
+        run: |
+          set -eu
+          python3 scripts/stage-r737-preview.py
+          sh -n download-r737-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r737-visible-video-preview.update.json').read_text())
+          payload=base64.b64decode(Path('payload/r737-visible-video-preview.b64').read_bytes())
+          assert len(payload)==m['size']==415986
+          assert hashlib.sha256(payload).hexdigest()==m['sha256']
+          assert not m['hardware_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R737_VERIFIED_NO_STABLE_CHANGE')
+          PY
+      - name: Publish on test branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r737-visible-video-preview.b64 staging/r737-visible-video-preview.update.json download-r737-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.7 already staged'
+          else
+            git commit -m 'Stage checksum verified R73.7 visible video Preview beta'
+            git push origin HEAD:feature/r737-video-visible-preview
+          fi
