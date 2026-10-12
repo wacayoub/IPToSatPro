@@ -271,6 +271,15 @@ def patch_plugin(src):
             _startup_log("R74_BOUQUET_FALLBACK","No current native DVB TV bouquet: satellite mode")
         current_raw = str(self.sat_ref_string or self.input_sat_ref or "")''')
 
+    # FTA key 6 is a satellite-list option; in native bouquet all DVB TV
+    # channels are already visible, so switch to SAT before applying it.
+    src=one(src,'''        self._r731_show_fta = not self._r731_show_fta
+        self._sat_rows_loaded = False''',
+'''        if self._r74_roster_mode == "BOUQUET":
+            self._r74_roster_mode = "SATELLITE"
+        self._r731_show_fta = not self._r731_show_fta
+        self._sat_rows_loaded = False''')
+
     src=one(src,'''    def _r731_toggle_fta(self):''',
 '''    def _r74_switch_roster(self):
         """7 switches CURRENT native bouquet vs CURRENT orbital satellite."""
