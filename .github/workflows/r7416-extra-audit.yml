@@ -1,0 +1,37 @@
+name: R7416 Mapping Alias and SAT CAIDs Audit
+on:
+  push:
+    branches: [fix/r7416-unmap-fta-crypted-icons]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Extract mapping cleanup, CAID and SAT screen APIs
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          sp=importlib.util.spec_from_file_location('builder','scripts/build-r74-unified.py')
+          b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
+          with tempfile.TemporaryDirectory() as td:
+            dest=Path(td)/'r74.ipk';b.build(dest)
+            pk=b.b.b.base.pack
+            fs=pk.members_from(pk.unpack_ar(dest.read_bytes())['data.tar.gz'])
+            for pyfile in ('plugin.py','monitor.py'):
+              src=fs[b.P+pyfile].decode()
+              tree=ast.parse(src)
+              wanted={'_save_manual_alias','_clear_learned_mapping','_sat_status','_lamedb_tv_service_rows','_native_static_access_state','_static_crypted_state','_ensure_full_sat_rows','_preview_sat_disk_load','_preview_sat_disk_save','_preview_sat_rows_cache_key','invalidate_overrides','invalidate_learned_mappings','_load_overrides','_save_override','_load_selected_sat_candidates','_r74_active_bouquet_rows','_refresh_mapping_caches','_rescan_selected_sat','_load_sat_roster_deferred','_start'}
+              for node in ast.walk(tree):
+                if isinstance(node,ast.FunctionDef) and node.name in wanted:
+                  label=pyfile+':'+node.name
+                  print('METHOD_START',label)
+                  print(ast.get_source_segment(src,node)[:14000])
+                  print('METHOD_END',label)
+              for name in ('OVERRIDE_PATH','ALIAS_PATH','MANUAL_ALIAS','LEARNED_MAPPING_PATH','SAT_ROWS_CACHE'):
+                for line in src.splitlines()[:250]:
+                  if name in line:print('CONST',pyfile,line[:150])
+          PY
