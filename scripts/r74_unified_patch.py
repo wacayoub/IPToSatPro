@@ -342,6 +342,15 @@ def patch_plugin(src):
 '''        self["context_info"].setText("Provider: %s   •   Sat: %s   •   DVB: %s   •   Mapping: %s   •   Video: %s" % (
             provider[:32], sat_display[:24], access, self._mapping_text()[:34], self.current_result[:25]))''')
 
+    # R74.2: Enigma2 Session.processDelay may call callback(*retVal)
+    # with retVal=(), including when R73.8 auto-play closes Preview with
+    # screen.close() (without result). The old lambda required a result arg
+    # and crashed Enigma2. _direct_preview_done already handles None safely.
+    src=one(src,
+'''    session.openWithCallback(lambda result: _direct_preview_done(session, result),
+                             SatIPTVBridgePreview, sat_ref, first, channels,''',
+'''    session.openWithCallback(lambda result=None: _direct_preview_done(session, result),
+                             SatIPTVBridgePreview, sat_ref, first, channels,''')
     src=_patch_filters(src)
     # Use original DVB audio language, NOT geographic market / arbitrary user
     # language preferences. Unknown origin is neutral and falls through to score.
