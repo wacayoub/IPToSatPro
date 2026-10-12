@@ -29,14 +29,14 @@ jobs:
                   if isinstance(node,(ast.ClassDef,ast.FunctionDef)) and any(t in node.name.lower() for t in
                       ('fallback','mapping','match','play','preview','tune_fail','scan','monitor','nav','start','check','retry','override')):
                       print('INVENTORY',label,node.lineno,node.name)
-              chosen={'MONITOR':['__init__','_on_start','_encrypted_fallback_allowed_once','_on_tune_failed','_deferred_tune_failed','_on_service_start','_on_service_event','_trigger_fallback'],
-                      'PLUGIN':['__init__','_preview_selected','_poll_expanded_candidates','_load_selected_sat_candidates','_play_current_mode','_green_action','_commit_auto_scan_overrides']}
+              chosen={'MONITOR':['__init__','_on_start','_encrypted_fallback_allowed_once','_on_tune_failed','_deferred_tune_failed','_on_service_start','_on_service_event','_trigger_fallback','_fallback_if_matched','_play_match','_play_service_force','_queue_background_smartmatch','_smartmatch_poll','_start_guard','_same_sat_still_playing','_load_overrides','invalidate_overrides'],
+                      'PLUGIN':['__init__','_preview_selected','_poll_expanded_candidates','_load_selected_sat_candidates','_play_current_mode','_green_action','_commit_auto_scan_overrides','_auto_scan_override_record','_r736_auto_map_single_sat','_refresh_monitor','_safe_refresh_monitor']}
               for node in ast.walk(tree):
                   if isinstance(node,ast.FunctionDef) and node.name in chosen[label]:
                       snip=ast.get_source_segment(source,node) or ''
                       print('SNIPPET',label,node.name,'BEGIN')
                       if node.name=='__init__':print(snip[:3000])
-                      else: print(snip[:7500])
+                      else: print(snip[:13000])
                       print('SNIPPET',label,node.name,'END')
           PY
       - name: Run R73.7 regression tests
