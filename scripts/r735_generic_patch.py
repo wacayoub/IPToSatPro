@@ -139,6 +139,28 @@ def patch_plugin(src):
         rows.sort(key=key,reverse=True)
         return rows''')
 
+    # Do not preserve an old AUTO lock as the highlighted suggestion when
+    # the user has not deliberately focused a candidate. Keep an explicit
+    # RIGHT-panel human selection while new candidates finish loading.
+    src=one(src,
+'''        old_fp = ""
+        try:
+            selected = self._selected_channel()
+            old_fp = channel_fingerprint(selected or {}) if selected else ""
+        except Exception:
+            pass
+        self.sat_name = clean_display_name(rec[0] or "SAT channel")''',
+'''        old_fp = ""
+        try:
+            selected = self._selected_channel()
+            if self.focus == "right" and selected and not selected.get("_r735_old_auto_lock"):
+                old_fp = channel_fingerprint(selected)
+        except Exception:
+            pass
+        if not old_fp:
+            self.selected_index = 0
+        self.sat_name = clean_display_name(rec[0] or "SAT channel")''')
+
     # Full list is ready, but R73.4's async callback did not refresh right_head;
     # it consequently displayed 0 TOTAL while actual rows were visible.
     src=one(src,
