@@ -1,0 +1,20 @@
+name: R74 TOD beIN AAC hotfix checks
+
+on:
+  push:
+    branches:
+      - fix/r74-tod-bein-aac-direct-audio
+  workflow_dispatch:
+
+jobs:
+  hotfix-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and reversible audio routing tests
+        run: |
+          python -m py_compile scripts/r74_tod_bein_audio_hotfix.py
+          python -m unittest discover -s scripts -p 'test_r74_tod_bein_audio_hotfix.py' -v
