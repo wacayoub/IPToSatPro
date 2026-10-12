@@ -1,0 +1,33 @@
+name: R7414 Fast Lane API Audit
+on:
+  push:
+    branches: [fix/r7414-fast-candidates-manual-lock]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Runtime fast index API
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('r74','scripts/build-r74-unified.py')
+          mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+          with tempfile.TemporaryDirectory() as td:
+              f=Path(td)/'r74.ipk';mod.build(f);pk=mod.b.b.base.pack
+              files=pk.members_from(pk.unpack_ar(f.read_bytes())['data.tar.gz'])
+              for filename in ('plugin.py','core.py'):
+                  src=files[mod.P+filename].decode()
+                  nodes=ast.parse(src)
+                  wanted={'fast_preview_instant_matches','_fast_candidate_pool','_preview_channel_rows','_load_sat_fast_candidates','_fast_rank_sat','_preview_nomination_pool','normalize_name','normalize_preview_name','_sort_candidates_with_cached_evidence','_selected_channel'}
+                  for n in ast.walk(nodes):
+                      if isinstance(n,ast.FunctionDef) and n.name in wanted:
+                          print('METHOD_START',filename,n.name)
+                          print(ast.get_source_segment(src,n)[:12500])
+                          print('METHOD_END',filename,n.name)
+          PY
