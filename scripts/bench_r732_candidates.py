@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory() as tmp:
             "server_label":"Synthetic","group":"TEST","language":"FR" if i%3 else "EN",
             "server_priority":i%3})
     t=time.perf_counter();catalog=lib.Catalog(ch);print("PROFILE init_24k %.1f ms"%((time.perf_counter()-t)*1000))
-    for target in ["CANAL+ GOLF HD","BEIN SPORTS 6 FHD","OSN CINEMA 3 HD","USHUAIA TV FHD"]:
+    for target in ["CANAL+ GOLF HD","BEIN SPORTS 4 FHD","OSN CINEMA 5 HD","USHUAIA TV FHD"]:
         ctx={"confidence":"HIGH","market":"FR","language_priorities":["FR"],
               "market_preferences":["FR"],"match_threshold":60.0,"provider_family":""}
         t=time.perf_counter()
@@ -43,5 +43,6 @@ with tempfile.TemporaryDirectory() as tmp:
         t=time.perf_counter()
         mega=catalog.fast_preview_mega_matches(target,["FR"],context=ctx,per_server=64,topn=192)
         new_ms=(time.perf_counter()-t)*1000
-        print("PROFILE",target,"MEGA_192",len(mega),"ms",round(new_ms,1),
+        print("PROFILE",target,"TURBO_192",len(mega),"ms",round(new_ms,1),
               "speedup_vs_previous",round(old_ms/max(new_ms,0.001),2))
+        assert mega, "expected a numbered identity actually present in synthetic catalogue: "+target
