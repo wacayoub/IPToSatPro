@@ -1,0 +1,60 @@
+name: Stage R73.5 Generic Match Engine BETA
+on:
+  push:
+    branches: [feature/r735-generic-match-engine]
+    paths:
+      - '.github/workflows/stage-r735-preview.yml'
+      - 'scripts/stage-r735-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r735-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify global channel identity and AutoScan safety
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r735_generic.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+          python3 scripts/build-r73-preview.py
+          echo '78f890b365a2d0971c3e2cb685893546e77a92e29ea5dd609d84bbd1824f3dbb  r735-generic-match-engine-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r735-generic-match-engine-beta.ipk
+      - name: Stage verified experimental download
+        run: |
+          set -eu
+          python3 scripts/stage-r735-preview.py
+          sh -n download-r735-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r735-generic-match-engine.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r735-generic-match-engine.b64').read_bytes())
+          assert len(blob)==m['size']==414684
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert m['hardware_tested'] is False and m['production_published'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R735_CHECKSUM_VERIFIED_NO_PRODUCTION_CHANGE')
+          PY
+      - name: Push opt-in beta to experiment branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r735-generic-match-engine.b64 staging/r735-generic-match-engine.update.json download-r735-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.5 already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73.5 generic matching engine beta'
+            git push origin HEAD:feature/r735-generic-match-engine
+          fi
