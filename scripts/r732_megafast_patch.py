@@ -34,6 +34,7 @@ def patch_core(src):
         wanted_nums = tuple(_preview_numbers(sat_name or ""))
         wanted_tokens = set(target.split())
         wanted_fam = str(_effective_sat_provider_family(sat_name, context) or "")
+        wanted_brand = str(_iptv_provider_family(sat_name or "") or "").upper()
         role_map = {}
         seen = set()
         max_nominees = max(760, roles_cap * max(3, len(self.server_roles())) * 2)
@@ -53,8 +54,15 @@ def patch_core(src):
             compact = int(bool(norm and "".join(norm.split()) == "".join(target.split())))
             if not (exact or compact or overlap):
                 return None
-            ch_fam = str(ch.get("provider_family") or "")
-            fam = int(bool(wanted_fam and ch_fam and wanted_fam.upper() == ch_fam.upper()))
+            # Channel-brand evidence is stronger than broad platform/provider.
+            # beIN SPORTS 6 cannot nominate DUBAI SPORTS 6 merely because both
+            # share the generic word "sports" and the same service number.
+            candidate_brand = str(_iptv_provider_family(name or "") or "").upper()
+            if wanted_brand and candidate_brand and wanted_brand != candidate_brand:
+                return None
+            ch_fam = str(ch.get("provider_family") or candidate_brand or "")
+            fam = int(bool((wanted_brand or wanted_fam) and ch_fam and
+                           (wanted_brand or wanted_fam.upper()) == ch_fam.upper()))
             market = str(ch.get("market") or "").upper()
             prefs = [str(x).upper() for x in (context.get("market_preferences") or [])]
             market_rank = int(bool(market and market in prefs))
