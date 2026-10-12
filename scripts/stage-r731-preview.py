@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage opt-in R73 Preview Browser beta on its feature branch only.
+"""Stage opt-in R73.1 candidate recovery beta on its isolated feature branch only.
 
 SHA-verified, no production updater change, never auto-install on receiver.
 """
