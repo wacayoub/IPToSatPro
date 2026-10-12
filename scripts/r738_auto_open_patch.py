@@ -74,6 +74,7 @@ def patch_plugin(src):
             return "ACTIVATION_FAILED"
         mon.last_match_source = "SESSION_FAST"
         mon._r738_autoplay_token = token
+        mon._r738_autoplay_last = (str(sat_ref), str(fingerprint), time.monotonic())
         mon._log("AUTO_PLAY_START", "sat='%s' iptv='%s' role=%s candidates=%d source=PREVIEW_SAFE" %
                  (str(getattr(mon, "current_sat_name", ""))[:70],
                   str(ch.get("name") or "")[:80], str(ch.get("server_role") or "-"), len(plan)))
@@ -85,12 +86,12 @@ def patch_plugin(src):
 
 
 def _r738_queue_auto_open(screen, sat_ref, state, channel):
-    """Queue only newly created/replaced SAFE maps for the live SAT service.
+    """Queue SAFE newly created/replaced and previously saved AUTO maps for live SAT.
 
     Preview's normal _restore() always restores SAT on close. Close Preview
     before opening IPTV; otherwise _restore() could undo the new stream.
     """
-    if state not in ("AUTO_CREATED", "AUTO_REPLACED") or not isinstance(channel, dict):
+    if state not in ("AUTO_CREATED", "AUTO_REPLACED", "ALREADY_AUTO") or not isinstance(channel, dict):
         return False
     if bool(getattr(screen, "_r738_auto_open_queued", False)):
         return False
@@ -107,6 +108,13 @@ def _r738_queue_auto_open(screen, sat_ref, state, channel):
         fp = channel_fingerprint(channel)
         if not fp:
             return False
+        # Existing AUTO mappings from previous releases need one recovery too.
+        # Do not auto-close Preview repeatedly if a source has just failed:
+        # leave the user time to select a manual correction via GREEN.
+        last = getattr(MONITOR, "_r738_autoplay_last", None)
+        if isinstance(last, tuple) and len(last) == 3:
+            if last[0] == sat_ref and last[1] == fp and time.monotonic()-float(last[2]) < 60:
+                return False
         screen._r738_auto_open_queued = True
         _startup_log("AUTO_PLAY_QUEUED", "sat=%r iptv=%r status=%s" %
                      (str(getattr(screen, "sat_name", ""))[:75], str(channel.get("name") or "")[:85], state))
