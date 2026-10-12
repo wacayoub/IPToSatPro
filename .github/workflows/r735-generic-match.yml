@@ -1,0 +1,29 @@
+name: R73.5 Generic Matching Regression
+on:
+  push:
+    branches: [feature/r735-generic-match-engine]
+  workflow_dispatch:
+jobs:
+  match:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test global match safety and selection using actual bundled plugin
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_r735_generic.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+      - name: Ensure receiver player and user mapping files stay protected
+        run: |
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r735-generic-match-engine-beta.ipk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path("update.json").read_text())["version"]=="1.0.46-r70-final"
+          assert Path("latest-version.txt").read_text().strip()=="1.0.46-r70-final"
+          print("R735_PRODUCTION_UNCHANGED")
+          PY
