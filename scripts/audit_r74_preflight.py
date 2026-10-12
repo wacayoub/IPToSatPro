@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory() as td:
         "_preview_sat_service_rows","_preview_sat_stats","_preview_sat_rows_cache_key",
         "_preview_sat_disk_load","_preview_sat_disk_save","_preview_channel_rows",
         "_r731_toggle_fta","_render_sat_list","_update_header","_load_sat_roster",
-        "_load_sat_rows","_selected_sat_row","_page_sat","_sat_key",
+        "_load_sat_rows","_load_sat_roster_deferred","_ensure_full_sat_rows","_sat_selection_changed","_context_for_row_fast","_sat_status","_selected_sat_row","_page_sat","_sat_key",
         "_set_focus","_render_source_list","_candidate_decision","_candidate_status",
         "_poll_expanded_candidates","_expand_selected_sat_candidates","_load_selected_sat_candidates",
         "_sat_roster_tick","_open_auto_scan","_green_action","_start","_display_sort_key",
