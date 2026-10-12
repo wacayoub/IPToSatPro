@@ -1,0 +1,20 @@
+name: R73.2 Candidate Latency Audit
+on:
+  push:
+    branches: [feature/r732-instant-candidates]
+  workflow_dispatch:
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect candidate browse and index costs
+        run: |
+          python3 scripts/audit_r732_latency.py
+      - name: Verify predecessor baseline
+        run: |
+          python3 -m unittest discover -s scripts -p test_r731_recovery.py -v
