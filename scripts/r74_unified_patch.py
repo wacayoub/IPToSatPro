@@ -224,7 +224,7 @@ def patch_plugin(src):
     src=one(src,'''        self["verify"] = Label("AUTO maps SAFE candidates by identity • OK displays real video fullscreen • GREEN corrects manually")''',
         '''        self["verify"] = Label("AUTO SELECT / PLAY • OK: test vidéo 8 s • GREEN: correction manuelle")''')
     src=one(src,'''        self["detail"] = Label("LEFT: SAT channels • RIGHT: IPTV sources • OK = FULLSCREEN video test (8 s) • AUTO = metadata only")''',
-        '''        self["detail"] = Label("7 Bouquet/Sat • 8 Serveur • 9 SAFE • 3 Pays/Qualité • 5 Recherche")''')
+        '''        self["detail"] = Label("7 Bouquet/Sat • 8 Serveur • 9 SAFE • 3 Langue/Qualité • 5 Recherche")''')
     src=one(src,'''        self["sat_list"] = PreviewBrowserList([], width=488, item_height=42, font_size=19)''',
         '''        self["sat_list"] = PreviewBrowserList([], width=492, item_height=43, font_size=19)''')
     src=one(src,'''        self["source_list"] = PreviewBrowserList([], width=1066, item_height=42, font_size=18)''',
@@ -265,7 +265,7 @@ def patch_plugin(src):
                 self._sat_rows_loaded=True
                 _startup_log("R74_BOUQUET_ROSTER","bouquet=%r tv=%d elapsed=%dms"%
                     (bouquet_name,len(rows),int((time.monotonic()-started)*1000)))
-                self["detail"].setText("Bouquet actuel • 7 Satellite • 8 Serveur • 9 SAFE • 3 Pays/Qualité • 5 Recherche")
+                self["detail"].setText("Bouquet actuel • 7 Satellite • 8 Serveur • 9 SAFE • 3 Langue/Qualité • 5 Recherche")
                 return True
             self._r74_roster_mode="SATELLITE"
             _startup_log("R74_BOUQUET_FALLBACK","No current native DVB TV bouquet: satellite mode")
