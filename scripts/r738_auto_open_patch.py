@@ -145,7 +145,7 @@ def _r738_queue_auto_open(screen, sat_ref, state, channel):
             except Exception as auto_error:''',
 '''                if auto_state in ("AUTO_CREATED","AUTO_REPLACED"):
                     self._manual_overrides=_load_overrides()
-                    _r738_queue_auto_open(self, raw, auto_state, _pick)
+                _r738_queue_auto_open(self, raw, auto_state, _pick)
             except Exception as auto_error:''')
     src = exactly(src,
 '''            if automap_state in ("AUTO_CREATED","AUTO_REPLACED"):
@@ -153,7 +153,7 @@ def _r738_queue_auto_open(screen, sat_ref, state, channel):
         except Exception as auto_err:''',
 '''            if automap_state in ("AUTO_CREATED","AUTO_REPLACED"):
                 self._manual_overrides=_load_overrides()
-                _r738_queue_auto_open(self, raw, automap_state, _chosen)
+            _r738_queue_auto_open(self, raw, automap_state, _chosen)
         except Exception as auto_err:''')
     compile(src, "plugin.py", "exec")
     return src
