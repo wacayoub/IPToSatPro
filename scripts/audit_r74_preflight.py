@@ -27,4 +27,6 @@ with tempfile.TemporaryDirectory() as td:
             print("\n<<<< "+n.name+" "+str(n.lineno)+" >>>>\n"+src[:15500]+"\n<<<< END "+n.name+" >>>>")
     for n in ast.walk(ast.parse(plugin)):
         if isinstance(n,ast.ClassDef) and n.name=="SatIPTVBridgePreview":
+            init=next(x for x in n.body if isinstance(x,ast.FunctionDef) and x.name=="__init__")
+            print("PREVIEW_INIT_BEGIN\\n"+(ast.get_source_segment(plugin,init) or "")[:18000]+"\\nPREVIEW_INIT_END")
             print("PREVIEW_METHODS",[(x.name,x.lineno) for x in n.body if isinstance(x,ast.FunctionDef)])
