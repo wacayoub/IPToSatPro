@@ -119,3 +119,13 @@ with tempfile.TemporaryDirectory() as td:
         for i in hits[:6]:
             print("R745_ANCHOR",word,i+1)
             print("\\n".join("%d %s"%(j+1,monitor_lines[j]) for j in range(max(0,i-6),min(i+12,len(monitor_lines)))))
+
+    for n in ast.walk(tree):
+        if isinstance(n,ast.FunctionDef) and (n.name in ("_check","_check_sat","_check_satellite","_sat_check","_on_timer","_on_check_timer","_monitor","_read_pts","_resolution_present","_video_dimensions","_same_sat_still_playing") or "sat" in n.name and ("check" in n.name or "probe" in n.name)):
+            print("R746_FUN",n.name,"BEGIN")
+            print((ast.get_source_segment(monitor,n) or "")[:24000])
+            print("R746_FUN",n.name,"END")
+    for line_i, line in enumerate(monitor_lines):
+        if ("FTA_FALLBACK_BLOCK" in line or "SAT_BLACK" in line or "video_event_seen = True" in line or "SAT_CHECK" in line or "KEEP_SAT_CLEAR" in line):
+            print("R746_WINDOW",line_i+1)
+            print("\\n".join("%d: %s"%(i+1,monitor_lines[i]) for i in range(max(0,line_i-28),min(line_i+28,len(monitor_lines)))))
