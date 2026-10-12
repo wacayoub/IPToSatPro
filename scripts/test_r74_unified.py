@@ -272,7 +272,8 @@ class R74Tests(unittest.TestCase):
         self.assertIn("redraw",events)
 
     def test_player_and_monitor_unmodified(self):
-        self.assertTrue(self.meta["monitor_unchanged"])
+        self.assertFalse(self.meta["monitor_unchanged"])
+        self.assertTrue(self.meta["monitor_crypto_patch_only"])
         self.assertFalse(self.meta["production_published"])
         self.assertFalse(self.meta["receiver_tested"])
 
