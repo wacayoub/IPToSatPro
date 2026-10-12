@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.4-fast-signal-policy-beta`
+**Build**: `1.0.46-r74.5-nosignal-cache-fast-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.5 cached confirmed No Signal / fast return
+
+- True native Enigma2 TUNE_FAILED/NO_LOCK proves a failed transponder and caches (TSID, ONID, namespace) **in receiver RAM only** for 120s. Never treat SNR=0 alone as proof.
+- Subsequent channels on the **same proven-unavailable transponder** get 180ms + 250ms foreground-lock checks and may start the standard guarded fallback at roughly 430ms rather than waiting 5s again for the tuner. The first ever unknown failure must still be confirmed by the tuner; **1 second end-to-end cannot be guaranteed**.
+- `NO_SIGNAL_CACHE_HIT`, `NO_SIGNAL_FAST_TRY`, `NO_SIGNAL_DEDUP`, `NO_SIGNAL_CACHE_CLEAR`, `NO_SIGNAL_PROVEN` log evidence and recovery.
+- Limit native fallback to **one request per DVB zap** so repeated 5-second tuner-failed events do not cause infinite attempts on no-match/failed IPTV.
+- Any recovered LOCKED tuner, PMT PID or native decoded video invalidates cached no-signal evidence before switching. Native PMT/PAT 1250ms crash guard remains intact; safety before an unrealistic <1s video guarantee.
+- No user settings, IPTV mappings, persistent caching or manual locks changed.
 
 ## R74.4 Fast signal-priority engine
 
