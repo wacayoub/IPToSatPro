@@ -93,6 +93,120 @@ def _r74_active_bouquet_rows(session):
 
 '''
 
+
+def _patch_filters(src):
+    """Fast non-destructive view filters: source role, SAFE and market/lang/quality.
+
+    Full all-server candidate cache is never discarded and manual locks never
+    change; CH+/- remains page navigation over the filtered view.
+    """
+    src=one(src,'''        self._r74_bouquet_name = "Bouquet actuel"
+        self.input_sat_ref''',
+'''        self._r74_bouquet_name = "Bouquet actuel"
+        self._r74_role_filter = "ALL"
+        self._r74_safe_only = False
+        self._r74_meta_filter = "ALL"
+        self._r74_filtered_rows = None
+        self.input_sat_ref''')
+
+    src=one(src,''' "7": self._r74_switch_roster,''',
+''' "7": self._r74_switch_roster, "8": self._r74_cycle_server,
+            "9": self._r74_toggle_safe, "3": self._r74_cycle_metadata,''')
+
+    methods='''    def _r74_filters_active(self):
+        return (self._r74_role_filter!="ALL" or self._r74_safe_only
+                or self._r74_meta_filter!="ALL")
+
+    def _r74_apply_filters(self):
+        """Filter in memory; no scoring, network, extra catalogue scans or locks."""
+        all_rows=list(self._r732_auto_rows or [])
+        wanted=self._r74_role_filter
+        rule=self._r74_meta_filter
+        result=[]
+        for ch in all_rows:
+            role=str(ch.get("server_role") or "SERVER").upper()
+            if wanted!="ALL" and wanted!=role:
+                continue
+            if self._r74_safe_only and self._candidate_decision(ch) not in ("SAFE","ALLOWED","MANUAL"):
+                continue
+            if rule in ("FR","EN","AR"):
+                lang=str(ch.get("language") or "").upper()
+                market=str(ch.get("market") or "").upper()
+                if lang!=rule and market!=rule:
+                    continue
+            if rule in ("HD+","FHD+","UHD"):
+                quality=str(ch.get("quality") or "").upper()
+                try: width=int(ch.get("actual_width") or 0)
+                except Exception: width=0
+                if rule=="HD+" and not any(x in quality for x in ("HD","FHD","4K","UHD")) and width<1280:
+                    continue
+                if rule=="FHD+" and not any(x in quality for x in ("FHD","1080","4K","UHD")) and width<1800:
+                    continue
+                if rule=="UHD" and not any(x in quality for x in ("4K","UHD","2160")) and width<3000:
+                    continue
+            result.append(dict(ch))
+        self._r74_filtered_rows=result if self._r74_filters_active() else None
+        self._r732_auto_page=0
+        self.selected_index=0
+        self.channels=result[:48]
+        self._render_source_list(keep_index=False)
+        self._set_focus(self.focus)
+        self["status"].setText("IPTV %d/%d • server %s • %s • %s"%(len(result),len(all_rows),
+            self._r74_role_filter,"SAFE" if self._r74_safe_only else "ALL",
+            self._r74_meta_filter))
+        _startup_log("R74_FILTER","role=%s safe=%d meta=%s rows=%d full=%d"%
+            (self._r74_role_filter,int(self._r74_safe_only),self._r74_meta_filter,len(result),len(all_rows)))
+
+    def _r74_cycle_server(self):
+        values=("ALL","PRIMARY","BACKUP1","BACKUP2")
+        self._r74_role_filter=values[(values.index(self._r74_role_filter)+1)%len(values)]
+        self._r74_apply_filters()
+
+    def _r74_toggle_safe(self):
+        self._r74_safe_only=not self._r74_safe_only
+        self._r74_apply_filters()
+
+    def _r74_cycle_metadata(self):
+        values=("ALL","FR","AR","EN","HD+","FHD+","UHD")
+        self._r74_meta_filter=values[(values.index(self._r74_meta_filter)+1)%len(values)]
+        self._r74_apply_filters()
+
+'''
+    src=one(src,'    def _r74_switch_roster(self):',methods+'    def _r74_switch_roster(self):')
+
+    src=one(src,'''        total = len(self._r732_auto_rows)
+        pagecount = (total+47)//48
+        self._r732_auto_page = max(0, min(pagecount-1, self._r732_auto_page+(1 if direction>0 else -1)))
+        start = self._r732_auto_page*48
+        self.channels = [dict(ch) for ch in self._r732_auto_rows[start:start+48]]''',
+'''        all_rows = self._r74_filtered_rows if self._r74_filters_active() else self._r732_auto_rows
+        total = len(all_rows or [])
+        if not total:
+            return
+        pagecount = (total+47)//48
+        self._r732_auto_page = max(0, min(pagecount-1, self._r732_auto_page+(1 if direction>0 else -1)))
+        start = self._r732_auto_page*48
+        self.channels = [dict(ch) for ch in all_rows[start:start+48]]''')
+    src=one(src,'''        self._set_focus(self.focus)
+
+        # Second phase: populate the fuller bounded candidate set after the instant list is on''',
+'''        self._set_focus(self.focus)
+        if self._r74_filters_active():
+            self._r74_apply_filters()
+
+        # Second phase: populate the fuller bounded candidate set after the instant list is on''')
+    src=one(src,'''        _startup_log("PREVIEW_UI_CANDIDATES",''',
+'''        if self._r74_filters_active():
+            self._r74_apply_filters()
+        _startup_log("PREVIEW_UI_CANDIDATES",''')
+    src=one(src,'''        self["focus_hint"].setText("FOCUS: %s" % ("SOURCES" if self.focus == "right" else "SAT"))''',
+'''        if self._r74_filters_active():
+            self["right_head"].setText("IPTV FILTRE • %s • %s • %s" % (
+                self._r74_role_filter,"SAFE" if self._r74_safe_only else "ALL",
+                self._r74_meta_filter))
+        self["focus_hint"].setText("FOCUS: %s" % ("SOURCES" if self.focus == "right" else "SAT"))''')
+    return src
+
 def patch_plugin(src):
     src=one(src,'def _preview_sat_service_rows(session, current_sat_ref_string):',
         BOUQUET_HELPERS+'def _preview_sat_service_rows(session, current_sat_ref_string):')
@@ -219,6 +333,7 @@ def patch_plugin(src):
 '''        self["context_info"].setText("Provider: %s   •   Sat: %s   •   DVB: %s   •   Mapping: %s   •   Video: %s" % (
             provider[:32], sat_display[:24], access, self._mapping_text()[:34], self.current_result[:25]))''')
 
+    src=_patch_filters(src)
     compile(src,"plugin.py","exec")
     return src
 
