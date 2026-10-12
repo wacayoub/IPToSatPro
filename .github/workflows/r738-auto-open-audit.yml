@@ -35,5 +35,9 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add payload/r738-safe-auto-play.b64 staging/r738-safe-auto-play.update.json
-          git diff --cached --quiet || git commit -m 'ci: stage verified R73.8 beta payload [skip ci]'
-          git push origin HEAD:feature/r738-auto-open-on-safe-match
+          if git diff --cached --quiet; then
+            echo 'Beta payload already staged; no push necessary.'
+          else
+            git commit -m 'ci: stage verified R73.8 beta payload [skip ci]'
+            git push origin HEAD:feature/r738-auto-open-on-safe-match
+          fi
