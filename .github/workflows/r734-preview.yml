@@ -1,0 +1,29 @@
+name: R73.4 Preview First Paint and Resolution
+on:
+  push:
+    branches: [feature/r734-instant-preview-resolution]
+  workflow_dispatch:
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test late decoder resolution and first candidate paint
+        run: |
+          python3 -m unittest discover -s scripts -p test_r734_preview.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
+      - name: Verify reproducible package and protect player and production updater
+        run: |
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r734-instant-preview-resolution-beta.ipk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path("update.json").read_text())["version"]=="1.0.46-r70-final"
+          assert Path("latest-version.txt").read_text().strip()=="1.0.46-r70-final"
+          print("R734_PRODUCTION_UNMODIFIED")
+          PY
