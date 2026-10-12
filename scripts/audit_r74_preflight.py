@@ -44,3 +44,18 @@ with tempfile.TemporaryDirectory() as td:
     for n in ast.walk(ast.parse(plugin)):
         if isinstance(n,ast.FunctionDef) and n.name in ("_direct_preview_done","_open_preview_sources_direct","_restore","_close_no_save"):
             print("CRASH_HANDLER",n.name,ast.get_source_segment(plugin,n)[:12000])
+
+    monitor=fs[b.b.P+"monitor.py"].decode()
+    tree=ast.parse(monitor)
+    monitor_lines=monitor.splitlines()
+    targets=("FTA_FALLBACK_BLOCK","_static_crypted_state","crypted_state","FAST_MAP_FIRE","DVB_PAT_GUARD","_read_crypt","_encrypted_fallback_allowed_once","_on_sat_check","_check_sat","_is_crypted","_on_tune_failed")
+    for token in targets:
+        matching=[i for i,line in enumerate(monitor_lines) if token in line]
+        print("CRYPT_AUDIT_TOKEN",token,len(matching))
+        for i in matching[:5]:
+            print("CRYPT_AUDIT_WINDOW",token,i+1)
+            for j in range(max(0,i-15),min(len(monitor_lines),i+24)):
+                print("SRC",j+1,monitor_lines[j])
+    for n in ast.walk(tree):
+        if isinstance(n,ast.FunctionDef) and any(tag in n.name.lower() for tag in ("crypt","fast_map","guard","tuner","sat_check","isfta","signal","dvb")):
+            print("CRYPT_AUDIT_FUNCTION",n.name,n.lineno,n.end_lineno)
