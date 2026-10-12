@@ -1,0 +1,45 @@
+name: R73.8 Auto Open Source Audit
+on:
+  push:
+    branches: [feature/r738-auto-open-on-safe-match]
+  workflow_dispatch:
+jobs:
+  inspect-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect compiled R73.7 playback hooks and test
+        run: |
+          python - <<'PY'
+          import importlib.util,base64,ast
+          from pathlib import Path
+          root=Path('.')
+          spec=importlib.util.spec_from_file_location('b737',root/'scripts/build-r73-preview.py')
+          b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
+          raw=base64.b64decode(b.B64.read_bytes())
+          files=b.base.pack.members_from(b.base.pack.unpack_ar(raw)['data.tar.gz'])
+          plugin=b.patch_plugin(files[b.PLUGIN]).decode()
+          monitor=files[b.P+'monitor.py'].decode()
+          for label,source in [('PLUGIN',plugin),('MONITOR',monitor)]:
+              tree=ast.parse(source)
+              for node in ast.walk(tree):
+                  if isinstance(node,(ast.ClassDef,ast.FunctionDef)) and any(t in node.name.lower() for t in
+                      ('fallback','mapping','match','play','preview','tune_fail','scan','monitor','nav','start','check','retry','override')):
+                      print('INVENTORY',label,node.lineno,node.name)
+              chosen={'MONITOR':['__init__','_on_start','_encrypted_fallback_allowed_once','_on_tune_failed','_deferred_tune_failed','_on_service_start','_on_service_event','_trigger_fallback'],
+                      'PLUGIN':['__init__','_preview_selected','_poll_expanded_candidates','_load_selected_sat_candidates','_play_current_mode','_green_action','_commit_auto_scan_overrides']}
+              for node in ast.walk(tree):
+                  if isinstance(node,ast.FunctionDef) and node.name in chosen[label]:
+                      snip=ast.get_source_segment(source,node) or ''
+                      print('SNIPPET',label,node.name,'BEGIN')
+                      if node.name=='__init__':print(snip[:3000])
+                      else: print(snip[:7500])
+                      print('SNIPPET',label,node.name,'END')
+          PY
+      - name: Run R73.7 regression tests
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_r736_automap.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r737_video_visible.py' -v
