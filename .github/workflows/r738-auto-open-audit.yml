@@ -3,6 +3,8 @@ on:
   push:
     branches: [feature/r738-auto-open-on-safe-match]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build-and-regress:
     runs-on: ubuntu-latest
@@ -25,3 +27,13 @@ jobs:
           name: r738-safe-auto-play-beta
           path: /tmp/r738-safe-auto-play-beta.ipk
           retention-days: 7
+      - name: Stage SHA256-verified opt-in beta on feature branch only
+        run: |
+          sh -n download-r738-safe-beta.sh
+          base64 -w0 /tmp/r738-safe-auto-play-beta.ipk > payload/r738-safe-auto-play.b64
+          python3 -c 'import json,hashlib,pathlib; p=pathlib.Path("/tmp/r738-safe-auto-play-beta.ipk"); b=p.read_bytes(); m={"version":"1.0.46-r73.8-safe-auto-play-beta","size":len(b),"sha256":hashlib.sha256(b).hexdigest(),"beta":True,"receiver_tested":False,"production_published":False}; pathlib.Path("staging/r738-safe-auto-play.update.json").write_text(json.dumps(m,indent=2)+"\\n")'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add payload/r738-safe-auto-play.b64 staging/r738-safe-auto-play.update.json
+          git diff --cached --quiet || git commit -m 'ci: stage verified R73.8 beta payload [skip ci]'
+          git push origin HEAD:feature/r738-auto-open-on-safe-match
