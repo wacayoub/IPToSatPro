@@ -28,9 +28,9 @@ with tempfile.TemporaryDirectory() as t:
             for i,ln in enumerate(chunk):
                 print(" ",ln)
             print("END_SECTION",fname,node.name)
-        for a,b in ([(3270,3435),(5990,6080),(6515,6680)] if fname=="plugin.py" else [(1180,1287),(1950,2095),(3930,4015)]):
-            print("RANGE",fname,a,b)
-            for ii in range(a-1,min(b,len(lines))): print("%d %s"%(ii+1,lines[ii]))
+        for start,end in ([(3270,3435),(5990,6080),(6515,6680)] if fname=="plugin.py" else [(1180,1287),(1950,2095),(3930,4015)]):
+            print("RANGE",fname,start,end)
+            for ii in range(start-1,min(end,len(lines))): print("%d %s"%(ii+1,lines[ii]))
         for phrase in ("AUTO_LOCK","auto_lock","best_match","match_threshold",
                        "PREVIEW_RANK_BG","CANDIDATES •","SAFE","_manual_candidate",
                        "source_rank","locked_candidate","locked_source"):
