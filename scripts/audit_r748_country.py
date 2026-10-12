@@ -53,3 +53,26 @@ with tempfile.TemporaryDirectory() as td:
     print("R748_SCORE_FULL_BEGIN")
     print(score[:34000])
     print("R748_SCORE_FULL_END")
+
+    if label=="core":
+        for n in functions:
+            if n.name in ("_preview_numbers","extract_numbers","_identity_anchor_tokens","_enrich_channel","_preview_decorated_source_name"):
+                print("R749_FUNC",n.name,"BEGIN")
+                print((ast.get_source_segment(src,n) or "")[:10500])
+                print("R749_FUNC",n.name,"END")
+        from importlib.util import spec_from_file_location,module_from_spec
+        location=Path(td)/"core_inspect.py"
+        location.write_text(src)
+        spc=spec_from_file_location("real_r749_core",location)
+        core=module_from_spec(spc);spc.loader.exec_module(core)
+        context={"confidence":"LOW","language_priorities":[],"market_preferences":[]}
+        for sat,iptv in (("FilmBox One","ONE: FILMBOX"),
+             ("FILMBOX ONE HD","ONE FILMBOX FHD"),
+             ("FILMBOX 1 HD","ONE FILMBOX FHD"),
+             ("FilmBox One","FILMBOX EXTRA"),
+             ("FilmBox One","ONE FILMBOX 2")):
+            item={"name":iptv,"group":"MOVIES","server_role":"BACKUP1","server_priority":1,"url":"http://invalid.local/video.ts"}
+            for preview in (True,False):
+                score,details=core.match_score_details(sat,item,[],context,preview=preview)
+                print("R749_BEFORE",repr(sat),repr(iptv),preview,score,core.match_decision(score,details,82),details.get("reject_reason"),details.get("review_reason"),
+                    core.normalize_preview_name(sat),core.normalize_preview_name(iptv),core._preview_numbers(sat),core._preview_numbers(iptv))
