@@ -11,7 +11,7 @@ b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
 pp=importlib.util.spec_from_file_location("r74patch",ROOT/"scripts/r74_unified_patch.py")
 p=importlib.util.module_from_spec(pp);pp.loader.exec_module(p)
 OLD=b.NEW
-NEW="1.0.46-r74.3-dvb-access-recheck-beta"
+NEW="1.0.46-r74.4-fast-signal-policy-beta"
 P=b.b.P
 PLUGIN=b.b.PLUGIN
 CORE=b.b.CORE
@@ -20,6 +20,8 @@ THEME=P+"preview_theme_r74.py"
 MONITOR=P+"monitor.py"
 mp=importlib.util.spec_from_file_location("r743patch",ROOT/"scripts/r743_crypt_patch.py")
 crypt_patch=importlib.util.module_from_spec(mp);mp.loader.exec_module(crypt_patch)
+rp=importlib.util.spec_from_file_location("r744patch",ROOT/"scripts/r744_fast_signal_policy.py")
+priority_patch=importlib.util.module_from_spec(rp);rp.loader.exec_module(priority_patch)
 CHANGELOG=P+"CHANGELOG-r74-UNIFIED-PREVIEW.txt"
 
 def _validate_skin(theme):
@@ -64,17 +66,17 @@ def build(destination=None):
         updater=b.b.exactly(updater,'CURRENT_VERSION = "'+OLD+'"',
                              'CURRENT_VERSION = "'+NEW+'"')
         ctl=b.b.exactly(control["control"].decode(),"Version: "+OLD,"Version: "+NEW)
-        monitor=crypt_patch.patch_monitor(original[MONITOR].decode())
+        monitor=priority_patch.patch_monitor(crypt_patch.patch_monitor(original[MONITOR].decode()))
         theme_bytes=(ROOT/"scripts/r74_preview_theme.py").read_bytes()
         _validate_skin(theme_bytes.decode())
         changes={PLUGIN:plugin.encode(),CORE:core.encode(),UPDATER:updater.encode(),MONITOR:monitor.encode()}
-        desc=("R74.3 first-zap DVB crypt-state recheck beta: native CURRENT bouquet with original Enigma2 "
+        desc=("R74.4 fast signal/crypto priority and two-second FTA->encrypted recheck beta: native CURRENT bouquet with original Enigma2 "
             "service order including DVB FTA and encrypted TV, numeric 7 switches to "
             "current satellite, fast list load, a legible Neo Dark screen, 48 "
             "bounded all-server scored candidates, visible catalog-versus-measured "
             "labels, current-channel SAFE Auto Select/Auto Play (R73.8 engine), "
             "manual mapping, source detail, video preview, original player watchdog "
-            "and failover protected. Native playback/monitor/timeshift modules "
+            "and failover protected. Native player/timeshift modules "
             "unchanged. Do not treat CI tests as receiver validation.").encode()
         parts["data.tar.gz"]=b.b.base.pack.make_tar(parts["data.tar.gz"],changes,
                                                        {THEME:theme_bytes,CHANGELOG:desc})
@@ -95,7 +97,7 @@ def build(destination=None):
         return {"version":NEW,"size":len(result),
                 "sha256":hashlib.sha256(result).hexdigest(),
                 "changed":sorted(changes),"new_theme":THEME,
-                "monitor_unchanged":False,"monitor_crypto_patch_only":True,"receiver_tested":False,
+                "monitor_unchanged":False,"monitor_crypto_patch_only":True,"monitor_fast_signal_policy":True,"receiver_tested":False,
                 "production_published":False,"theme_widgets":20}
 
 if __name__=="__main__":
