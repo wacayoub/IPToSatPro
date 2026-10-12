@@ -26,7 +26,8 @@ NEW_CALL = '''        if not self.finished:
 
     def _play_current_mode(self):'''
 OLD_METHOD = '    def _r737_show_video_fullscreen(self):'
-NEW_METHOD = '''    def _r7413_keep_preview_visible(self):
+NEW_METHOD = '''    # R7413_PREVIEW_INLINE_NO_HIDE
+    def _r7413_keep_preview_visible(self):
         """Keep the two-panel Preview table visible above the running video.
 
         OK starts the SAME player through _play_current_mode(); this method
