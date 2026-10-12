@@ -112,6 +112,19 @@ def patch_monitor(src):
             self._log("FAST_NO_SIGNAL","sat='%s' tuner=%s crypto=ANY"% (self.current_sat_name,signal))
         elif self._is_crypted() is True:
             self._log("FAST_SIGNAL_CRYPTED","sat='%s' source=LIVE -> IPTV"%self.current_sat_name)
+        elif signal=="LOCKED" and self._is_crypted() is False and self._static_crypted_state_fast() is not True:
+            # The ONE excluded case: native signal confirmed, FTA access.
+            # Treat early 0 as PROVISIONAL for two seconds so channels whose
+            # CA arrives late can recover without a second zap.
+            age=int(max(0.0,time.time()-float(self.current_sat_started_at or 0))*1000)
+            self.crypted_state="?" if age<2000 else "NO"
+            self._fallback_crypto_gate=None if age<2000 else False
+            self.play_result="FTA_RECHECK_2S" if age<2000 else "KEEP SAT"
+            if getattr(self,"_r744_fta_status_key",None)!=(self.current_sat_ref_string,self.crypted_state):
+                self._r744_fta_status_key=(self.current_sat_ref_string,self.crypted_state)
+                self._log("SIGNAL_FTA_PENDING" if age<2000 else "SIGNAL_FTA_KEEP_SAT",
+                    "sat='%s' live=NO tuner=LOCKED elapsed=%dms"% (self.current_sat_name,age))
+            return
         elif self._r743_crypto_pending():
             return
         if not self._encrypted_fallback_allowed_once():''')
