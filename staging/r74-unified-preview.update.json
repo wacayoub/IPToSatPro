@@ -1,7 +1,7 @@
 {
-  "version": "1.0.46-r74.1-original-audio-beta",
-  "size": 422834,
-  "sha256": "10d3a1dbb4e45f880b09da690fc87a9915f605a2bc76031105b074881875a002",
+  "version": "1.0.46-r74.2-preview-close-hotfix-beta",
+  "size": 422858,
+  "sha256": "08c0cf0a284449a9bb171b4f87e4cea6ec74377f64bd1c22c07a4d1d24985b29",
   "beta": true,
   "receiver_tested": false,
   "production_published": false
