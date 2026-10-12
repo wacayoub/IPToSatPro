@@ -14,7 +14,7 @@ python3 - "$WORK/manifest.json" "$WORK/result.ipk" <<'PY'
 import hashlib,json,os,sys
 m=json.load(open(sys.argv[1]))
 data=open(sys.argv[2],"rb").read()
-assert m["version"]=="1.0.46-r74.3-dvb-access-recheck-beta","Unexpected version"
+assert m["version"]=="1.0.46-r74.4-fast-signal-policy-beta","Unexpected version"
 assert m.get("beta") is True,"Not a beta manifest"
 assert len(data)==int(m["size"]),"Invalid IPK size"
 assert hashlib.sha256(data).hexdigest()==m["sha256"],"INVALID IPK SHA256"
