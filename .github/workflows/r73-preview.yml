@@ -14,7 +14,9 @@ jobs:
       - name: Inspect real preview skin and callbacks (read-only)
         run: python3 scripts/inspect_r73_preview.py
       - name: Test actual packaged Preview code
-        run: python3 -m unittest discover -s scripts -p test_r73_preview.py -v
+        run: |
+          python3 -m unittest discover -s scripts -p test_r73_preview.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
       - name: Build and inspect staged IPK
         run: |
           python3 scripts/build-r73-preview.py
