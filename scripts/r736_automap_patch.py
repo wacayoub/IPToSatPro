@@ -38,9 +38,6 @@ def patch_plugin(src):
                 has_review=True
                 continue
             identity=float(details.get("name") or 0)+float(details.get("equivalence") or 0)+float(details.get("variant") or 0)
-            if identity < 70:
-                has_review=True
-                continue
             try:
                 qual=quality_fit_key(ch,sat_name,ctx or {})
             except Exception:
