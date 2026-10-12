@@ -11,7 +11,7 @@ b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
 pp=importlib.util.spec_from_file_location("r74patch",ROOT/"scripts/r74_unified_patch.py")
 p=importlib.util.module_from_spec(pp);pp.loader.exec_module(p)
 OLD=b.NEW
-NEW="1.0.46-r74.6-dvb-black-picture-beta"
+NEW="1.0.46-r74.7-preview-complete-candidates-beta"
 P=b.b.P
 PLUGIN=b.b.PLUGIN
 CORE=b.b.CORE
@@ -26,6 +26,8 @@ sp745=importlib.util.spec_from_file_location("r745patch",ROOT/"scripts/r745_nosi
 fast_patch=importlib.util.module_from_spec(sp745);sp745.loader.exec_module(fast_patch)
 sp746=importlib.util.spec_from_file_location("r746patch",ROOT/"scripts/r746_dvb_black_decision.py")
 black_patch=importlib.util.module_from_spec(sp746);sp746.loader.exec_module(black_patch)
+sp747=importlib.util.spec_from_file_location("r747patch",ROOT/"scripts/r747_initial_candidates_patch.py")
+seed_patch=importlib.util.module_from_spec(sp747);sp747.loader.exec_module(seed_patch)
 CHANGELOG=P+"CHANGELOG-r74-UNIFIED-PREVIEW.txt"
 
 def _validate_skin(theme):
@@ -62,7 +64,7 @@ def build(destination=None):
         parts=b.b.base.pack.unpack_ar(raw)
         original=b.b.base.pack.members_from(parts["data.tar.gz"])
         control=b.b.base.pack.members_from(parts["control.tar.gz"])
-        plugin=p.patch_plugin(original[PLUGIN].decode())
+        plugin=seed_patch.patch_plugin(p.patch_plugin(original[PLUGIN].decode()))
         core=p.patch_core(original[CORE].decode())
         updater=original[UPDATER].decode()
         plugin=b.b.exactly(plugin,'PLUGIN_VERSION = "'+OLD+'"',
@@ -74,7 +76,7 @@ def build(destination=None):
         theme_bytes=(ROOT/"scripts/r74_preview_theme.py").read_bytes()
         _validate_skin(theme_bytes.decode())
         changes={PLUGIN:plugin.encode(),CORE:core.encode(),UPDATER:updater.encode(),MONITOR:monitor.encode()}
-        desc=("R74.6 DVB decoder-black fallback and proven tuner lock vs video distinction: native CURRENT bouquet with original Enigma2 "
+        desc=("R74.7 initial locked candidate seed correctly expands to P/B1/B2 full shortlist: native CURRENT bouquet with original Enigma2 "
             "service order including DVB FTA and encrypted TV, numeric 7 switches to "
             "current satellite, fast list load, a legible Neo Dark screen, 48 "
             "bounded all-server scored candidates, visible catalog-versus-measured "
@@ -101,7 +103,7 @@ def build(destination=None):
         return {"version":NEW,"size":len(result),
                 "sha256":hashlib.sha256(result).hexdigest(),
                 "changed":sorted(changes),"new_theme":THEME,
-                "monitor_unchanged":False,"monitor_crypto_patch_only":True,"monitor_fast_signal_policy":True,"monitor_cached_no_signal":True,"monitor_black_decision":True,"receiver_tested":False,
+                "monitor_unchanged":False,"monitor_crypto_patch_only":True,"monitor_fast_signal_policy":True,"monitor_cached_no_signal":True,"monitor_black_decision":True,"preview_initial_seed_fix":True,"receiver_tested":False,
                 "production_published":False,"theme_widgets":20}
 
 if __name__=="__main__":
