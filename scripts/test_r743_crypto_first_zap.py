@@ -57,6 +57,7 @@ class CryptFirstZapTests(unittest.TestCase):
             video_event_seen=False,direct_mapping_source="MANUAL_LOCK",
             session=self.session,
         )
+        self.m._r745_cached_failure_active=lambda:False
         self.m._same_sat_still_playing=lambda: self.m.current_sat_ref_string==self.ref
         self.m._manual_lock_saved_access=lambda:self.saved
         self.m._is_crypted=lambda:self.live
