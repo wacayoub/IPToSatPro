@@ -1,0 +1,30 @@
+name: R7417 FTA Signal Native Guard Tests
+on:
+  push:
+    branches: [fix/r7417-fta-signal-keep-native]
+  workflow_dispatch:
+jobs:
+  monitor-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Python compile and real R74 monitor guard regression
+        run: |
+          python3 -m py_compile scripts/r7417_fta_signal_native_guard.py
+          python3 -m unittest discover -s scripts -p test_r7417_fta_signal_native.py -v
+      - name: Prior TOD AAC and Preview regressions
+        run: |
+          python3 -m unittest discover -s scripts -p test_r74_tod_bein_audio_hotfix.py -v
+          python3 -m unittest discover -s scripts -p test_r7416_unmap_crypto.py -v
+      - name: Keep production updater unchanged
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          ver=str(json.loads(Path("update.json").read_text()).get("version",""))
+          assert "r70" in ver.lower(),ver
+          print("PRODUCTION_UPDATE_UNMODIFIED",ver)
+          PY
