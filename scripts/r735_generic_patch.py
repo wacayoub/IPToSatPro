@@ -64,7 +64,7 @@ def patch_plugin(src):
 '''    def _merge_locked_candidate(self, key, channels, sat_name=None, context=None):
         channels = [dict(x or {}) for x in list(channels or [])]''')
     src=one(src,
-'''                  item = dict(locked)
+'''                item = dict(locked)
                 item["_preview_score"] = float((manual or {}).get("auto_scan_score") or 0.0)
                 item["_preview_details"] = {
                   "allow_reason": "auto scan lock" if (manual or {}).get("auto_best_lock") else "manual lock",
@@ -72,7 +72,7 @@ def patch_plugin(src):
                   "auto_best_lock": bool((manual or {}).get("auto_best_lock")),
                 }
                 channels.insert(0, item)''',
-'''                  item = dict(locked)
+'''                item = dict(locked)
                 is_auto = bool((manual or {}).get("auto_best_lock"))
                 item["_r735_verified_manual_lock"] = not is_auto
                 item["_r735_old_auto_lock"] = is_auto
