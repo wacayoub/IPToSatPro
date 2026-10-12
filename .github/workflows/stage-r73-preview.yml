@@ -1,0 +1,60 @@
+name: Stage R73 Preview Browser Neo Dark BETA
+on:
+  push:
+    branches: [feature/r73-preview-browser-pro]
+    paths:
+      - '.github/workflows/stage-r73-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r73-preview-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Regression suite and protected player guard
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r73_preview.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+          python3 scripts/build-r73-preview.py
+          echo '969d26dbfeb045f990d42b4d294c0513f03a8f757d9b10c758f06ad4f32758d7  r73-preview-browser-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r73-preview-browser-beta.ipk
+      - name: Stage verified opt-in package with no main promotion
+        run: |
+          set -eu
+          python3 scripts/stage-r73-preview.py
+          sh -n download-r73-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r73-preview-browser.update.json').read_text())
+          data=base64.b64decode(Path('payload/r73-preview-browser.b64').read_bytes())
+          assert len(data)==m['size']==407996
+          assert hashlib.sha256(data).hexdigest()==m['sha256']
+          assert not m['hardware_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R73_VERIFIED_STAGING_ONLY_R70_PRODUCTION_UNCHANGED')
+          PY
+      - name: Publish only branch-scoped beta downloadable files
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r73-preview-browser.b64 staging/r73-preview-browser.update.json download-r73-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73 download already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73 Neo Dark Preview Browser beta'
+            git push origin HEAD:feature/r73-preview-browser-pro
+          fi
