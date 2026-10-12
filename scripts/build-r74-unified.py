@@ -11,7 +11,7 @@ b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
 pp=importlib.util.spec_from_file_location("r74patch",ROOT/"scripts/r74_unified_patch.py")
 p=importlib.util.module_from_spec(pp);pp.loader.exec_module(p)
 OLD=b.NEW
-NEW="1.0.46-r74.4-fast-signal-policy-beta"
+NEW="1.0.46-r74.5-nosignal-cache-fast-beta"
 P=b.b.P
 PLUGIN=b.b.PLUGIN
 CORE=b.b.CORE
@@ -22,6 +22,8 @@ mp=importlib.util.spec_from_file_location("r743patch",ROOT/"scripts/r743_crypt_p
 crypt_patch=importlib.util.module_from_spec(mp);mp.loader.exec_module(crypt_patch)
 rp=importlib.util.spec_from_file_location("r744patch",ROOT/"scripts/r744_fast_signal_policy.py")
 priority_patch=importlib.util.module_from_spec(rp);rp.loader.exec_module(priority_patch)
+sp745=importlib.util.spec_from_file_location("r745patch",ROOT/"scripts/r745_nosignal_fast_patch.py")
+fast_patch=importlib.util.module_from_spec(sp745);sp745.loader.exec_module(fast_patch)
 CHANGELOG=P+"CHANGELOG-r74-UNIFIED-PREVIEW.txt"
 
 def _validate_skin(theme):
@@ -66,11 +68,11 @@ def build(destination=None):
         updater=b.b.exactly(updater,'CURRENT_VERSION = "'+OLD+'"',
                              'CURRENT_VERSION = "'+NEW+'"')
         ctl=b.b.exactly(control["control"].decode(),"Version: "+OLD,"Version: "+NEW)
-        monitor=priority_patch.patch_monitor(crypt_patch.patch_monitor(original[MONITOR].decode()))
+        monitor=fast_patch.patch_monitor(priority_patch.patch_monitor(crypt_patch.patch_monitor(original[MONITOR].decode())))
         theme_bytes=(ROOT/"scripts/r74_preview_theme.py").read_bytes()
         _validate_skin(theme_bytes.decode())
         changes={PLUGIN:plugin.encode(),CORE:core.encode(),UPDATER:updater.encode(),MONITOR:monitor.encode()}
-        desc=("R74.4 fast signal/crypto priority and two-second FTA->encrypted recheck beta: native CURRENT bouquet with original Enigma2 "
+        desc=("R74.5 proven NO SIGNAL transponder shortcut with safe 1.25s native PAT guard: native CURRENT bouquet with original Enigma2 "
             "service order including DVB FTA and encrypted TV, numeric 7 switches to "
             "current satellite, fast list load, a legible Neo Dark screen, 48 "
             "bounded all-server scored candidates, visible catalog-versus-measured "
@@ -97,7 +99,7 @@ def build(destination=None):
         return {"version":NEW,"size":len(result),
                 "sha256":hashlib.sha256(result).hexdigest(),
                 "changed":sorted(changes),"new_theme":THEME,
-                "monitor_unchanged":False,"monitor_crypto_patch_only":True,"monitor_fast_signal_policy":True,"receiver_tested":False,
+                "monitor_unchanged":False,"monitor_crypto_patch_only":True,"monitor_fast_signal_policy":True,"monitor_cached_no_signal":True,"receiver_tested":False,
                 "production_published":False,"theme_widgets":20}
 
 if __name__=="__main__":
