@@ -13,7 +13,7 @@ def one(src,old,new):
 HELPER = '''
 # R74.8 explicit *country* names for SAT ↔ IPTV label identity.
 # AR in this MENA-oriented catalogue means Arabic/MENA, NOT ISO Argentina;
-# AL=Albania, AF=Afghanistan. AU=Australia and AT=Austria are distinct.
+# AL=Albania. IPTV prefix AF often means Africa (regional feed), not the ISO nation Afghanistan. AU=Australia and AT=Austria are distinct.
 _R748_COUNTRY_LABELS = {
     "AT": ("austria","osterreich","oesterreich","autriche","austrias"),
     "DE": ("germany","deutschland","allemagne"),
@@ -37,7 +37,8 @@ _R748_COUNTRY_LABELS = {
     "CY": ("cyprus","chypre"),
     "TR": ("turkey","turkiye","turquie"),
     "AL": ("albania","shqiperia","albanie"),
-    "AF": ("afghanistan",),
+    "AF": ("africa","afrique","african"),
+    "AFG": ("afghanistan",),
     "HR": ("croatia","croatie","hrvatska"),
     "RS": ("serbia","serbie","srbija"),
     "BA": ("bosnia","bosnia herzegovina","bosnie"),
