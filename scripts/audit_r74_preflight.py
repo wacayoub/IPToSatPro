@@ -86,3 +86,22 @@ with tempfile.TemporaryDirectory() as td:
         for i in indexes[:5]:
             print("R744_WINDOW",token,"INDEX",i+1)
             print("\\n".join("%d %s"%(j+1,monitor_lines[j]) for j in range(max(0,i-13),min(i+22,len(monitor_lines)))))
+
+    interested=("TUNE_FAIL_DEFER_MS","TUNE_FAIL_DEFER","tune_fail_defer","TUNER_RECHECK_MS","_deferred_tune_failed",
+      "_tune_fail_defer_fire","_native_pat_guard_fire","_native_pat_guard_remaining_ms",
+      "SAT_NO_SIGNAL","FAST_NO_SIGNAL","_on_start","_poll","_arm_native_pat_poll")
+    for word in interested:
+        hits=[i for i,t in enumerate(monitor_lines) if word in t]
+        print("R745_WORD",word,"hits",len(hits))
+        for i in hits[:5]:
+            print("R745_HIT",word,i+1,
+                  " ".join(monitor_lines[max(0,i-4):min(len(monitor_lines),i+6)]))
+    for n in ast.walk(tree):
+        if isinstance(n,ast.FunctionDef) and (n.name in
+            ("_tune_fail_defer_fire","_on_tune_failed","_fallback_with_native_pat_guard",
+             "_native_pat_guard_fire","_arm_native_pat_poll","_poll","_start_guard",
+             "_on_service_event","_on_start")):
+            body=ast.get_source_segment(monitor,n) or ""
+            print("R745_FUN",n.name,"BEGIN")
+            print(body[:24000])
+            print("R745_FUN",n.name,"END")
