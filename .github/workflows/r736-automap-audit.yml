@@ -1,0 +1,16 @@
+name: R73.6 AutoMap Audit
+on:
+  push:
+    branches: [feature/r736-autolock-all-safe]
+    paths: ['.github/workflows/r736-automap-audit.yml','scripts/audit_r736_automap.py']
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python3 scripts/audit_r736_automap.py
