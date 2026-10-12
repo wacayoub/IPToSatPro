@@ -21,8 +21,8 @@ PLUGIN = P + "plugin.py"
 UPDATER = P + "updater.py"
 CORE = P + "core.py"
 OLD = "1.0.46-r72.7-fuzzy-cache-beta"
-NEW = "1.0.46-r73.5-generic-match-engine-beta"
-CHANGELOG = P + "CHANGELOG-r735-GENERIC-MATCH-ENGINE.txt"
+NEW = "1.0.46-r73.6-automatic-safe-mapping-beta"
+CHANGELOG = P + "CHANGELOG-r736-AUTO-MAP-SAFE.txt"
 B64 = ROOT/"payload/r727-fuzzy-cache.b64"
 BASE_SHA256 = "cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62"
 
@@ -45,6 +45,10 @@ qsp.loader.exec_module(r734)
 r735sp=importlib.util.spec_from_file_location("r735",ROOT/"scripts/r735_generic_patch.py")
 r735=importlib.util.module_from_spec(r735sp)
 r735sp.loader.exec_module(r735)
+
+r736sp=importlib.util.spec_from_file_location("r736",ROOT/"scripts/r736_automap_patch.py")
+r736=importlib.util.module_from_spec(r736sp)
+r736sp.loader.exec_module(r736)
 
 def exactly(src, old, new):
     n = src.count(old)
@@ -184,6 +188,7 @@ def patch_plugin(data):
     src = r733.patch_plugin(src)
     src = r734.patch_plugin(src)
     src = r735.patch_plugin(src)
+    src = r736.patch_plugin(src)
     src = exactly(src, 'PLUGIN_VERSION = "'+OLD+'"', 'PLUGIN_VERSION = "'+NEW+'"')
     compile(src, PLUGIN, "exec")
     return src.encode("utf-8")
@@ -229,7 +234,7 @@ def build(path=None):
     changes[UPDATER] = exactly(up, 'CURRENT_VERSION = "'+OLD+'"',
                                    'CURRENT_VERSION = "'+NEW+'"').encode()
     description = (
-        "R73.5: generic safe-first exact identity matching, numbered LIVE variant protection, old AUTO not manual, cross-source Preview ranking, safe AutoScan "
+        "R73.6: auto-map SAFE or ALLOWED Preview candidates to SAT, bulk scan uses same green scorer; protect manual corrections; one-click auto mapping "
         "(48-row paging, no progressive UI); FTA SAT option; preview country REVIEW, "
         "keep hard number/audio safety checks; native Neo Dark theme, "
         "focused SAT/IPTV pagination and read-only BLUE details. LIVE player, monitor, timeshift and user data unchanged. "
@@ -252,7 +257,7 @@ def build(path=None):
     parts["data.tar.gz"] = base.pack.make_tar(parts["data.tar.gz"], changes,
         {CHANGELOG:description, P+"preview_theme_r73.py":theme_source})
     parts["control.tar.gz"] = base.pack.make_tar(parts["control.tar.gz"], {"control":new_control})
-    dest = Path(path) if path else ROOT/"r735-generic-match-engine-beta.ipk"
+    dest = Path(path) if path else ROOT/"r736-automatic-safe-mapping-beta.ipk"
     if dest.exists(): dest.unlink()
     built = base.pack.assemble(parts, dest)
     rebuilt = base.pack.members_from(base.pack.unpack_ar(built)["data.tar.gz"])
@@ -264,7 +269,7 @@ def build(path=None):
         "version":NEW, "size":len(built), "sha256":hashlib.sha256(built).hexdigest(),
         "changed": sorted(changes), "protected_unmodified":len(original)-len(changes),
         "production_published":False, "receiver_tested":False,
-        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"r735_generic_SAFE_first_and_numbered_LIVE_variant_guard"
+        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"r736_unified_preview_and_bulk_safe_automapping"
     }
     print("R73_PREVIEW_STAGE_OK", json.dumps(metadata, sort_keys=True))
     return metadata
