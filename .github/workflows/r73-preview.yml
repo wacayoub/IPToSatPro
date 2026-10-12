@@ -11,6 +11,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Inspect real preview skin and callbacks (read-only)
+        run: python3 scripts/inspect_r73_preview.py
       - name: Test actual packaged Preview code
         run: python3 -m unittest discover -s scripts -p test_r73_preview.py -v
       - name: Build and inspect staged IPK
