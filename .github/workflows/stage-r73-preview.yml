@@ -4,6 +4,7 @@ on:
     branches: [feature/r73-preview-browser-pro]
     paths:
       - '.github/workflows/stage-r73-preview.yml'
+      - 'scripts/stage-r73-preview.py'
   workflow_dispatch:
 permissions:
   contents: write
