@@ -330,13 +330,11 @@ def patch(source):
             "bouquet access classification")
 
     source=replace_once(source,
-            '''        self._r74_bouquet_name = "Bouquet actuel"
-        self.input_sat_ref''',
+            '''        self._r74_bouquet_name = "Bouquet actuel"''',
             '''        self._r74_bouquet_name = "Bouquet actuel"
         self._r7416_access_filter = "ALL"
         self._r7416_all_sat_rows = None
-        self._r7416_pending_unmap = None
-        self.input_sat_ref''',
+        self._r7416_pending_unmap = None''',
             "screen new state")
 
     source=replace_in_method(source,"_r74_switch_roster",
