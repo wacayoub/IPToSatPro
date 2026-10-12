@@ -48,6 +48,9 @@ class NoSignalFastTests(unittest.TestCase):
                 only_crypted=SimpleNamespace(value=True),
                 fallback_no_signal=SimpleNamespace(value=True)),
         )
+        self.m._r746_black_active=lambda:False
+        self.m._r746_stable_black=lambda:False
+        self.m._r746_native_picture=lambda:bool(self.m.video_event_seen)
         self.m._same_sat_still_playing=lambda:self.m.current_sat_ref_string in (self.ref,self.nextref,self.other_tp_ref)
         self.m._sat_tuner_state=lambda:self.frontend
         self.m._sat_pmt_pid=lambda:self.pmt
@@ -113,21 +116,22 @@ class NoSignalFastTests(unittest.TestCase):
         self.assertEqual(self.play_calls,[])
         self.assertNotIn(key,self.m._r745_bad_transponders)
 
-    def test_native_lock_clears_cached_no_signal(self):
+    def test_native_lock_alone_does_not_clear_cached_no_signal(self):
         self._proof()
         self.m._r745_arm_cached_nosignal()
         self.frontend="LOCKED"
         self.m._r745_cached_probe()
         self.assertEqual(self.play_calls,[])
-        self.assertFalse(self.m._r745_bad_transponders)
+        self.assertTrue(self.m._r745_bad_transponders)
+        self.assertIn("DVB_LOCK_NO_VIDEO",str(self.logs))
 
-    def test_pmt_ready_clears_cache(self):
+    def test_pmt_ready_alone_does_not_clear_cache(self):
         self._proof()
         self.m._r745_arm_cached_nosignal()
         self.pmt=260
         self.m._r745_cached_probe()
         self.assertEqual(self.play_calls,[])
-        self.assertFalse(self.m._r745_bad_transponders)
+        self.assertTrue(self.m._r745_bad_transponders)
 
     def test_no_frontend_state_never_guesses_no_signal_from_zero_snr(self):
         self._proof()
