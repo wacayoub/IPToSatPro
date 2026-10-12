@@ -343,17 +343,76 @@ def patch_plugin(src):
             provider[:32], sat_display[:24], access, self._mapping_text()[:34], self.current_result[:25]))''')
 
     src=_patch_filters(src)
-    # Match market and audio before fuzzy-score tie-break for same safe identity.
+    # Use original DVB audio language, NOT geographic market / arbitrary user
+    # language preferences. Unknown origin is neutral and falls through to score.
+    src=one(src,'def _r736_choose_best_safe(sat_ref, sat_name, ctx, ranked, rejected=None):',
+'''def _r74_normalize_lang(value):
+    """Normalize known ISO 639-1/639-2 audio tags without guessing a market."""
+    raw=str(value or "").strip().upper().replace("_","-").split("-",1)[0]
+    known={"FRA":"FR","FRE":"FR","FRENCH":"FR","ENG":"EN","ENGLISH":"EN",
+           "ARA":"AR","ARABIC":"AR","DEU":"DE","GER":"DE","ITA":"IT",
+           "SPA":"ES","POR":"PT","NLD":"NL","DUT":"NL","POL":"PL",
+           "TUR":"TR","ALB":"SQ","SQI":"SQ","RUS":"RU"}
+    return known.get(raw,raw if len(raw)==2 and raw.isalpha() else "")
+
+
+def _r74_sat_original_languages(sat_ref, context):
+    """Real DVB audio for the SAME SAT ref, or channel-specific identity hint.
+
+    Never promote cfg.languages, market_preferences, provider-country guesses
+    or a default FR/AR/EN order into original channel-language evidence.
+    """
+    context=context or {}
+    actual=[]
+    try:
+        monitor=MONITOR
+        if monitor is not None and str(getattr(monitor,"current_sat_ref_string","") or "")==str(sat_ref or ""):
+            actual=list(getattr(monitor,"sat_audio_languages",[]) or [])
+    except Exception:
+        actual=[]
+    if not actual:
+        actual=list(context.get("audio_language_set") or [])
+    langs=[]
+    for item in actual:
+        code=_r74_normalize_lang(item)
+        if code and code not in langs:
+            langs.append(code)
+    if langs:
+        return tuple(langs),"DVB_AUDIO"
+    hint=_r74_normalize_lang(context.get("channel_language"))
+    if hint:
+        return (hint,),"CHANNEL_IDENTITY"
+    return (),"UNKNOWN"
+
+
+def _r736_choose_best_safe(sat_ref, sat_name, ctx, ranked, rejected=None):''')
+    src=one(src,'''    rejected = rejected or {}
+    items=[]
+    has_review=False''',
+'''    rejected = rejected or {}
+    origin_languages,origin_source=_r74_sat_original_languages(sat_ref,ctx)
+    items=[]
+    has_review=False''')
     src=one(src,'''            order=(tier,iband,identity,float(score or 0),measured,qual,
                    w*hh,-priority,-pos)''',
-'''            prefs=set(str(v).upper() for v in (ctx or {}).get("market_preferences",[]) if v)
-            langs=set(str(v).upper() for v in (ctx or {}).get("language_priorities",[]) if v)
-            cm=str((ch or {}).get("market") or "").upper()
-            cl=str((ch or {}).get("language") or "").upper()
-            market_fit=int(bool(cm and cm in prefs))
-            lang_fit=int(bool(cl and cl in langs))
-            order=(tier,iband,identity,market_fit,lang_fit,float(score or 0),measured,qual,
+'''            iptv_lang=_r74_normalize_lang((ch or {}).get("language"))
+            # Matching original SAT audio outranks a small difference in score.
+            # Unknown catalog language is neutral, not an assumed country.
+            if (origin_source=="DVB_AUDIO" and origin_languages and iptv_lang
+                    and iptv_lang not in origin_languages):
+                has_review=True
+                continue
+            audio_fit=(2 if origin_languages and iptv_lang in origin_languages
+                       else 0 if origin_languages and iptv_lang else 1)
+            order=(tier,iband,identity,audio_fit,float(score or 0),measured,qual,
                    w*hh,-priority,-pos)''')
+    src=one(src,'''    details["universal_auto_lock"]=True
+    return ch,score,details,has_review''',
+'''    details["universal_auto_lock"]=True
+    details["r74_sat_language"]="/".join(origin_languages) if origin_languages else "UNKNOWN"
+    details["r74_language_evidence"]=origin_source
+    details["r74_iptv_language"]=_r74_normalize_lang(ch.get("language")) or "UNKNOWN"
+    return ch,score,details,has_review''')
     compile(src,"plugin.py","exec")
     return src
 
