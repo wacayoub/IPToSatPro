@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.7-visible-video-preview-beta",
+  "size": 415986,
+  "sha256": "d5ebcfad771207ca572ff32613ff01c5f83432c45d6e4e2d99bd05cedd9f5d62",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r737-video-visible-preview/payload/r737-visible-video-preview.b64"
+  ],
+  "notes": "R73.7 video visibility: after OK, temporarily hide opaque Neo Dark Preview to expose selected IPTV picture fullscreen for 8 seconds, then restore candidate list via independent timer. Log PREVIEW_VIDEO_WINDOW and decoder state. This is not proof that the stream carries video; AUTO mapping remains metadata-based; r73.6 AutoScan and manual corrections preserved. Player, timeshift and mappings unchanged. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
