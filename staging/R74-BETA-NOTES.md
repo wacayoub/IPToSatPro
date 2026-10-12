@@ -1,8 +1,14 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.1-original-audio-beta`
+**Build**: `1.0.46-r74.2-preview-close-hotfix-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## Critical crash hotfix R74.2
+
+- Fixes Enigma2 traceback `TypeError: _open_preview_sources_direct.<locals>.<lambda>() missing 1 required positional argument: 'result'`, triggered when Auto Play closes Preview with no result.
+- Callback now accepts zero or one result argument; the existing Preview return handler already treats `None` as no manual action.
+- Seven regression checks cover zero-argument close, explicit return, mapping workflow, and protected player modules.
 
 ## Implemented
 
