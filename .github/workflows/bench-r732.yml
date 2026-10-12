@@ -1,0 +1,17 @@
+name: R73.2 24k Candidate Speed Benchmark
+on:
+  push:
+    branches: [feature/r732-instant-candidates]
+    paths: ['.github/workflows/bench-r732.yml']
+  workflow_dispatch:
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Measure baseline 144 vs one-shot 192 at 24000 streams
+        run: python3 scripts/bench_r732_candidates.py
