@@ -36,3 +36,11 @@ with tempfile.TemporaryDirectory() as td:
         if isinstance(n,ast.FunctionDef) and n.name=="infer_sat_context":
             excerpt=ast.get_source_segment(core,n) or ""
             print("INFER_SAT_CONTEXT_BEGIN\\n"+excerpt[:17500]+"\\nINFER_SAT_CONTEXT_END")
+
+    # R74.2 crash audit: show all callbacks and exact closing handler
+    for line_no,line in enumerate(plugin.splitlines(),1):
+        if "openWithCallback(" in line or "_direct_preview_done" in line or "callback=" in line:
+            print("OPEN_CALLBACK",line_no,repr(line[:200]))
+    for n in ast.walk(ast.parse(plugin)):
+        if isinstance(n,ast.FunctionDef) and n.name in ("_direct_preview_done","_open_preview_sources_direct","_restore","_close_no_save"):
+            print("CRASH_HANDLER",n.name,ast.get_source_segment(plugin,n)[:12000])
