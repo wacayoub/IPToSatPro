@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.2-instant-candidates-beta",
+  "size": 412204,
+  "sha256": "a741489442d6f39eb8976877b93fb579ec893d85dadaa879c59ded612a5ad452",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r732-instant-candidates/payload/r732-instant-candidates.b64"
+  ],
+  "notes": "R73.2 Mega Fast Preview BETA: all 192 indexed candidates in a single background pass; 48-per-page navigation with no progressive re-ranking; 60 detailed scored across all sources; full-catalogue manual search; FTA option; strict numbered and explicit branded feed guards; PTS video safety. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
