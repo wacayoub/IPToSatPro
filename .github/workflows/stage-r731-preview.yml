@@ -1,0 +1,60 @@
+name: Stage R73.1 Preview Recovery BETA
+on:
+  push:
+    branches: [feature/r731-preview-core-recovery]
+    paths:
+      - '.github/workflows/stage-r731-preview.yml'
+      - 'scripts/stage-r731-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r731-preview-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Safely validate complete catalogue and video guard
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r731_recovery.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+          python3 scripts/build-r73-preview.py
+          echo '2ed09630f46066e7376a47858edd4f425d2df0ef56227a66a067bccd0d91e85d  r731-preview-recovery-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r731-preview-recovery-beta.ipk
+      - name: Stage verified opt-in R73.1 online package
+        run: |
+          set -eu
+          python3 scripts/stage-r731-preview.py
+          sh -n download-r731-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r731-preview-recovery.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r731-preview-recovery.b64').read_bytes())
+          assert len(blob)==m['size']==409874
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert m['hardware_tested'] is False and m['production_published'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R731_BETA_VERIFIED_PRODUCTION_UNMODIFIED')
+          PY
+      - name: Commit opt-in package only to R73.1 branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r731-preview-recovery.b64 staging/r731-preview-recovery.update.json download-r731-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.1 already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73.1 Preview recovery beta'
+            git push origin HEAD:feature/r731-preview-core-recovery
+          fi
