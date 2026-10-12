@@ -1,0 +1,60 @@
+name: Stage R73.2 Mega Fast Candidates BETA
+on:
+  push:
+    branches: [feature/r732-instant-candidates]
+    paths:
+      - '.github/workflows/stage-r732-preview.yml'
+      - 'scripts/stage-r732-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r732-preview-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify complete indexed UI and provider safety
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r732_instant.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+          python3 scripts/build-r73-preview.py
+          echo 'a741489442d6f39eb8976877b93fb579ec893d85dadaa879c59ded612a5ad452  r732-instant-candidates-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r732-instant-candidates-beta.ipk
+      - name: Stage verified R73.2 beta without installing
+        run: |
+          set -eu
+          python3 scripts/stage-r732-preview.py
+          sh -n download-r732-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r732-instant-candidates.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r732-instant-candidates.b64').read_bytes())
+          assert len(blob)==m['size']==412204
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert m['hardware_tested'] is False and m['production_published'] is False
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R732_VERIFIED_PRODUCTION_UNMODIFIED')
+          PY
+      - name: Publish SHA-checked beta on this feature branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r732-instant-candidates.b64 staging/r732-instant-candidates.update.json download-r732-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.2 beta already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73.2 Mega Fast Preview beta'
+            git push origin HEAD:feature/r732-instant-candidates
+          fi
