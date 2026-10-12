@@ -368,16 +368,10 @@ def patch(source):
         if isinstance(manual, dict) and manual.get("channel_id"):
             role''',
             "unmapped mapping label")
-    source=replace_in_method(source,"_render_sat_list",
-            '''        text = "[%s] %s" % (label, clean_display_name(row.get("name") or "SAT channel"))''',
-            '''        text = "%s [%s] %s" % (_r7416_crypt_icon(row.get("crypted")),label,
-                                      clean_display_name(row.get("name") or "SAT channel"))''',
-            "partial SAT refresh")
-    source=replace_in_method(source,"_render_sat_list",
-            '''            text = "[%s] %s" % (label, clean_display_name(row.get("name") or "SAT channel"))''',
-            '''            text = "%s [%s] %s" % (_r7416_crypt_icon(row.get("crypted")),label,
-                                          clean_display_name(row.get("name") or "SAT channel"))''',
-            "full SAT refresh")
+    source=replace_once(source,
+            'text = "[%s] %s" % (label, clean_display_name(row.get("name") or "SAT channel"))',
+            'text = "%s [%s] %s" % (_r7416_crypt_icon(row.get("crypted")),label, clean_display_name(row.get("name") or "SAT channel"))',
+            "SAT crypto label both render branches",expected=2)
     source=replace_in_method(source,"_render_sat_list",
             '''            rows = [sat_list.row("[NO CRYPTED TV] No confirmed encrypted TV service", "NO_SOURCE")]''',
             '''            rows = [sat_list.row("[NO TV] No channels for current access filter", "NO_SOURCE")]''',
