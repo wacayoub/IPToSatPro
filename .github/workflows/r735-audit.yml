@@ -1,0 +1,16 @@
+name: R73.5 Generic Match Engine Audit
+on:
+  push:
+    branches: [feature/r735-generic-match-engine]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect bundled scorer ranking and auto lock code
+        run: python3 scripts/audit_r735_scoring.py
