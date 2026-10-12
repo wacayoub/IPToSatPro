@@ -1,0 +1,37 @@
+name: R7412 Preview Path Audit
+on:
+  push:
+    branches: [fix/r7412-preview-fast-shortlist]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Print critical actual R74 Preview handlers
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          sp=importlib.util.spec_from_file_location('r74','scripts/build-r74-unified.py')
+          m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m)
+          with tempfile.TemporaryDirectory() as td:
+              path=Path(td)/'r74.ipk';m.build(path)
+              p=m.b.b.base.pack
+              contents=p.members_from(p.unpack_ar(path.read_bytes())['data.tar.gz'])
+              src=contents[m.PLUGIN].decode()
+              root=ast.parse(src)
+              names=['_all_sources','_expand_selected_sat_candidates','_poll_expanded_candidates','_load_selected_sat_candidates','_r732_page_auto','_r74_apply_filters','_preview_selected','_sort_candidates_with_cached_evidence']
+              for n in ast.walk(root):
+                  if isinstance(n,ast.FunctionDef) and n.name in names:
+                      if n.name in ('_all_sources','_expand_selected_sat_candidates','_poll_expanded_candidates'):
+                          seg=ast.get_source_segment(src,n)
+                          print('METHOD_START',n.name,n.lineno)
+                          print(seg[:11000])
+                          print('METHOD_END',n.name)
+              for word in ('candidate_budget = 192','candidate_per_server = 64','def _all_sources','_r71_deep_requested = False'):
+                  print('EXACT',repr(word),src.count(word))
+          PY
