@@ -21,13 +21,9 @@ def patch_plugin(src):
         self._r737_video_visible = False
         self.sat_change_timer = eTimer();''')
     src=one(src,
+'''        self.onClose.append(self._r731_cleanup)''',
 '''        self.onClose.append(self._r731_cleanup)
-
-    def _start(self):''',
-'''        self.onClose.append(self._r731_cleanup)
-        self.onClose.append(self._r737_cleanup_video)
-
-    def _start(self):''')
+        self.onClose.append(self._r737_cleanup_video)''')
     functions='''    def _r737_show_video_fullscreen(self):
         """Temporarily reveal decoded IPTV picture behind the opaque skin.
 
