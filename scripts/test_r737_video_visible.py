@@ -90,6 +90,7 @@ class VideoWindowTests(unittest.TestCase):
 
     def test_screen_hide_not_supported_does_not_leave_user_stuck(self):
         v=self.fake(broken=True)
+        v._r737_restore_video=lambda:self.method("_r737_restore_video")(v)
         self.method("_r737_show_video_fullscreen")(v)
         self.assertFalse(v._r737_video_visible)
         self.assertTrue(v.shown)
