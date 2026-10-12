@@ -100,6 +100,45 @@ class RecoveryTests(unittest.TestCase):
         s,d=self.core.match_score_details("beIN Sports 6 HD",ch,["FR"],{},preview=True)
         self.assertEqual(self.core.match_decision(s,d,60.0),"REJECT")
 
+    def test_decoder_dimensions_without_pts_do_not_auto_verify(self):
+        import time
+        method=next(x for x in self.pclass.body if isinstance(x,ast.FunctionDef) and x.name=="_poll")
+        namespace={"time":time, "MONITOR":types.SimpleNamespace(_read_pts=lambda:None),
+                   "_server_badge":lambda role,label:"TEST"}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method],type_ignores=[])),
+                     "r731_preview_poll","exec"),namespace)
+        class Label:
+            def __init__(self):self.value=""
+            def setText(self,value):self.value=value
+        class Clock:
+            def __init__(self):self.calls=0
+            def start(self,*args):self.calls+=1
+        class Fake:
+            def __init__(self):
+                self.finished=False;self.preview_ok=False;self.current_result="OPENING"
+                self.started_at=time.monotonic()-0.35
+                self.attempt_started_at=time.monotonic()-0.35
+                self.attempt_pre_dims=(0,0)
+                self.attempt_pre_pts=None
+                self.samples=0;self.last_dims=(0,0)
+                self._r731_last_pts=None;self._r731_pts_steps=0
+                self.modes=["4097"];self.mode_index=0
+                self.timer=Clock()
+                self.channel={"server_role":"PRIMARY","server_label":"TEST"}
+                self.labels={"status":Label(),"detail":Label()}
+            def __getitem__(self,key):return self.labels[key]
+            def _dimensions(self):return (1920,1080)
+            def _preview_player_active(self):return True
+            def _preview_failover_deadline_ms(self,active=False):return 1100
+        f=Fake()
+        namespace["_poll"](f)
+        namespace["_poll"](f)
+        self.assertFalse(f.preview_ok)
+        self.assertEqual(f.current_result,"OPENING")
+        self.assertGreaterEqual(f.timer.calls,2)
+        self.assertIn("if confirmed and self._r731_pts_steps < 2",self.plugin)
+        self.assertIn("now = time.monotonic(); attempt_ms",self.plugin)
+
     def test_build_deterministic(self):
         again=Path(self.tmp.name)/"again.ipk"
         meta=b.build(again)
