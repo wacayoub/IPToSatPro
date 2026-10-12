@@ -73,7 +73,7 @@ def main(argv=None):
     modes.add_argument('--check', action='store_true', help='read-only; default')
     modes.add_argument('--apply', action='store_true', help='back up and patch')
     modes.add_argument('--rollback', action='store_true', help='restore original')
-    modes.add_argument('--target', type=Path, default=TARGET, help=argparse.SUPPRESS)
+    parser.add_argument('--target', type=Path, default=TARGET, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     target = args.target
     backup = target.with_name('monitor.py.tod-bein-aac.original.bak')
