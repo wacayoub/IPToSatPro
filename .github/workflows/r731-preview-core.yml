@@ -1,0 +1,29 @@
+name: R73.1 Preview Candidate Recovery
+on:
+  push:
+    branches: [feature/r731-preview-core-recovery]
+  workflow_dispatch:
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Full catalogue search, FTA and score regression
+        run: |
+          python3 -m unittest discover -s scripts -p test_r731_recovery.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
+      - name: Verify reproduced IPK and fast locked player unchanged
+        run: |
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r731-preview-recovery-beta.ipk
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          assert json.loads(Path("update.json").read_text())["version"] == "1.0.46-r70-final"
+          assert Path("latest-version.txt").read_text().strip()=="1.0.46-r70-final"
+          print("PRODUCTION_UPDATE_UNMODIFIED")
+          PY
