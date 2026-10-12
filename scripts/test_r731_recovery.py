@@ -123,7 +123,7 @@ class RecoveryTests(unittest.TestCase):
                 self.attempt_pre_pts=None
                 self.samples=0;self.last_dims=(0,0)
                 self._r731_last_pts=None;self._r731_pts_steps=0
-                self.modes=["4097"];self.mode_index=0
+                self.modes=["4097"];self.mode_index=0;self.mode="4097"
                 self.timer=Clock()
                 self.channel={"server_role":"PRIMARY","server_label":"TEST"}
                 self.labels={"status":Label(),"detail":Label()}
