@@ -1,0 +1,15 @@
+name: R74 Preflight Source Inventory
+on:
+  push:
+    branches: [feature/r74-unified-preview-actual-bouquet]
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect compiled R73.8 Preview methods
+        run: python3 scripts/audit_r74_preflight.py
