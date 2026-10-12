@@ -63,7 +63,7 @@ echo "R73 VERIFIED BETA DOWNLOADED: $TARGET"
 echo "NOT INSTALLED. Existing version, mappings and settings remain unchanged."
 '''
     sh=sh.replace("__URL__",URL).replace("__TARGET__",TARGET).replace("__SIZE__",str(SIZE)).replace("__SHA__",SHA)
-    assert "opkg install" not in sh and "__SHA__" not in sh
+    assert not any(line.lstrip().startswith("opkg ") for line in sh.splitlines()) and "__SHA__" not in sh
     (ROOT/"download-r73-preview.sh").write_text(sh)
     print("R73_VERIFIED_STAGE_OK",json.dumps(manifest,sort_keys=True))
 
