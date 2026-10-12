@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as td:
         "_set_focus","_render_source_list","_candidate_decision","_candidate_status",
         "_poll_expanded_candidates","_expand_selected_sat_candidates","_load_selected_sat_candidates",
         "_sat_roster_tick","_open_auto_scan","_green_action","_start","_display_sort_key",
-        "_scan_one","_r738_queue_auto_open","_r738_autoplay_current",
+        "_scan_one","_open_preview_sources_direct","_open_all_sources_direct","_r738_queue_auto_open","_r738_autoplay_current",
     }
     print("IMPORTS BEGIN\n"+"\n".join(plugin.splitlines()[:105])+"\nIMPORTS END")
     for n in ast.walk(ast.parse(plugin)):
