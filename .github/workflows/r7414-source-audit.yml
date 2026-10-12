@@ -1,0 +1,37 @@
+name: R7414 Real Preview Handler Audit
+on:
+  push:
+    branches: [fix/r7414-fast-candidates-manual-lock]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Extract R74 real candidate and lock handlers
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('r74','scripts/build-r74-unified.py')
+          mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+          with tempfile.TemporaryDirectory() as td:
+              f=Path(td)/'r74.ipk';mod.build(f)
+              pk=mod.b.b.base.pack
+              files=pk.members_from(pk.unpack_ar(f.read_bytes())['data.tar.gz'])
+              src=files[mod.PLUGIN].decode()
+              tree=ast.parse(src)
+              preview=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='SatIPTVBridgePreview')
+              selected=('__init__','_preview_selected','_verify_selected','_lock_selected','_manual_lock','_save_manual_lock','_lock_current','_green','_manual_map','_store_lock','_load_selected_sat_candidates','_sat_selection_changed','_expand_selected_sat_candidates','_poll_expanded_candidates','_r74_apply_filters','_sort_candidates_with_cached_evidence','_selected_channel','_candidate_decision','_all_sources','_r731_start_search')
+              for node in preview.body:
+                  if isinstance(node,ast.FunctionDef) and (node.name in selected or any(t in node.name for t in ('lock','map','verify'))):
+                      txt=ast.get_source_segment(src,node)
+                      print('METHOD_START',node.name,'LENGTH',len(txt))
+                      print(txt[:12500])
+                      print('METHOD_END',node.name)
+              for term in ('GREEN','VERIFIED','MANUAL','_preview_selected','_manual_'):
+                  print('CANDIDATE_TERM',term,src.count(term))
+          PY
