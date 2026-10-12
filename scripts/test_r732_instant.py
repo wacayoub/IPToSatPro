@@ -67,6 +67,22 @@ class InstantCandidateTests(unittest.TestCase):
         print("R732_CACHE_HIT_MS",round((time.perf_counter()-t)*1000,2))
         self.assertEqual(len(again),192)
 
+    def test_same_number_different_known_brand_never_nominated(self):
+        data=[]
+        for role in ("PRIMARY","BACKUP1","BACKUP2"):
+            for n in range(15):
+                for name in ("beIN Sports 6 FHD","Dubai Sports 6 FHD"):
+                    data.append({"name":name,"server_role":role,
+                                 "url":"http://192.0.2.1/%s/%s/%d"%(role,name,n),
+                                 "group":"SPORT","language":"AR"})
+        cat=self.core.Catalog(data)
+        found=cat.fast_preview_mega_matches("beIN Sports 6 FHD",["AR"],
+              context={"confidence":"LOW","match_threshold":60.0},topn=192,per_server=64)
+        names=[c["name"].lower() for c,score,details in found]
+        self.assertTrue(names)
+        self.assertTrue(all("bein" in n for n in names),names[:8])
+        self.assertFalse(any("dubai" in n for n in names))
+
     def test_one_list_page_48_without_second_search(self):
         method=next(n for n in self.cls.body if isinstance(n,ast.FunctionDef) and n.name=="_r732_page_auto")
         mod=ast.fix_missing_locations(ast.Module(body=[method],type_ignores=[]))
