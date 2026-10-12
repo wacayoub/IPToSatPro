@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.5-nosignal-cache-fast-beta`
+**Build**: `1.0.46-r74.6-dvb-black-picture-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.6 Decode-aware SAT fallback — DMAX / TLC black screen
+
+- Corrects R74.5's false recovery decision: tuner `LOCKED` or nonzero PMT **does not prove decoded picture** and must not erase a recent transponder TUNE_FAILED cache entry without decoder evidence.
+- Samples DVB decoder PTS at ~850ms after SAT start; at ~2000ms uses the actual SAT decoded-video event or advancing decoder PTS to decide whether the screen is truly functioning.
+- If video remains absent after independent checks even though tuner claims `LOCKED` and a provisional FTA flag is present, execute the existing safe DVB->IPTV fallback, logging `DVB_BLACK_FALLBACK`; manual mappings and normal SmartMatch safety/identity rules remain respected.
+- A working FTA channel with decoded video is always kept on satellite. Cached no-signal transponders are invalidated by native DVB video, not mere RF lock.
+- Logging: `DVB_LOCK_NO_VIDEO`, `DVB_VIDEO_SAMPLE`, `DVB_BLACK_FALLBACK`, `DVB_BLACK_ALLOW`, `DVB_BLACK_CANCEL`.
+- Existing PAT/PMT 1250ms no-crash protection and 2-second encryption correction unchanged. This is not a guaranteed sub-second first frame on previously unknown transponders.
 
 ## R74.5 cached confirmed No Signal / fast return
 
