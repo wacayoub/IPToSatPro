@@ -278,8 +278,7 @@ def patch_plugin(src):
             '"CANDIDATES • %d TOTAL • 48/PAGE • P+B1+B2" % max(len(self.channels),len(self._r732_auto_rows))')
     # Do not compact distinct IPTV URLs from the same provider; every indexed
     # backup remains available for a human preview on later pages.
-    src=one(src,'        return self._compact_candidate_duplicates(rows)\n\n    def _preview_catalog_token',
-                '        return rows\n\n    def _preview_catalog_token')
+    src=one(src,'return self._compact_candidate_duplicates(rows)', 'return rows')
     src=one(src,'''            self["status"].setText("%d candidates • INSTANT%s • full P/B1/B2 loading" % (len(self.channels), " CACHE" if complete else ""))''',
                 '''            self["status"].setText("%d INDEXED CANDIDATES READY • %d pages • CH+/-" %
                                    (len(self._r732_auto_rows),(len(self._r732_auto_rows)+47)//48))''')
