@@ -14,6 +14,8 @@ with tempfile.TemporaryDirectory() as tmp:
         "_start","_sat_selection_changed","_load_selected_sat_candidates",
         "_expand_selected_sat_candidates","_poll_expanded_candidates",
         "_preview_selected","_preview_finished","_preview_finished_callback",
+        "_start_quality_analysis","_poll_quality_analysis","_quality_poll","_quality_timer_tick",
+        "_play_current_mode","_preview_failover_deadline_ms","_ensure_full_sat_rows","_poll_full_sat_roster","__init__",
         "_quality_record_text","_quality_checklist_text","_health_record",
         "_preview_success","_preview_done","_poll","_preview_player_active",
         "_preview_quality_verified","_dimensions","_read_video_dimensions",
