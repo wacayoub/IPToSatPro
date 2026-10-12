@@ -30,7 +30,7 @@ jobs:
                       ('fallback','mapping','match','play','preview','tune_fail','scan','monitor','nav','start','check','retry','override')):
                       print('INVENTORY',label,node.lineno,node.name)
               chosen={'MONITOR':['__init__','_on_start','_encrypted_fallback_allowed_once','_on_tune_failed','_deferred_tune_failed','_on_service_start','_on_service_event','_trigger_fallback','_fallback_if_matched','_play_match','_play_service_force','_queue_background_smartmatch','_smartmatch_poll','_start_guard','_same_sat_still_playing','_load_overrides','invalidate_overrides','begin_manual_preview','end_manual_preview','recover_manual_preview','_direct_candidate_plan','_activate_candidate','_find_override'],
-                      'PLUGIN':['__init__','_preview_selected','_poll_expanded_candidates','_load_selected_sat_candidates','_play_current_mode','_green_action','_commit_auto_scan_overrides','_auto_scan_override_record','_r736_auto_map_single_sat','_refresh_monitor','_safe_refresh_monitor','_cleanup','_open_after_preview_close','_preview_done','_r731_cleanup','_r737_cleanup_video']}
+                      'PLUGIN':['__init__','_preview_selected','_poll_expanded_candidates','_load_selected_sat_candidates','_play_current_mode','_green_action','_commit_auto_scan_overrides','_auto_scan_override_record','_r736_auto_map_single_sat','_refresh_monitor','_safe_refresh_monitor','_cleanup','_open_after_preview_close','_preview_done','_r731_cleanup','_r737_cleanup_video','_restore','_load_selected_sat_candidates','_poll_expanded_candidates']}
               for node in ast.walk(tree):
                   if isinstance(node,ast.FunctionDef) and node.name in chosen[label]:
                       snip=ast.get_source_segment(source,node) or ''
