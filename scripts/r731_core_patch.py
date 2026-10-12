@@ -246,7 +246,7 @@ def patch_plugin_r731(src):
         'self.modes = self._preferred_modes(); self.mode_index = 0; self.started_at = time.monotonic()')
     src=replace_once(src,
         'self.attempt_started_at = time.time(); self.samples = 0; self.last_dims = (0, 0)',
-        'self.attempt_started_at = time.monotonic(); self.samples = 0; self.last_dims = (0, 0)\\n        self._r731_last_pts = self.attempt_pre_pts; self._r731_pts_steps = 0')
+        'self.attempt_started_at = time.monotonic(); self.samples = 0; self.last_dims = (0, 0)\n        self._r731_last_pts = self.attempt_pre_pts; self._r731_pts_steps = 0')
     src=replace_once(src,
         'now = time.time(); attempt_ms = int(max(0.0, now - self.attempt_started_at) * 1000.0); total_ms = int(max(0.0, now - self.started_at) * 1000.0)',
         'now = time.monotonic(); attempt_ms = int(max(0.0, now - self.attempt_started_at) * 1000.0); total_ms = int(max(0.0, now - self.started_at) * 1000.0)')
