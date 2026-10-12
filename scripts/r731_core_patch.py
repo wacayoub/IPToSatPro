@@ -237,4 +237,32 @@ def patch_plugin_r731(src):
              ("SEARCH %d/%d • P+B1+B2" % (len(self.channels),len(self._r731_search_rows))
               if self._r731_search_active else
               "CANDIDATES • %d • P+B1+B2 • 5 SEARCH" % len(self.channels)))''')
+    # Video decoder dimensions alone can stay nonzero on a stale/black frame.
+    # Require two distinct fresh PTS movements while the requested player is
+    # active before auto-confirming PLAYING. Players with no readable PTS fall
+    # back to explicit VERIFY, never a silent automatic successful verdict.
+    src=replace_once(src,
+        'self.modes = self._preferred_modes(); self.mode_index = 0; self.started_at = time.time()',
+        'self.modes = self._preferred_modes(); self.mode_index = 0; self.started_at = time.monotonic()')
+    src=replace_once(src,
+        'self.attempt_started_at = time.time(); self.samples = 0; self.last_dims = (0, 0)',
+        'self.attempt_started_at = time.monotonic(); self.samples = 0; self.last_dims = (0, 0)\\n        self._r731_last_pts = self.attempt_pre_pts; self._r731_pts_steps = 0')
+    src=replace_once(src,
+        'now = time.time(); attempt_ms = int(max(0.0, now - self.attempt_started_at) * 1000.0); total_ms = int(max(0.0, now - self.started_at) * 1000.0)',
+        'now = time.monotonic(); attempt_ms = int(max(0.0, now - self.attempt_started_at) * 1000.0); total_ms = int(max(0.0, now - self.started_at) * 1000.0)')
+    src=replace_once(src,
+        '''            pts_moved = bool(cur_pts is not None and self.attempt_pre_pts is not None and cur_pts != self.attempt_pre_pts and cur_pts != 0)''',
+        '''            pts_moved = bool(cur_pts is not None and self.attempt_pre_pts is not None and cur_pts != self.attempt_pre_pts and cur_pts != 0)
+            if pts_moved and self._r731_last_pts is not None and cur_pts != self._r731_last_pts:
+                self._r731_pts_steps += 1
+            self._r731_last_pts = cur_pts''')
+    src=replace_once(src,
+        '''            if confirmed:
+                self.finished = True; self.preview_ok = True; self.current_result = "PLAYING"''',
+        '''            if confirmed and self._r731_pts_steps < 2:
+                # Accepted decoder dimensions are not proof of a moving picture.
+                confirmed = False
+            if confirmed:
+                self.finished = True; self.preview_ok = True; self.current_result = "PLAYING"''')
+    src=replace_once(src,'rec["open_observed_at"] = now','rec["open_observed_at"] = time.time()')
     return src
