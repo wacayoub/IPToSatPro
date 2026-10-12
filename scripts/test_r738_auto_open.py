@@ -72,6 +72,7 @@ class AutoOpenTests(unittest.TestCase):
         self.monitor=Monitor()
         self.ns={
             "MONITOR":self.monitor,
+            "time":__import__("time"),
             "cfg":SimpleNamespace(enabled=SimpleNamespace(value=True)),
             "sat_service_key":lambda ref:ref,
             "_load_overrides":lambda:{self.ref:self.saved},
@@ -115,8 +116,18 @@ class AutoOpenTests(unittest.TestCase):
         self.run_deferred()
         self.assertEqual(len(self.monitor.played),1)
     def test_existing_manual_and_review_are_never_auto_opened(self):
-        for state in ("REVIEW_ONLY","MANUAL_PROTECTED","NO_SAFE","ALREADY_AUTO"):
+        for state in ("REVIEW_ONLY","MANUAL_PROTECTED","NO_SAFE"):
             self.assertFalse(self.ns["_r738_queue_auto_open"](self.screen,self.ref,state,self.iptv))
+        self.assertEqual(self.delayed,[])
+    def test_existing_auto_mapping_from_older_build_autoplays(self):
+        self.assertTrue(self.ns["_r738_queue_auto_open"](self.screen,self.ref,"ALREADY_AUTO",self.iptv))
+        self.run_deferred()
+        self.assertEqual(len(self.monitor.played),1)
+    def test_recent_failed_autoplay_leaves_preview_open_for_manual_correction(self):
+        import time
+        self.monitor._r738_autoplay_last=(self.ref,"best",time.monotonic())
+        self.assertFalse(self.ns["_r738_queue_auto_open"](self.screen,self.ref,"ALREADY_AUTO",self.iptv))
+        self.assertEqual(self.screen.closed,0)
         self.assertEqual(self.delayed,[])
     def test_zap_while_scoring_prevents_hijack(self):
         self.assertTrue(self.ns["_r738_queue_auto_open"](self.screen,self.ref,"AUTO_CREATED",self.iptv))
