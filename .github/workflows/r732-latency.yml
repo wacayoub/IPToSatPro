@@ -15,6 +15,8 @@ jobs:
       - name: Inspect candidate browse and index costs
         run: |
           python3 scripts/audit_r732_latency.py
+      - name: Benchmark 24k catalogue candidate latency
+        run: python3 scripts/bench_r732_candidates.py
       - name: Verify predecessor baseline
         run: |
           python3 -m unittest discover -s scripts -p test_r731_recovery.py -v
