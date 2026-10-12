@@ -1,6 +1,6 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.0-unified-preview-beta`
+**Build**: `1.0.46-r74.1-original-audio-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
 
@@ -10,8 +10,8 @@
 - Numeric **7** switches between the native current bouquet and the currently selected satellite's channels. Satellite's original encrypted-only filter and numeric 6 FTA option remain available; 6 automatically selects satellite mode.
 - Compact 1700x790 **Neo Dark R74** skin with all 20 original widgets, properly separated panels, status labels and keys. XML bounding-box tests reject overlapping widgets (picon and fallback are intentionally co-located).
 - 48 detailed all-server scoring evaluations (up from R73.8's 36, originally 18), still bounded to keep Vu+ responsive. Unscored candidates remain REVIEW, not unsafe auto-locks.
-- SAFE/ALLOWED selection prefers exact identity first, then strongly matching market and language, then numeric score and measured quality. It does not promote REJECT/REVIEW.
-- Numeric **8** cycles IPTV sources ALL/PRIMARY/BACKUP1/BACKUP2; **9** toggles SAFE-only; **3** cycles FR/AR/EN and HD+/FHD+/UHD metadata filters. Numeric 5 retains full IPTV name search. Filters are in-memory display-only; the full candidate cache, server duplicates and mappings remain untouched.
+- **Original SAT language only**: prefer actual DVB audio languages of the currently tuned SAT channel (or channel-specific explicit identity hint when audio is unavailable). No global FR/AR/EN order, user language preference, or country-market bonus is placed ahead of the score. An observed DVB audio mismatch is not Auto Locked. Without audio/language evidence, the numeric score breaks ties after SAFE and identity.
+- Language and country filters on 3 are **manual display filters only**; they never decide Auto Mapping.\n- Numeric **8** cycles IPTV sources ALL/PRIMARY/BACKUP1/BACKUP2; **9** toggles SAFE-only; **3** cycles FR/AR/EN and HD+/FHD+/UHD metadata filters. Numeric 5 retains full IPTV name search. Filters are in-memory display-only; the full candidate cache, server duplicates and mappings remain untouched.
 - Candidate rows distinguish **REAL measured video quality** from **CAT catalog-declared quality**. Existing BLUE details, OK full-screen video test and verification data retained.
 - Inherits R73.8 SAFE Auto Select/Auto Lock/Auto Play for current active SAT with prior Auto locks, stale-zap protections, guarded native DVB picture, existing player watchdog and same-channel failover.
 - Reuses existing Preview cache, pagination and low-cost deferred native roster loading; writes `R74_BOUQUET_ROSTER`, `R74_ROSTER_MODE`, `R74_FILTER` and existing Auto Play logs.
