@@ -185,7 +185,7 @@ class R7416Tests(unittest.TestCase):
         cycle(f)
         self.assertEqual([r["ref"] for r in f.sat_rows],["a","b","c","d","e"])
         self.assertEqual(f._r7416_access_filter,"ALL")
-        self.assertTrue(any("2 unknown" in v for v in status))
+        self.assertTrue(any("1 unknown" in v for v in status))
 
     def test_blue_sat_requests_confirmation_not_immediate_delete(self):
         events=[]
@@ -194,6 +194,7 @@ class R7416Tests(unittest.TestCase):
             _manual_overrides={"SAT_A":{"channel_id":"old","name":"OLD IPTV"}}
             def _selected_sat_row(self):return {"ref":"SAT_A","name":"SAT A"}
             def _focus_right(self):events.append("FOCUS_RIGHT")
+            def _r7416_confirm_unmap(self, accepted=False):pass
             def __getitem__(self,key):
                 return SimpleNamespace(setText=lambda value:events.append(value))
             session=SimpleNamespace(openWithCallback=lambda cb,*args,**kw:events.append(("confirm",cb,args,kw)))
