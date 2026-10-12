@@ -21,8 +21,8 @@ PLUGIN = P + "plugin.py"
 UPDATER = P + "updater.py"
 CORE = P + "core.py"
 OLD = "1.0.46-r72.7-fuzzy-cache-beta"
-NEW = "1.0.46-r73.6-automatic-safe-mapping-beta"
-CHANGELOG = P + "CHANGELOG-r736-AUTO-MAP-SAFE.txt"
+NEW = "1.0.46-r73.7-visible-video-preview-beta"
+CHANGELOG = P + "CHANGELOG-r737-VISIBLE-VIDEO.txt"
 B64 = ROOT/"payload/r727-fuzzy-cache.b64"
 BASE_SHA256 = "cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62"
 
@@ -49,6 +49,10 @@ r735sp.loader.exec_module(r735)
 r736sp=importlib.util.spec_from_file_location("r736",ROOT/"scripts/r736_automap_patch.py")
 r736=importlib.util.module_from_spec(r736sp)
 r736sp.loader.exec_module(r736)
+
+r737sp=importlib.util.spec_from_file_location("r737",ROOT/"scripts/r737_video_visibility_patch.py")
+r737=importlib.util.module_from_spec(r737sp)
+r737sp.loader.exec_module(r737)
 
 def exactly(src, old, new):
     n = src.count(old)
@@ -189,6 +193,7 @@ def patch_plugin(data):
     src = r734.patch_plugin(src)
     src = r735.patch_plugin(src)
     src = r736.patch_plugin(src)
+    src = r737.patch_plugin(src)
     src = exactly(src, 'PLUGIN_VERSION = "'+OLD+'"', 'PLUGIN_VERSION = "'+NEW+'"')
     compile(src, PLUGIN, "exec")
     return src.encode("utf-8")
@@ -234,7 +239,7 @@ def build(path=None):
     changes[UPDATER] = exactly(up, 'CURRENT_VERSION = "'+OLD+'"',
                                    'CURRENT_VERSION = "'+NEW+'"').encode()
     description = (
-        "R73.6: auto-map SAFE or ALLOWED Preview candidates to SAT, bulk scan uses same green scorer; protect manual corrections; one-click auto mapping "
+        "R73.7: OK reveals actual video fullscreen for 8 seconds behind opaque Neo Dark Preview and automatically restores list, with playback diagnostics; automatic mappings still metadata-only until video is confirmed "
         "(48-row paging, no progressive UI); FTA SAT option; preview country REVIEW, "
         "keep hard number/audio safety checks; native Neo Dark theme, "
         "focused SAT/IPTV pagination and read-only BLUE details. LIVE player, monitor, timeshift and user data unchanged. "
@@ -257,7 +262,7 @@ def build(path=None):
     parts["data.tar.gz"] = base.pack.make_tar(parts["data.tar.gz"], changes,
         {CHANGELOG:description, P+"preview_theme_r73.py":theme_source})
     parts["control.tar.gz"] = base.pack.make_tar(parts["control.tar.gz"], {"control":new_control})
-    dest = Path(path) if path else ROOT/"r736-automatic-safe-mapping-beta.ipk"
+    dest = Path(path) if path else ROOT/"r737-visible-video-preview-beta.ipk"
     if dest.exists(): dest.unlink()
     built = base.pack.assemble(parts, dest)
     rebuilt = base.pack.members_from(base.pack.unpack_ar(built)["data.tar.gz"])
@@ -269,7 +274,7 @@ def build(path=None):
         "version":NEW, "size":len(built), "sha256":hashlib.sha256(built).hexdigest(),
         "changed": sorted(changes), "protected_unmodified":len(original)-len(changes),
         "production_published":False, "receiver_tested":False,
-        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"r736_unified_preview_and_bulk_safe_automapping"
+        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"r737_8s_video_preview_then_auto_restore_with_r736_automap"
     }
     print("R73_PREVIEW_STAGE_OK", json.dumps(metadata, sort_keys=True))
     return metadata
