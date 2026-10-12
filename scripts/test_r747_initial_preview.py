@@ -70,6 +70,7 @@ class FirstSatCandidateTests(unittest.TestCase):
             def _render_source_list(self,keep_index=False):pass
             def _update_header(self):pass
             def _set_focus(self,focus):pass
+            def _r74_filters_active(self):return False
             def __getitem__(self,item):
                 return SimpleNamespace(setText=lambda t:self.lines.__setitem__(item,t))
         f=Fake()
@@ -79,6 +80,8 @@ class FirstSatCandidateTests(unittest.TestCase):
             "clean_display_name":lambda s:s,
             "_startup_log":lambda *args:logs.append(args),
             "_preview_candidate_cache_get":lambda raw:None,
+            "_r736_auto_map_single_sat":lambda *args:("ALREADY_MANUAL",None),
+            "_r738_queue_auto_open":lambda *args:None,
             "PREVIEW_LAST_SOURCE_BY_SAT":{},
         }
         return f,self.isolate("_load_selected_sat_candidates",env),logs
