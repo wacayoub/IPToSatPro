@@ -1,0 +1,31 @@
+name: R7412 Short Preview and On-Demand Deep
+on:
+  push:
+    branches: [fix/r7412-preview-fast-shortlist]
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile and test patched actual R74 plugin
+        run: |
+          python3 -m py_compile scripts/r7412_preview_fast_shortlist_hotfix.py
+          python3 -m unittest discover -s scripts -p 'test_r7412_preview_shortlist.py' -v
+      - name: Baseline existing R74 candidate behavior
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_r7411_preview_priority.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r747_initial_preview.py' -v
+      - name: Production updater not released
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          version=str(json.loads(Path("update.json").read_text()).get("version",""))
+          assert "r70" in version.lower(),version
+          print("NO_PRODUCTION_UPDATE",version)
+          PY
