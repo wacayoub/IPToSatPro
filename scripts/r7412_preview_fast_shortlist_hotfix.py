@@ -2,8 +2,8 @@
 """R74.12: cap NORMAL Preview ranked IPTV candidates at 24 (8 per role).
 
 The old 192 candidates/64 per-role one-shot scan can take ~20s on Vu+ Zero 4K.
-Only the Preview worker quota changes. Bulk auto-scan still uses topn=192 and
-per_server=64. Existing SAFE auto-map and provider/language/resolution
+Only the Preview worker quota and YELLOW deep-search handler change. Bulk auto-scan still uses topn=192 and
+per_server=64. YELLOW retrieves 192 candidates only on demand. Existing SAFE auto-map and provider/language/resolution
 priorities remain as in the installed plugin; manual locks and TOD AAC fix
 are unchanged. Use Preview numeric 5 to search the full catalogue manually.
 Requires previously applied r7411 Preview priority fix.
@@ -20,10 +20,22 @@ BACKUP="plugin.py.r7412-fast-shortlist-original.bak"
 TAG="R7412_FAST_PREVIEW_SHORTLIST"
 ORIGINAL='''        candidate_budget = 192
         candidate_per_server = 64'''
-UPDATED='''        # R7412_FAST_PREVIEW_SHORTLIST: fast normal Preview, not bulk scan.
-        # Detailed FULL catalogue lookup remains available via key 5 SEARCH.
-        candidate_budget = 24
-        candidate_per_server = 8'''
+UPDATED='''        # R7412_FAST_PREVIEW_SHORTLIST: cheap normal Preview; full deep on YELLOW.
+        # Bulk AutoScan is a separate function and retains its own 192 budget.
+        candidate_budget = 192 if self._r71_worker_deep else 24
+        candidate_per_server = 64 if self._r71_worker_deep else 8'''
+DEEP_ORIGINAL='''        if self._r732_auto_rows:
+            self["status"].setText("ALL INDEXED CANDIDATES READY: %d • CH+/- page • 5 full search" % len(self._r732_auto_rows))
+            self._set_focus("right")
+            return
+        self._r71_deep_requested = False
+        self._r71_deep_target_ref = ""
+        self["status"].setText("DEEP SEARCH • up to 144 indexed candidates • use CH+/- in IPTV panel")'''
+DEEP_UPDATED='''        # The normal 24-result list is intentionally shallow. Explicit YELLOW
+        # must bypass the complete short-cache and request 192 in background.
+        self._r71_deep_requested = True
+        self._r71_deep_target_ref = raw
+        self["status"].setText("DEEP SEARCH • up to 192 candidates • background • CH+/-")'''
 
 
 def patch(source):
@@ -34,6 +46,9 @@ def patch(source):
     if source.count(ORIGINAL)!=1:
         raise ValueError("Expected R74 Preview quota exactly once; aborting on source drift")
     updated=source.replace(ORIGINAL,UPDATED,1)
+    if updated.count(DEEP_ORIGINAL)!=1:
+        raise ValueError("Unexpected R74 YELLOW handler; abort without changes")
+    updated=updated.replace(DEEP_ORIGINAL,DEEP_UPDATED,1)
     compile(updated,"plugin.py","exec")
     return updated,"ready"
 
@@ -82,7 +97,7 @@ def main(argv=None):
         parser.error(str(error))
     if not args.apply:
         print("CHECK_OK:",status)
-        print("Normal Preview: up to 24 nominees, 8/source role; full 5 SEARCH kept")
+        print("Normal Preview: up to 24 candidates, 8/source role; YELLOW deep 192 kept")
         print("R7411 priority, Preview stay-open, bulk AutoScan, live player, TOD AAC unchanged")
         return 0
     if status=="already-installed":
