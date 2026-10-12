@@ -78,7 +78,7 @@ class CountryCodeMatcher(unittest.TestCase):
                 score,details=self.score(sat,iptv)
                 self.assertEqual(details.get("country_alias_match"),code,(score,details))
                 self.assertFalse(details.get("reject_reason"),(score,details))
-    def test_wrong_market_candidates_do_not_auto_map(self):
+    def test_wrong_market_label_visible_review_but_never_automatic(self):
         pairs=[
             ("TLC HD Austria","DE: TLC HD"),
             ("TLC HD Austria","AU: TLC HD"),
@@ -89,8 +89,10 @@ class CountryCodeMatcher(unittest.TestCase):
             with self.subTest(sat=sat,iptv=iptv):
                 self.assertEqual(self.c._r748_country_relation(sat,iptv)[0],"CONFLICT")
                 score,details=self.score(sat,iptv)
-                self.assertEqual(self.c.match_decision(score,details,82),"REJECT")
-                self.assertIn("country",details["reject_reason"].lower())
+                self.assertEqual(self.c.match_decision(score,details,82),"REVIEW")
+                self.assertIn("country",details.get("review_reason","").lower())
+                self.assertEqual(details.get("prefix_evidence"),"UNVERIFIED_LABEL")
+                self.assertFalse(details.get("reject_reason"),(score,details))
     def test_real_service_numbers_and_variants_unchanged(self):
         positives=[("TLC 1 HD Austria","AT TLC 1 HD"),
                    ("TLC 2 HD Germany","DE TLC 2 HD")]
