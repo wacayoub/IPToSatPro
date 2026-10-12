@@ -36,7 +36,7 @@ def patch_core(src):
         wanted_fam = str(_effective_sat_provider_family(sat_name, context) or "")
         role_map = {}
         seen = set()
-        max_nominees = 760
+        max_nominees = max(760, roles_cap * max(3, len(self.server_roles())) * 2)
         checked = 0
 
         def candidate_key(ch):
@@ -70,11 +70,13 @@ def patch_core(src):
             ident = id(ch)
             if ident in seen:
                 return
+            role = str(ch.get("server_role") or "SERVER")
+            if len(role_map.get(role, ())) >= max(roles_cap, min(96, roles_cap*2)):
+                return
             seen.add(ident)
-            checked += 1
             rank = candidate_key(ch)
             if rank is not None:
-                role = str(ch.get("server_role") or "SERVER")
+                checked += 1
                 role_map.setdefault(role, []).append((rank,ch))
 
         # All sources: exact normalized and decorated aliases first.
@@ -121,19 +123,28 @@ def patch_core(src):
         # Quotas are across IPTV SERVER ROLE, not provider-country guesses.
         # Sort candidates cheaply first; detailed fuzzy score is only computed
         # on the first 16 per role, at most 60 globally.
-        all_ranked = []
-        for role, values in role_map.items():
-            values.sort(key=lambda x:x[0],reverse=True)
-            all_ranked.extend((rank,role,ch) for rank,ch in values[:roles_cap])
-        all_ranked.sort(key=lambda x:x[0], reverse=True)
+        # Reserve slots for every configured server, not only the first
+        # provider that happened to fill an exact-name index bucket.
+        ordered_roles = sorted(role_map, key=lambda role:
+            (0 if role == "PRIMARY" else 1 if role == "BACKUP1" else
+             2 if role == "BACKUP2" else 3, role))
+        ordered_pools = {}
+        for role in ordered_roles:
+            values = role_map[role]
+            values.sort(key=lambda x:x[0], reverse=True)
+            ordered_pools[role] = values[:roles_cap]
         chosen = []
-        counts = {}
-        for rank,role,ch in all_ranked:
-            if counts.get(role,0) >= roles_cap: continue
-            counts[role] = counts.get(role,0)+1
-            chosen.append((rank,role,ch))
-            if len(chosen)>=limit: break
-        roles = list(dict.fromkeys(role for _rank,role,_ch in chosen))
+        for i in range(max((len(x) for x in ordered_pools.values()),default=0)):
+            for role in ordered_roles:
+                values = ordered_pools[role]
+                if i < len(values):
+                    rank,ch = values[i]
+                    chosen.append((rank,role,ch))
+                    if len(chosen) >= limit:
+                        break
+            if len(chosen) >= limit:
+                break
+        roles = ordered_roles
         score_ids = set()
         by_role={}
         for _rank,role,ch in chosen:
