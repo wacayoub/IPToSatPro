@@ -1,4 +1,4 @@
-name: R73.2 Candidate Latency Audit
+name: R73.2 One-Shot Candidate CI
 on:
   push:
     branches: [feature/r732-instant-candidates]
@@ -12,11 +12,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Inspect candidate browse and index costs
+      - name: Verify one-shot 192 candidates and full manual search
         run: |
-          python3 scripts/audit_r732_latency.py
-      - name: Benchmark 24k catalogue candidate latency
-        run: python3 scripts/bench_r732_candidates.py
-      - name: Verify predecessor baseline
+          python3 -m unittest discover -s scripts -p test_r732_instant.py -v
+          python3 -m unittest discover -s scripts -p test_r73_20_matches.py -v
+      - name: Protect locked fast playback and production updater
         run: |
-          python3 -m unittest discover -s scripts -p test_r731_recovery.py -v
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r732-instant-candidates-beta.ipk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          print('PRODUCTION_UNMODIFIED')
+          PY
