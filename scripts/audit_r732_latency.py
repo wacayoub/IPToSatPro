@@ -11,7 +11,7 @@ with tempfile.TemporaryDirectory() as td:
     for filename,method_names in {
         "plugin.py":("_sat_selection_changed","_load_selected_sat_candidates","_load_sat_fast_candidates",
              "_run_sat_match","_render_source_list","_sort_candidates_with_cached_evidence",
-             "_preview_channel_rows","_render_sat_list","_measured_best_fps","_measured_fastest_and_overall","_refresh_epg_now_next","_refresh_mapping_caches","_source_tag","_update_header","_r731_start_search","_r731_poll_search","_expand_selected_sat_candidates",
+             "_preview_channel_rows","_candidate_decision","_render_sat_list","_measured_best_fps","_measured_fastest_and_overall","_refresh_epg_now_next","_refresh_mapping_caches","_source_tag","_update_header","_fast_rank_sat","_r731_start_search","_r731_poll_search","_expand_selected_sat_candidates",
              "_poll_expanded_candidates","_all_sources","_preview_sat_service_rows"),
         "core.py":("_preview_nomination_pool","fast_preview_instant_matches",
             "_fast_candidate_pool","_ensure_manual_indexes","_ensure_preview_decorated_index","_ensure_preview_coverage_indexes","_ensure_preview_provider_index","manual_search")
