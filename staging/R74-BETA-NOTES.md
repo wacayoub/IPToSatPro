@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.3-dvb-access-recheck-beta`
+**Build**: `1.0.46-r74.4-fast-signal-policy-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.4 Fast signal-priority engine
+
+- **SIGNAL+CRYPTED**: start IPTV with existing safe tuner/PMT guard; no extra crypto wait when positive CA evidence exists.
+- **NO SIGNAL+FTA/CRYPTED**: initiate IPTV as soon as actual tuner failure is confirmed (do not use SNR=0 alone).
+- **SIGNAL+FTA**: keep SAT; the ONLY deliberately excluded path.
+- **FTA at the start, ENCRYPTED at two seconds**: native Enigma2 timer re-reads live DVB crypto and CAIDs after 2000ms and starts IPTV automatically if the channel has become encrypted; no second zap.
+- Uses mainloop timer, current-service token, single-start protection and no forced channel switch during an existing IPTV transition. Preserves user mappings.
+- Controlled tests for all four priorities plus FTA-changing-to-encrypted and cancellation during CH+/CH-.
 
 ## R74.3 First-zap DVB crypto detection correction
 
