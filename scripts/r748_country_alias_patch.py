@@ -213,5 +213,13 @@ def patch_core(src):
     if not identity_ok:''')
     src=one(src,'''    if not equivalence and sat_norm != ip_norm and base < 72.0:''',
 '''    if not equivalence and not country_identity and sat_norm != ip_norm and base < 72.0:''')
+    src=one(src,'''    sat_var = _variant_tokens(sat_norm); ip_var = _variant_tokens(ip_norm)''',
+'''    sat_var = _variant_tokens(sat_norm); ip_var = _variant_tokens(ip_norm)
+    if country_identity:
+        # The country suffix/prefix is not a channel subservice variant.
+        _sat_code,_sat_base=_r748_explicit_country(sat_name)
+        _ip_code,_ip_base=_r748_explicit_country(ch.get("name",""))
+        sat_var=_variant_tokens(normalize_preview_name(_sat_base))
+        ip_var=_variant_tokens(normalize_preview_name(_ip_base))''')
     compile(src,"core.py","exec")
     return src
