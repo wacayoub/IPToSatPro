@@ -105,3 +105,17 @@ with tempfile.TemporaryDirectory() as td:
             print("R745_FUN",n.name,"BEGIN")
             print(body[:24000])
             print("R745_FUN",n.name,"END")
+
+    for n in ast.walk(tree):
+        if isinstance(n,ast.FunctionDef) and n.name in (
+          "_deferred_tune_failed_fallback","_on_start","_check_tuner_and_signal",
+          "_poll","_native_pat_guard_remaining_ms","_fast_map_fire","_poll_sat",
+          "_on_service_event"):
+            print("R745_FINAL_METHOD",n.name,"BEGIN")
+            print((ast.get_source_segment(monitor,n) or "")[:21000])
+            print("R745_FINAL_METHOD",n.name,"END")
+    for word in ("_fallback_if_matched()","tune_fail_defer_timer","_static_crypto_cache","TUNER_MAX_RECHECKS","FAST_MAPPED_DELAY_MS","NATIVE_PAT_GUARD_MS"):
+        hits=[i for i,x in enumerate(monitor_lines) if word in x]
+        for i in hits[:6]:
+            print("R745_ANCHOR",word,i+1)
+            print("\\n".join("%d %s"%(j+1,monitor_lines[j]) for j in range(max(0,i-6),min(i+12,len(monitor_lines)))))
