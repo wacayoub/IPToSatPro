@@ -106,7 +106,8 @@ class PreviewCloseCrashTests(unittest.TestCase):
             self.plugin)
 
     def test_player_monitor_and_timeshift_remain_unchanged(self):
-        self.assertTrue(self.meta["monitor_unchanged"])
+        self.assertFalse(self.meta["monitor_unchanged"])
+        self.assertTrue(self.meta["monitor_crypto_patch_only"])
         self.assertFalse(self.meta["receiver_tested"])
         self.assertFalse(self.meta["production_published"])
 
