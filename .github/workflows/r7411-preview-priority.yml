@@ -1,0 +1,33 @@
+name: R74 Preview Persistent SAFE Priority
+
+on:
+  push:
+    branches: [fix/r74-preview-persist-provider-language-resolution]
+  workflow_dispatch:
+
+jobs:
+  preview-safe-priority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Real R74 package Preview and rollback regression
+        run: |
+          python3 -m py_compile scripts/r7411_preview_persist_priority_hotfix.py
+          python3 -m unittest discover -s scripts -p test_r7411_preview_priority.py -v
+      - name: R74 existing automatic SAFE and video tests
+        run: |
+          python3 -m unittest discover -s scripts -p test_r74_unified.py -v
+          python3 -m unittest discover -s scripts -p test_r738_auto_open.py -v
+          python3 -m unittest discover -s scripts -p test_r737_video_visible.py -v
+      - name: Ensure no production updater changed
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          assert "r70" in str(json.loads(Path("update.json").read_text()).get("version","")).lower()
+          print("PRODUCTION_UPDATE_UNMODIFIED")
+          PY
