@@ -50,17 +50,17 @@ def build(destination=None):
         baseline=Path(td)/"r738.ipk"
         b.build(baseline)
         raw=baseline.read_bytes()
-        parts=b.b.b.base.pack.unpack_ar(raw)
-        original=b.b.b.base.pack.members_from(parts["data.tar.gz"])
-        control=b.b.b.base.pack.members_from(parts["control.tar.gz"])
+        parts=b.b.base.pack.unpack_ar(raw)
+        original=b.b.base.pack.members_from(parts["data.tar.gz"])
+        control=b.b.base.pack.members_from(parts["control.tar.gz"])
         plugin=p.patch_plugin(original[PLUGIN].decode())
         core=p.patch_core(original[CORE].decode())
         updater=original[UPDATER].decode()
-        plugin=b.b.b.exactly(plugin,'PLUGIN_VERSION = "'+OLD+'"',
+        plugin=b.b.exactly(plugin,'PLUGIN_VERSION = "'+OLD+'"',
                             'PLUGIN_VERSION = "'+NEW+'"')
-        updater=b.b.b.exactly(updater,'CURRENT_VERSION = "'+OLD+'"',
+        updater=b.b.exactly(updater,'CURRENT_VERSION = "'+OLD+'"',
                              'CURRENT_VERSION = "'+NEW+'"')
-        ctl=b.b.b.exactly(control["control"].decode(),"Version: "+OLD,"Version: "+NEW)
+        ctl=b.b.exactly(control["control"].decode(),"Version: "+OLD,"Version: "+NEW)
         theme_bytes=(ROOT/"scripts/r74_preview_theme.py").read_bytes()
         _validate_skin(theme_bytes.decode())
         changes={PLUGIN:plugin.encode(),CORE:core.encode(),UPDATER:updater.encode()}
@@ -72,14 +72,14 @@ def build(destination=None):
             "manual mapping, source detail, video preview, original player watchdog "
             "and failover protected. Native playback/monitor/timeshift modules "
             "unchanged. Do not treat CI tests as receiver validation.").encode()
-        parts["data.tar.gz"]=b.b.b.base.pack.make_tar(parts["data.tar.gz"],changes,
+        parts["data.tar.gz"]=b.b.base.pack.make_tar(parts["data.tar.gz"],changes,
                                                        {THEME:theme_bytes,CHANGELOG:desc})
-        parts["control.tar.gz"]=b.b.b.base.pack.make_tar(parts["control.tar.gz"],
+        parts["control.tar.gz"]=b.b.base.pack.make_tar(parts["control.tar.gz"],
                                                           {"control":ctl.encode()})
         dest=Path(destination) if destination else ROOT/"r74-unified-preview-beta.ipk"
         if dest.exists():dest.unlink()
-        result=b.b.b.base.pack.assemble(parts,dest)
-        actual=b.b.b.base.pack.members_from(b.b.b.base.pack.unpack_ar(result)["data.tar.gz"])
+        result=b.b.base.pack.assemble(parts,dest)
+        actual=b.b.base.pack.members_from(b.b.base.pack.unpack_ar(result)["data.tar.gz"])
         assert set(actual)==set(original)|{THEME,CHANGELOG}
         for key,val in original.items():
             assert actual[key]==changes.get(key,val),key
