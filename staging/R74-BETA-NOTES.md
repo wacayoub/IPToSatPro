@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.6-dvb-black-picture-beta`
+**Build**: `1.0.46-r74.7-preview-complete-candidates-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.7 Preview initial single source bug
+
+- Fixes the first current SAT channel initially displaying **only its preloaded manual lock**: one nonempty cached seed is not a complete candidate list.
+- Always asynchronously expand **incomplete** cached results, even when one or several instant seed candidates are already visible; preserves fast first screen.
+- Keep existing **complete** all-server cache fast path unchanged. The background result ranks up to 192 candidates with up to 64 per server PRIMARY/BACKUP1/BACKUP2; row limits do not collapse sources to one.
+- Retry the current SAT request safely if an old channel ranking worker is busy instead of silently dropping the search. Cancel/display only matching current SAT result and preserve mapping.
+- New logs: `PREVIEW_SEED_EXPAND`, `PREVIEW_EXPAND_WAIT`, `PREVIEW_RANK_BG`, `PREVIEW_UI_CANDIDATES`.
+- No changes to DVB, player, stream watchdog, timeshift, user locks or provider credentials.
 
 ## R74.6 Decode-aware SAT fallback — DMAX / TLC black screen
 
