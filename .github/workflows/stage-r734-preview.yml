@@ -1,0 +1,60 @@
+name: Stage R73.4 Instant Preview Resolution Beta
+on:
+  push:
+    branches: [feature/r734-instant-preview-resolution]
+    paths:
+      - '.github/workflows/stage-r734-preview.yml'
+      - 'scripts/stage-r734-preview.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: iptosat-r734-beta
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate late-resolving decoder and preview safeguards
+        run: |
+          set -eu
+          python3 -m unittest discover -s scripts -p 'test_r734_preview.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
+          python3 scripts/build-r73-preview.py
+          echo '58baa06a862c33ae48d22eae7d62286cf46e1337b6bdea31ab937ae1750c3061  r734-instant-preview-resolution-beta.ipk' | sha256sum -c -
+          python3 scripts/check_locked_fast_guard.py r734-instant-preview-resolution-beta.ipk
+      - name: Stage SHA-verified opt-in build
+        run: |
+          set -eu
+          python3 scripts/stage-r734-preview.py
+          sh -n download-r734-preview.sh
+          python3 - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('staging/r734-instant-preview-resolution.update.json').read_text())
+          blob=base64.b64decode(Path('payload/r734-instant-preview-resolution.b64').read_bytes())
+          assert len(blob)==m['size']==413348
+          assert hashlib.sha256(blob).hexdigest()==m['sha256']
+          assert not m['hardware_tested'] and not m['production_published']
+          assert json.loads(Path('update.json').read_text())['version']=='1.0.46-r70-final'
+          assert Path('latest-version.txt').read_text().strip()=='1.0.46-r70-final'
+          print('R734_BETA_VERIFIED_PRODUCTION_UNMODIFIED')
+          PY
+      - name: Publish only to experimental branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add payload/r734-instant-preview-resolution.b64 staging/r734-instant-preview-resolution.update.json download-r734-preview.sh
+          if git diff --cached --quiet; then
+            echo 'R73.4 already staged'
+          else
+            git commit -m 'Stage SHA256 verified R73.4 instant Preview resolution beta'
+            git push origin HEAD:feature/r734-instant-preview-resolution
+          fi
