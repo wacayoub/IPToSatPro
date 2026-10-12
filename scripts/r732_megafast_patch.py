@@ -241,8 +241,8 @@ def patch_plugin(src):
             self["status"].setText("ALL INDEXED CANDIDATES READY: %d • CH+/- page • 5 full search" % len(self._r732_auto_rows))
             self._set_focus("right")
             return
-        self._r71_deep_requested = True
-        self._r71_deep_target_ref = raw''')
+        self._r71_deep_requested = False
+        self._r71_deep_target_ref = ""''')
     # Do not leave previous SAT candidates on screen while a new job is pending.
     src=one(src,'        self.channels = []\n        self.selected_index = 0\n        self._user_rejected_ids = set()',
         '''        self.channels = []
@@ -276,6 +276,13 @@ def patch_plugin(src):
     # Header shows total even though only one page is rendered at a time.
     src=one(src,'"CANDIDATES • %d • P+B1+B2 • 5 SEARCH" % len(self.channels)',
             '"CANDIDATES • %d TOTAL • 48/PAGE • P+B1+B2" % max(len(self.channels),len(self._r732_auto_rows))')
+    # Do not compact distinct IPTV URLs from the same provider; every indexed
+    # backup remains available for a human preview on later pages.
+    src=one(src,'        return self._compact_candidate_duplicates(rows)\n\n    def _preview_catalog_token',
+                '        return rows\n\n    def _preview_catalog_token')
+    src=one(src,'''            self["status"].setText("%d candidates • INSTANT%s • full P/B1/B2 loading" % (len(self.channels), " CACHE" if complete else ""))''',
+                '''            self["status"].setText("%d INDEXED CANDIDATES READY • %d pages • CH+/-" %
+                                   (len(self._r732_auto_rows),(len(self._r732_auto_rows)+47)//48))''')
     # Preserve score rank for actual verified entries and reflect one-shot results.
     src=one(src,'        self["status"].setText("%d candidates • ALL SERVERS%s • READY • YELLOW = MORE" %',
             '        self["status"].setText("%d INDEXED CANDIDATES • ALL AT ONCE%s • READY • CH+/- PAGES" %')
