@@ -1,8 +1,16 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.8-country-code-matcher-beta`
+**Build**: `1.0.46-r74.9-reordered-name-matcher-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.9 FilmBox One ↔ ONE: FILMBOX exact reorder
+
+- Treat *only exact multisets of full normalized channel identity tokens* as a safe word-order equivalence (`FilmBox One` ↔ `ONE: FILMBOX`; One also maps to numeric 1). Used in fast all-server candidate nomination AND Preview/automatic match score; candidate receives `name_order_alias=SAME_WORDS_DIFFERENT_ORDER` and exact 100 name identity instead of order-specific penalty.
+- Preserve strict identical numbered service identity and edition tokens: FilmBox 2, FilmBox Extra, FilmBox Premium, FilmBox Family are NOT treated as FilmBox One.
+- Keep original DVB audio-language checks, explicit country-prefix conflicts and user manual mappings intact. No changes to player, monitor, stream health, timeshift or tuner timing.
+- Bump in-memory index cache epoch (`mega-r749`) so stale incomplete shortlist cannot hide reordered candidate after version upgrade. Source replicas remain independent.
+- CI tests include multiple name inversions, false-positive service variants, and all three IPTV server roles.
 
 ## R74.8 SAT country name ↔ IPTV country code
 
