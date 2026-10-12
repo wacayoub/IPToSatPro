@@ -30,3 +30,9 @@ with tempfile.TemporaryDirectory() as td:
             init=next(x for x in n.body if isinstance(x,ast.FunctionDef) and x.name=="__init__")
             print("PREVIEW_INIT_BEGIN\\n"+(ast.get_source_segment(plugin,init) or "")[:18000]+"\\nPREVIEW_INIT_END")
             print("PREVIEW_METHODS",[(x.name,x.lineno) for x in n.body if isinstance(x,ast.FunctionDef)])
+
+    core=fs[b.b.CORE].decode()
+    for n in ast.walk(ast.parse(core)):
+        if isinstance(n,ast.FunctionDef) and n.name=="infer_sat_context":
+            excerpt=ast.get_source_segment(core,n) or ""
+            print("INFER_SAT_CONTEXT_BEGIN\\n"+excerpt[:17500]+"\\nINFER_SAT_CONTEXT_END")
