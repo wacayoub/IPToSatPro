@@ -104,7 +104,7 @@ class ReorderedFilmBoxTests(unittest.TestCase):
     def test_reordering_in_pre_rank_and_score_and_cache_epoch(self):
         self.assertIn("reordered=_r749_reordered_identity(sat_name,name)",self.src)
         self.assertIn("or reordered))",self.src)
-        self.assertIn('self._fast_cache_key("mega-r749"',self.src)
+        self.assertIn('self._fast_cache_key("mega-r7410"',self.src)
         self.assertIn("reordered_identity=_r749_reordered_identity(sat_name,ch.get(\"name\",\"\"))",self.src)
         self.assertTrue(self.meta["reordered_name_matcher"])
         self.assertFalse(self.meta["receiver_tested"])
