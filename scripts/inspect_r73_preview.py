@@ -11,8 +11,8 @@ lines=src.splitlines()
 tree=ast.parse(src)
 print("SOURCE lines",len(lines))
 for node in tree.body:
-    if isinstance(node,ast.Assign) and any(isinstance(x,ast.Name) and "PREVIEW" in x.id and "SKIN" in x.id for x in node.targets):
-        print("PREVIEW SKIN",ast.unparse(node)[:20000])
+    if isinstance(node,ast.Assign) and any(isinstance(x,ast.Name) and x.id == "PREVIEW_FHD" for x in node.targets):
+        print("PREVIEW_SKIN",ast.unparse(node)[:25000])
     if isinstance(node,ast.ClassDef) and node.name in ("SatIPTVBridgePreview","PreviewBrowserList"):
         print("CLASS",node.name,node.lineno,node.end_lineno)
 for start,end in [(5028,5168),(5168,5355),(6487,6550),(6749,6805),(6939,7065),(7410,7470)]:
