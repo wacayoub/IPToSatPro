@@ -162,6 +162,13 @@ def _r736_auto_map_single_sat(sat_ref, sat_name, ctx, ranked):
                     "sat=%r state=ERROR source=CACHE error=%s"%
                     (self.sat_name,str(auto_error)[:100]))
         self._refresh_epg_now_next(raw)''')
+    # Make the resulting mapping's origin clear in the Preview heading. An
+    # automatic green candidate is locked, but never confused with MANUAL.
+    src=one(src,
+'''            return "[%s] %s • LOCKED" % (role, presentation_name(manual.get("name") or "IPTV"))''',
+'''            mapping_kind = "AUTO LOCKED" if manual.get("auto_best_lock") else "MANUAL LOCKED"
+            return "[%s] %s • %s" % (role, presentation_name(manual.get("name") or "IPTV"), mapping_kind)''')
+
     # Persist on Preview GUI thread after full background ranking completes.
     # The CPU-only worker does not modify disk files.
     src=one(src,
