@@ -115,6 +115,24 @@ def patch_monitor(src):
                 self.native_pat_guard_pending=False
                 self._log("DVB_LOCK_NO_VIDEO","sat='%s' still black during PMT guard"%self.current_sat_name)
                 return''')
+    # A reused failed TP that later says LOCKED may still be black.
+    # Do not invalidate actual TUNE_FAILED evidence until video is verified.
+    src=one(src,'''            if live=="LOCKED" or self._sat_pmt_pid()>0:
+                self._r745_discard_bad_tp("LATE_TUNER_LOCK")
+                return False''',
+'''            if live=="LOCKED" or self._sat_pmt_pid()>0:
+                if self._r746_black_active():
+                    self._fallback_crypto_gate=True
+                    self.crypted_state="?"
+                    self._log("DVB_BLACK_ALLOW","sat='%s' recovered lock but no DVB picture"%self.current_sat_name)
+                    return True
+                return False''')
+    src=one(src,'''            if str(self._sat_tuner_state() or "?").upper()=="LOCKED":
+                # LOCKED without video: R74.4 two-second observer arbitrates.''',
+'''            if (str(self._sat_tuner_state() or "?").upper()=="LOCKED"
+                    and not self._r746_black_active()):
+                # LOCKED without video: R74.4 two-second observer arbitrates.''')
+
     # Re-enable encrypted fallback only once 2 samples show no DVB picture.
     src=one(src,'''        live_state = self._is_crypted()
         if live_state is True:
@@ -153,7 +171,8 @@ def patch_monitor(src):
     src=one(src,'''        self.native_pat_guard_pending = False
         pmt = self._sat_pmt_pid()
         self._log("DVB_PAT_GUARD_OK",''',
-'''        if self._r746_black_active() and self._r746_native_picture():
+'''        if (getattr(self,"_r746_black_token",None)==self._r746_token()
+                and self._r746_native_picture()):
             self._r746_black_token=None
             self.native_pat_guard_pending=False
             self._log("DVB_BLACK_CANCEL","native video recovered during guard")
