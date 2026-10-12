@@ -1,0 +1,31 @@
+name: R7413 Preview Overlay Stays Visible
+on:
+  push:
+    branches: [fix/r7413-preview-inline-no-hide]
+  workflow_dispatch:
+jobs:
+  preview-inline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile and test real R74 UI overlay hotfix
+        run: |
+          python3 -m py_compile scripts/r7413_preview_inline_hotfix.py
+          python3 -m unittest discover -s scripts -p test_r7413_preview_inline.py -v
+      - name: Verify earlier Preview improvements
+        run: |
+          python3 -m unittest discover -s scripts -p test_r7412_preview_shortlist.py -v
+          python3 -m unittest discover -s scripts -p test_r7411_preview_priority.py -v
+      - name: No production publish
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          ver = json.loads(Path('update.json').read_text()).get('version','')
+          assert 'r70' in str(ver).lower(),ver
+          print('PRODUCTION_UNCHANGED',ver)
+          PY
