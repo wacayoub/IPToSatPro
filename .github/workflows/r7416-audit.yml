@@ -1,0 +1,37 @@
+name: R7416 Source Mapping & Crypt Roster Audit
+on:
+  push:
+    branches: [fix/r7416-unmap-fta-crypted-icons]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Inspect actual R74 built mapping and SAT roster
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          sp=importlib.util.spec_from_file_location("r74","scripts/build-r74-unified.py")
+          b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
+          with tempfile.TemporaryDirectory() as t:
+            ipk=Path(t)/"r74.ipk";b.build(ipk)
+            pack=b.b.b.base.pack
+            members=pack.members_from(pack.unpack_ar(ipk.read_bytes())["data.tar.gz"])
+            src=members[b.PLUGIN].decode()
+            tree=ast.parse(src)
+            cl=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=="SatIPTVBridgePreview")
+            targets={"_load_overrides","_save_override","_remove_user_rejection","_refresh_mapping_caches","_render_sat_list","_mapping_text","_r731_toggle_fta","_r74_switch_roster","_load_sat_roster_deferred","_selected_sat_row","_sat_index_now","_move_up","_move_down","_source_selection_changed","_update_header","_preview_sat_service_rows","_r74_bouquet_service_rows","_cleanup","_toggle_reject","_rescan_selected_sat"}
+            for n in tree.body:
+              if isinstance(n,ast.FunctionDef) and n.name in targets:
+                print("METHOD_START GLOBAL",n.name);print(ast.get_source_segment(src,n)[:18000]);print("METHOD_END GLOBAL",n.name)
+            for n in cl.body:
+              if isinstance(n,ast.FunctionDef) and n.name in targets:
+                print("METHOD_START PREVIEW",n.name);print(ast.get_source_segment(src,n)[:17000]);print("METHOD_END PREVIEW",n.name)
+            for term in ("_save_override(", "PREVIEW_LAST_SOURCE_BY_SAT","_manual_overrides","CRYPTED ONLY","F T A", "sat_rows"):
+              print("COUNT",term,src.count(term))
+          PY
