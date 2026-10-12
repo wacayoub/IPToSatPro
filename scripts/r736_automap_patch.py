@@ -128,6 +128,43 @@ def _r736_auto_map_single_sat(sat_ref, sat_name, ctx, ranked):
         return _r736_choose_best_safe(raw,sat_name,context,ranked,rejected)
 
 '''+src[end:]
+    # Complete shared-cache hits must auto-map too. Otherwise auto-mapping
+    # would only run when a fresh background ranking happens and skip most
+    # revisits after AutoScan has prewarmed the Preview candidate cache.
+    src=one(src,
+'''        self._r732_auto_rows = [dict(x or {}) for x in list(cached[2] or [])]
+        self._r732_auto_page = 0
+        self.channels = [dict(x) for x in self._r732_auto_rows[:48]]
+        try: complete = bool(cached[3])''',
+'''        self._r732_auto_rows = [dict(x or {}) for x in list(cached[2] or [])]
+        self._r732_auto_page = 0
+        self.channels = [dict(x) for x in self._r732_auto_rows[:48]]
+        try: complete = bool(cached[3])''')
+    # No changes in live mapping until complete scanned candidates become
+    # available.  Both direct cache and fresh-work paths use the shared helper.
+    src=one(src,
+'''        try: complete = bool(cached[3])
+        except Exception: complete = False
+        self._refresh_epg_now_next(raw)''',
+'''        try: complete = bool(cached[3])
+        except Exception: complete = False
+        if complete and self._r732_auto_rows:
+            try:
+                ranked_cached=[(dict(ch),
+                    float(ch.get("_preview_score") or 0),
+                    dict(ch.get("_preview_details") or {}))
+                    for ch in self._r732_auto_rows]
+                auto_state,_pick=_r736_auto_map_single_sat(raw,self.sat_name,
+                    self.context,ranked_cached)
+                _startup_log("PREVIEW_AUTO_MAP",
+                    "sat=%r state=%s source=CACHE"%(self.sat_name,auto_state))
+                if auto_state in ("AUTO_CREATED","AUTO_REPLACED"):
+                    self._manual_overrides=_load_overrides()
+            except Exception as auto_error:
+                _startup_log("PREVIEW_AUTO_MAP",
+                    "sat=%r state=ERROR source=CACHE error=%s"%
+                    (self.sat_name,str(auto_error)[:100]))
+        self._refresh_epg_now_next(raw)''')
     # Persist on Preview GUI thread after full background ranking completes.
     # The CPU-only worker does not modify disk files.
     src=one(src,
