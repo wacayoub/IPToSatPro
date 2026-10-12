@@ -90,7 +90,7 @@ class MonitorFTARegression(unittest.TestCase):
         self.assertEqual(patcher.patch(self.updated)[1],"already-installed")
         self.assertIn(aac.TAG,self.updated)
         self.assertIn(patcher.TAG,self.updated)
-        self.assertIn("native PAT",self.updated)
+        self.assertIn("NATIVE_PAT_GUARD_MS",self.updated)
         self.assertIn("_r745_cached_probe",self.updated)
 
     def test_fta_signal_locked_keeps_dvb_even_without_video_pts(self):
