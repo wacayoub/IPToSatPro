@@ -224,7 +224,7 @@ def patch_plugin(src):
     src=one(src,'''        self["verify"] = Label("AUTO maps SAFE candidates by identity • OK displays real video fullscreen • GREEN corrects manually")''',
         '''        self["verify"] = Label("AUTO SELECT / PLAY • OK: test vidéo 8 s • GREEN: correction manuelle")''')
     src=one(src,'''        self["detail"] = Label("LEFT: SAT channels • RIGHT: IPTV sources • OK = FULLSCREEN video test (8 s) • AUTO = metadata only")''',
-        '''        self["detail"] = Label("7: Bouquet / Satellite   •   6: filtre FTA satellite   •   CH+/-: pages")''')
+        '''        self["detail"] = Label("7 Bouquet/Sat • 8 Serveur • 9 SAFE • 3 Pays/Qualité • 5 Recherche")''')
     src=one(src,'''        self["sat_list"] = PreviewBrowserList([], width=488, item_height=42, font_size=19)''',
         '''        self["sat_list"] = PreviewBrowserList([], width=492, item_height=43, font_size=19)''')
     src=one(src,'''        self["source_list"] = PreviewBrowserList([], width=1066, item_height=42, font_size=18)''',
@@ -265,7 +265,7 @@ def patch_plugin(src):
                 self._sat_rows_loaded=True
                 _startup_log("R74_BOUQUET_ROSTER","bouquet=%r tv=%d elapsed=%dms"%
                     (bouquet_name,len(rows),int((time.monotonic()-started)*1000)))
-                self["detail"].setText("Bouquet actif • ordre natif • 7 = satellite • 5 = recherche IPTV")
+                self["detail"].setText("Bouquet actuel • 7 Satellite • 8 Serveur • 9 SAFE • 3 Pays/Qualité • 5 Recherche")
                 return True
             self._r74_roster_mode="SATELLITE"
             _startup_log("R74_BOUQUET_FALLBACK","No current native DVB TV bouquet: satellite mode")
@@ -334,6 +334,17 @@ def patch_plugin(src):
             provider[:32], sat_display[:24], access, self._mapping_text()[:34], self.current_result[:25]))''')
 
     src=_patch_filters(src)
+    # Match market and audio before fuzzy-score tie-break for same safe identity.
+    src=one(src,'''            order=(tier,iband,identity,float(score or 0),measured,qual,
+                   w*hh,-priority,-pos)''',
+'''            prefs=set(str(v).upper() for v in (ctx or {}).get("market_preferences",[]) if v)
+            langs=set(str(v).upper() for v in (ctx or {}).get("language_priorities",[]) if v)
+            cm=str((ch or {}).get("market") or "").upper()
+            cl=str((ch or {}).get("language") or "").upper()
+            market_fit=int(bool(cm and cm in prefs))
+            lang_fit=int(bool(cl and cl in langs))
+            order=(tier,iband,identity,market_fit,lang_fit,float(score or 0),measured,qual,
+                   w*hh,-priority,-pos)''')
     compile(src,"plugin.py","exec")
     return src
 
