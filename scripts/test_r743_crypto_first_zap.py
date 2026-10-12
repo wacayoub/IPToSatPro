@@ -22,7 +22,7 @@ class CryptFirstZapTests(unittest.TestCase):
         cls.tmp=tempfile.TemporaryDirectory()
         pkg=Path(cls.tmp.name)/"r743.ipk"
         cls.meta=b.build(pkg)
-        cls.payload=b.b.base.pack.members_from(b.b.base.pack.unpack_ar(pkg.read_bytes())["data.tar.gz"])
+        cls.payload=b.b.b.base.pack.members_from(b.b.b.base.pack.unpack_ar(pkg.read_bytes())["data.tar.gz"])
         cls.src=cls.payload[b.MONITOR].decode()
         tree=ast.parse(cls.src)
         classes=[n for n in tree.body if isinstance(n,ast.ClassDef)
