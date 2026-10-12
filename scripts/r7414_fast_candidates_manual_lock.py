@@ -183,7 +183,7 @@ def patch(source):
     if p2-p1>1300 or p2-p1<100:
         raise ValueError("Unexpected VERIFY confirmation block length")
     source=(source[:p1] +
-            '        # R7414: no implicit VERIFY->PLAYING promotion from player-active state.\\n' +
+            '        # R7414: no implicit VERIFY->PLAYING promotion from player-active state.\n' +
             source[p2:])
     source=once(source,GREEN_CAPTION_ORIGINAL,GREEN_CAPTION_REPLACE,"button label")
     source=once(source,GREEN_FOCUS_ORIGINAL,GREEN_FOCUS_REPLACE,"GREEN focus hint")
