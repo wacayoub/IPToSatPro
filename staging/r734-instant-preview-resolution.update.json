@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.4-instant-preview-resolution-beta",
+  "size": 413348,
+  "sha256": "58baa06a862c33ae48d22eae7d62286cf46e1337b6bdea31ab937ae1750c3061",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r734-instant-preview-resolution/payload/r734-instant-preview-resolution.b64"
+  ],
+  "notes": "R73.4 Preview: prioritize full candidate list before expensive SAT roster, all indexed P/B1/B2 candidates in one batch, delayed resolution automatically sampled up to 8 seconds also in VERIFY without rezapping, persist 1920x1080 in per-stream health only for active requested player. Player, timeshift and mappings unchanged. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
