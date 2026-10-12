@@ -240,17 +240,32 @@ def replace_once(source,before,after,label,expected=1):
 
 
 def replace_in_method(source,method,before,after,label):
-    marker="    def "+method+"("
-    begin=source.find(marker)
-    if begin<0:raise ValueError("R7416 missing method "+method)
-    end=source.find("\n    def ",begin+len(marker))
-    if end<0:raise ValueError("R7416 next method missing after "+method)
+    """Patch a verified class method or module-level function exactly once."""
+    class_marker="    def "+method+"("
+    top_marker="def "+method+"("
+    begin=source.find(class_marker)
+    is_top=False
+    if begin<0:
+        begin=source.find("\n"+top_marker)
+        if begin>=0:begin+=1
+        is_top=True
+    if begin<0:
+        raise ValueError("R7416 missing method "+method)
+    if is_top:
+        ends=[source.find(token,begin+len(top_marker)) for token in
+              ("\ndef ","\nclass ")]
+    else:
+        ends=[source.find("\n    def ",begin+len(class_marker))]
+    stops=[n for n in ends if n>=0]
+    end=min(stops) if stops else len(source)
     part=source[begin:end]
+    if part.count(before)!=1 and part.count("\n"+before)==1:
+        before="\n"+before
+        after="\n"+after
     if part.count(before)!=1:
-        raise ValueError("R7416 %s in %s anchor count=%d"%
+        raise ValueError("R7416 %s in %s anchor count=%d" %
                          (label,method,part.count(before)))
     return source[:begin]+part.replace(before,after,1)+source[end:]
-
 
 def patch(source):
     if TAG in source:
