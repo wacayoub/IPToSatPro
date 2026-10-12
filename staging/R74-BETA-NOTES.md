@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.9-reordered-name-matcher-beta`
+**Build**: `1.0.46-r74.10-untrusted-prefix-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.10 IPTV country prefix can be wrong
+
+- Previously R74.8 discarded matching channel base when DVB market Austria/AT conflicted with IPTV prefixed DE, so otherwise useful video candidates disappeared.
+- Explicit IPTV prefix is now **low-trust catalog metadata**. Exact channel-identity candidates stay listed and receive `country_prefix_warning` and `review_reason`, never automatic SAFE based only on an unverified prefix.
+- Matching proper-market prefix AT still ranks above DE on `TLC HD Austria`. Inconsistent prefixes appear as reviewable alternatives on PRIMARY/BACKUP1/BACKUP2, with manual video/audio verification; user MANUAL_LOCK remains authoritative.
+- Channel numbers, variant, and independent SAT audio safety checks remain intact. An IPTV country prefix cannot assert its actual audio language if contradicted by exact SAT identity.
+- Candidate-index cache key advanced to `mega-r7410` to refresh previously discarded mismatched-prefix candidates after updating.
+- Tests check multiple incorrect IPTV prefixes, proper country priority, live and Preview safety, and rejection of real mismatched channels. No receiver validation yet.
 
 ## R74.9 FilmBox One ↔ ONE: FILMBOX exact reorder
 
