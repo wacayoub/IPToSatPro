@@ -21,10 +21,14 @@ PLUGIN = P + "plugin.py"
 UPDATER = P + "updater.py"
 CORE = P + "core.py"
 OLD = "1.0.46-r72.7-fuzzy-cache-beta"
-NEW = "1.0.46-r73-preview-browser-beta"
-CHANGELOG = P + "CHANGELOG-r73-PREVIEW-BROWSER.txt"
+NEW = "1.0.46-r73.1-preview-recovery-beta"
+CHANGELOG = P + "CHANGELOG-r731-PREVIEW-RECOVERY.txt"
 B64 = ROOT/"payload/r727-fuzzy-cache.b64"
 BASE_SHA256 = "cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62"
+
+patchspec = importlib.util.spec_from_file_location("r731_patch", ROOT/"scripts/r731_core_patch.py")
+r731 = importlib.util.module_from_spec(patchspec)
+patchspec.loader.exec_module(r731)
 
 def exactly(src, old, new):
     n = src.count(old)
@@ -159,6 +163,7 @@ def patch_plugin(data):
         except Exception:
             return
         self._expand_ref = raw''')
+    src = r731.patch_plugin_r731(src)
     src = exactly(src, 'PLUGIN_VERSION = "'+OLD+'"', 'PLUGIN_VERSION = "'+NEW+'"')
     compile(src, PLUGIN, "exec")
     return src.encode("utf-8")
@@ -185,6 +190,7 @@ def patch_core(data):
     src=exactly(src,
         'str(ctx.get("target_hdr") or ""), str(quality_mode or "best"), tuple(extra or ()),',
         'str(ctx.get("target_hdr") or ""), str(ctx.get("match_threshold") or ""), str(quality_mode or "best"), tuple(extra or ()),')
+    src = r731.patch_core_r731(src)
     compile(src,CORE,"exec")
     return src.encode("utf-8")
 
@@ -200,9 +206,9 @@ def build(path=None):
     changes[UPDATER] = exactly(up, 'CURRENT_VERSION = "'+OLD+'"',
                                    'CURRENT_VERSION = "'+NEW+'"').encode()
     description = (
-        "R73 staged Preview refactor: preserve 144 deep indexed candidates "
-        "after sorting, refresh cache on language/match threshold/quality changes, "
-        "stop presenting saved manual lock as fabricated score 150; native Neo Dark theme, "
+        "R73.1 staged: 144 indexed candidates plus full-catalogue literal manual search "
+        "(48-row paging); FTA opt-in SAT list; correct preview country-only reject, "
+        "keep hard number/audio safety checks; native Neo Dark theme, "
         "focused SAT/IPTV pagination and read-only BLUE details. LIVE player, monitor, timeshift and user data unchanged. "
         "Experimental; do not install until tests and receiver validation.\\n"
     ).encode()
@@ -223,7 +229,7 @@ def build(path=None):
     parts["data.tar.gz"] = base.pack.make_tar(parts["data.tar.gz"], changes,
         {CHANGELOG:description, P+"preview_theme_r73.py":theme_source})
     parts["control.tar.gz"] = base.pack.make_tar(parts["control.tar.gz"], {"control":new_control})
-    dest = Path(path) if path else ROOT/"r73-preview-browser-beta.ipk"
+    dest = Path(path) if path else ROOT/"r731-preview-recovery-beta.ipk"
     if dest.exists(): dest.unlink()
     built = base.pack.assemble(parts, dest)
     rebuilt = base.pack.members_from(base.pack.unpack_ar(built)["data.tar.gz"])
@@ -235,7 +241,7 @@ def build(path=None):
         "version":NEW, "size":len(built), "sha256":hashlib.sha256(built).hexdigest(),
         "changed": sorted(changes), "protected_unmodified":len(original)-len(changes),
         "production_published":False, "receiver_tested":False,
-        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73"
+        "preview_only":True, "player_unchanged":True, "theme":"neo-dark-r73", "candidate_search":"indexed_full_catalogue"
     }
     print("R73_PREVIEW_STAGE_OK", json.dumps(metadata, sort_keys=True))
     return metadata
