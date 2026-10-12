@@ -127,7 +127,8 @@ class CountryCodeMatcher(unittest.TestCase):
     def test_all_server_index_uses_country_identity(self):
         self.assertIn("country_relation,_sat_code,_ip_code=_r748_country_relation(sat_name,name)",self.src)
         self.assertIn('country_relation=="MATCH"',self.src)
-        self.assertIn('if country_relation=="CONFLICT":',self.src)
+        self.assertIn('country_relation in ("MATCH","CONFLICT")',self.src)
+        self.assertIn('prefix_fit=(2 if country_relation=="MATCH"',self.src)
         self.assertTrue(self.meta["country_alias_matcher"])
         self.assertFalse(self.meta["receiver_tested"])
 if __name__=="__main__":unittest.main()
