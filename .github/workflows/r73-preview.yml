@@ -1,0 +1,19 @@
+name: R73 Preview Browser isolated tests
+on:
+  push:
+    branches: [feature/r73-preview-browser-pro]
+  workflow_dispatch:
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test actual packaged Preview code
+        run: python3 -m unittest discover -s scripts -p test_r73_preview.py -v
+      - name: Build and inspect staged IPK
+        run: |
+          python3 scripts/build-r73-preview.py
+          python3 scripts/check_locked_fast_guard.py r73-preview-browser-beta.ipk
