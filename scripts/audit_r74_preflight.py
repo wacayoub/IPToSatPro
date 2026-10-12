@@ -80,3 +80,9 @@ with tempfile.TemporaryDirectory() as td:
     for i,line in enumerate(monitor_lines):
         if "timer = eTimer()" in line or "_fallback_crypto_gate = None" in line or "current_sat_started_at = " in line:
             print("R744_INIT",i+1,monitor_lines[max(0,i-4):i+6])
+
+    for token in ('SAT_START','SAT_TUNED','_fallback_crypto_gate = None','_fallback_with_native_pat_guard()','NO_SIGNAL_FTA_IPTV_ALLOWED','FAST_MAP_ARM','_on_start('):
+        indexes=[i for i,line in enumerate(monitor_lines) if token in line]
+        for i in indexes[:5]:
+            print("R744_WINDOW",token,"INDEX",i+1)
+            print("\\n".join("%d %s"%(j+1,monitor_lines[j]) for j in range(max(0,i-13),min(i+22,len(monitor_lines)))))
