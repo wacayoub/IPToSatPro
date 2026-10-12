@@ -1,7 +1,7 @@
 {
-  "version": "1.0.46-r74.5-nosignal-cache-fast-beta",
-  "size": 425810,
-  "sha256": "aa2158eb3912eb481f41145a77e236337facfb950097c7ff8e5758f507598a9f",
+  "version": "1.0.46-r74.6-dvb-black-picture-beta",
+  "size": 426626,
+  "sha256": "6b794151f4870167ee8523ce5138ac10cb7584f41d514f4bbc534e6a441e6276",
   "beta": true,
   "receiver_tested": false,
   "production_published": false
