@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73-preview-browser-beta",
+  "size": 407996,
+  "sha256": "969d26dbfeb045f990d42b4d294c0513f03a8f757d9b10c758f06ad4f32758d7",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r73-preview-browser-pro/payload/r73-preview-browser.b64"
+  ],
+  "notes": "R73 Preview Browser opt-in BETA: native Neo Dark two-panel theme, focused CH paging, BLUE candidate details, deep indexed 144 candidate budget, configurable preview threshold, corrected cache and no fictitious 150 match score. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
