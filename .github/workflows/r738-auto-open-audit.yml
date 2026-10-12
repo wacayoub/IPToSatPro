@@ -19,7 +19,7 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_r736_automap.py' -v
           python3 -m unittest discover -s scripts -p 'test_r737_video_visible.py' -v
-          python3 -m unittest discover -s scripts -p 'test_r735_generic.py' -v
+          python3 -m unittest discover -s scripts -p 'test_r73_20_matches.py' -v
       - uses: actions/upload-artifact@v4
         with:
           name: r738-safe-auto-play-beta
