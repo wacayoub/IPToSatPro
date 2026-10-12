@@ -70,3 +70,13 @@ with tempfile.TemporaryDirectory() as td:
             print("CRYPT_FULL_FUNCTION",n.name,"BEGIN")
             print(snippet[:18500])
             print("CRYPT_FULL_FUNCTION",n.name,"END")
+
+    for n in ast.walk(tree):
+        if isinstance(n,ast.FunctionDef) and n.name in ("_poll","_on_service_start","_on_service_started","_sat_tuner_state","_fallback_if_matched","_fallback_with_native_pat_guard","_on_tune_failed","_deferred_tune_failed","_on_tuned","_start_guard"):
+            body=ast.get_source_segment(monitor,n) or ""
+            print("R744_FUNCTION",n.name,"BEGIN")
+            print(body[:17500])
+            print("R744_FUNCTION",n.name,"END")
+    for i,line in enumerate(monitor_lines):
+        if "timer = eTimer()" in line or "_fallback_crypto_gate = None" in line or "current_sat_started_at = " in line:
+            print("R744_INIT",i+1,monitor_lines[max(0,i-4):i+6])
