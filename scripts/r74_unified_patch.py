@@ -413,6 +413,37 @@ def _r736_choose_best_safe(sat_ref, sat_name, ctx, ranked, rejected=None):''')
     details["r74_language_evidence"]=origin_source
     details["r74_iptv_language"]=_r74_normalize_lang(ch.get("language")) or "UNKNOWN"
     return ch,score,details,has_review''')
+    # Ranking receives ONLY language evidence from the original SAT service.
+    # The global configured FR/AR/EN preferences are not a per-channel identity.
+    src=one(src,'''            priorities = [x.strip().upper() for x in cfg.languages.value.split(",") if x.strip()]
+            quality_mode = cfg.quality_mode.value
+            ctx = dict(ctx or {})
+            ctx["match_threshold"] = float(cfg.match_threshold.value)''',
+'''            ctx = dict(ctx or {})
+            priorities,evidence=_r74_sat_original_languages(raw,ctx)
+            priorities=list(priorities)
+            ctx["language_priorities"]=list(priorities)
+            if evidence=="DVB_AUDIO":
+                ctx["audio_language_set"]=list(priorities)
+                ctx["audio_identity"]="HIGH" if len(priorities)==1 else "MULTI"
+                ctx["audio_language_target"]=priorities[0] if len(priorities)==1 else ""
+            quality_mode = cfg.quality_mode.value
+            ctx["match_threshold"] = float(cfg.match_threshold.value)''')
+
+    src=one(src,'''            priorities=[x.strip().upper() for x in cfg.languages.value.split(",") if x.strip()]
+            ctx=dict(ctx or {})
+            ctx["match_threshold"]=float(cfg.match_threshold.value)
+            ranked=catalog.fast_preview_mega_matches(''',
+'''            ctx=dict(ctx or {})
+            priorities,evidence=_r74_sat_original_languages(raw,ctx)
+            priorities=list(priorities)
+            ctx["language_priorities"]=list(priorities)
+            if evidence=="DVB_AUDIO":
+                ctx["audio_language_set"]=list(priorities)
+                ctx["audio_identity"]="HIGH" if len(priorities)==1 else "MULTI"
+                ctx["audio_language_target"]=priorities[0] if len(priorities)==1 else ""
+            ctx["match_threshold"]=float(cfg.match_threshold.value)
+            ranked=catalog.fast_preview_mega_matches(''')
     compile(src,"plugin.py","exec")
     return src
 
