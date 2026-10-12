@@ -138,6 +138,21 @@ STATUS_REPLACE='''            if unverified_manual:
                 self["status"].setText("SAFE • LOCKED • PREVIEW VERIFIED • previous REVIEW/REJECT corrected • browser stays open")'''
 
 
+
+FAILED_VERIFY_ORIGINAL='''        if result == "VERIFY" and exact_active:
+            if not self._preview_player_active():
+                self["detail"].setText("The preview player is no longer on this source • press OK to retry")
+                return
+            # r42: GREEN itself is the explicit human confirmation. No second Yes/No popup.'''
+FAILED_VERIFY_REPLACE='''        if result == "VERIFY" and exact_active and self._preview_player_active():
+            # r42: GREEN itself is the explicit human confirmation. No second Yes/No popup.'''
+
+GREEN_CAPTION_ORIGINAL='''        self["key_green"] = Label("VERIFIED LOCK")'''
+GREEN_CAPTION_REPLACE='''        self["key_green"] = Label("MANUAL LOCK")'''
+
+GREEN_FOCUS_ORIGINAL='''            self["detail"].setText("GREEN locks a tested IPTV source • press RIGHT, select source, OK, wait PLAYING")'''
+GREEN_FOCUS_REPLACE='''            self["detail"].setText("GREEN saves selected IPTV source without mandatory OK test • press RIGHT, select candidate")'''
+
 def once(text,old,new,label):
     n=text.count(old)
     if n != 1:
@@ -156,6 +171,9 @@ def patch(source):
                 SEED_HELPER+"def _r7411_resolution_rank(channel, width=0, height=0):",
                 "seed helper")
     source=once(source,SAT_ANCHOR,SAT_REPLACEMENT,"SAT first-paint")
+    source=once(source,FAILED_VERIFY_ORIGINAL,FAILED_VERIFY_REPLACE,"failed Preview green lock")
+    source=once(source,GREEN_CAPTION_ORIGINAL,GREEN_CAPTION_REPLACE,"button label")
+    source=once(source,GREEN_FOCUS_ORIGINAL,GREEN_FOCUS_REPLACE,"GREEN focus hint")
     source=once(source,LOCK_ORIGINAL,LOCK_REPLACE,"manual lock verification gate")
     source=once(source,AUDIO_MISMATCH_ORIGINAL,AUDIO_MISMATCH_REPLACE,"audio mismatch gate")
     source=once(source,FORCED_ORIGINAL,FORCED_REPLACE,"forced manual lock")
