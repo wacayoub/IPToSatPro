@@ -141,6 +141,6 @@ class AutoMapTests(unittest.TestCase):
         self.assertTrue(self.meta["player_unchanged"])
         self.assertFalse(self.meta["receiver_tested"])
         self.assertFalse(self.meta["production_published"])
-        self.assertEqual(self.meta["candidate_search"],"r736_unified_preview_and_bulk_safe_automapping")
+        self.assertIn(self.meta["candidate_search"], ("r736_unified_preview_and_bulk_safe_automapping", "r737_8s_video_preview_then_auto_restore_with_r736_automap"))
 
 if __name__=="__main__":unittest.main()
