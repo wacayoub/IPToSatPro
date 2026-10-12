@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.6-automatic-safe-mapping-beta",
+  "size": 415216,
+  "sha256": "9f0335e257ef0e6861efb710b3b41c2970381c3ec595c6c47940d63031c6bbca",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r736-autolock-all-safe/payload/r736-automatic-safe-mapping.b64"
+  ],
+  "notes": "R73.6 auto mapping: complete Preview candidate search immediately saves best green SAFE/ALLOWED as persistent SAT-to-IPTV AUTO mapping, without manual GREEN button. Existing manual corrections and explicitly rejected candidates are protected. Bulk Auto Scan & Lock uses identical indexed candidate ranking across P/B1/B2, replaces stale AUTO. Preview clearly labels AUTO LOCKED vs MANUAL LOCKED. Existing R73.5 match variant safety and R73.4 video measurement preserved. Player, timeshift and mappings unchanged. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
