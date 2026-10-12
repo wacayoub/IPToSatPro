@@ -13,8 +13,8 @@ class R74Tests(unittest.TestCase):
         cls.tmp=tempfile.TemporaryDirectory()
         pkg=Path(cls.tmp.name)/"r74.ipk"
         cls.meta=builder.build(pkg)
-        cls.files=builder.b.b.b.base.pack.members_from(
-            builder.b.b.b.base.pack.unpack_ar(pkg.read_bytes())["data.tar.gz"])
+        cls.files=builder.b.b.base.pack.members_from(
+            builder.b.b.base.pack.unpack_ar(pkg.read_bytes())["data.tar.gz"])
         cls.src=cls.files[builder.PLUGIN].decode()
         cls.tree=ast.parse(cls.src)
         cls.preview=next(n for n in cls.tree.body if isinstance(n,ast.ClassDef) and n.name=="SatIPTVBridgePreview")
