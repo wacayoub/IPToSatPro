@@ -22,14 +22,14 @@ def stage():
     blob=pkg.read_bytes()
     assert result["size"]==SIZE and result["sha256"]==SHA and result["version"]==VERSION
     assert hashlib.sha256(blob).hexdigest()==SHA
-    encoded="\\n".join(textwrap.wrap(base64.b64encode(blob).decode("ascii"),76))+"\\n"
+    encoded="\n".join(textwrap.wrap(base64.b64encode(blob).decode("ascii"),76))+"\n"
     assert base64.b64decode(encoded)==blob
     (ROOT/"payload/r73-preview-browser.b64").write_text(encoded,encoding="ascii")
     manifest={"version":VERSION,"size":SIZE,"sha256":SHA,"parts":[URL],
       "notes":"R73 Preview Browser opt-in BETA: native Neo Dark two-panel theme, focused CH paging, BLUE candidate details, deep indexed 144 candidate budget, configurable preview threshold, corrected cache and no fictitious 150 match score. Playback/monitor/timeshift preserved. Not tested on receiver.",
       "hardware_tested":False,"production_published":False}
     (ROOT/"staging").mkdir(exist_ok=True)
-    (ROOT/"staging/r73-preview-browser.update.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\\n")
+    (ROOT/"staging/r73-preview-browser.update.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
     sh=r'''#!/bin/sh
 # SHA256-verified opt-in download only; no opkg install, no automatic restart.
 set -eu
