@@ -1,8 +1,17 @@
 # IPToSatPro R74 — Unified Preview Beta
 
-**Build**: `1.0.46-r74.2-preview-close-hotfix-beta`
+**Build**: `1.0.46-r74.3-dvb-access-recheck-beta`
 
 **Branch**: `feature/r74-unified-preview-actual-bouquet` (not merged into production `main`).
+
+## R74.3 First-zap DVB crypto detection correction
+
+- Early `sIsCrypted=0` (NO) while CA/PMT is initializing becomes provisional `?` and is revisited through an 880ms bounded mainloop timer.
+- Saved `sat_crypted=False` is revisable; live positive and native static CAID positive can override it at the first zap.
+- After the grace period, a manual mapping can recover despite a historical negative when no native SAT picture was verified; this is logged as `CRYPT_MANUAL_RECOVER` without falsely marking the SAT encrypted.
+- Confirmed native FTA video remains protected. Cross-zap deferred callbacks are cancelled.
+- Only monitor.py access-check and timer logic changes: player, audio, timeshift, mapping files and Enigma2 settings remain unmodified.
+- New regression suite covers early NO-to-YES, old saved NO, healthy FTA and stale callbacks.
 
 ## Critical crash hotfix R74.2
 
