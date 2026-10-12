@@ -13,5 +13,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Compare previous heavy candidate ranking against R73.3 turbo on 24k streams
+      - name: Compare identical indexed feeds (known-present numbers) at 24000 streams
         run: python3 scripts/bench_r732_candidates.py
