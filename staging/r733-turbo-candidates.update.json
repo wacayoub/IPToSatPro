@@ -1,0 +1,11 @@
+{
+  "version": "1.0.46-r73.3-turbo-candidates-beta",
+  "size": 412848,
+  "sha256": "a8fe9396c077a41cd7e3e015fb921d52579e1ef72cff2964527e38d21a2c9bd1",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r733-turbo-candidate-index/payload/r733-turbo-candidates.b64"
+  ],
+  "notes": "R73.3 TURBO Preview BETA: 192 indexed candidates in one batch, 48 per page, memoized title analysis, 18 detailed scored across IPTV sources, overflow always REVIEW not SAFE, measured index/scoring CPU diagnostics, full manual search and FTA preserved, player/timeshift not modified. Playback/monitor/timeshift preserved. Not tested on receiver.",
+  "hardware_tested": false,
+  "production_published": false
+}
