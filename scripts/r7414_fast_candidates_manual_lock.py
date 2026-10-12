@@ -172,6 +172,19 @@ def patch(source):
                 "seed helper")
     source=once(source,SAT_ANCHOR,SAT_REPLACEMENT,"SAT first-paint")
     source=once(source,FAILED_VERIFY_ORIGINAL,FAILED_VERIFY_REPLACE,"failed Preview green lock")
+    # VERIFY means playback is still unconfirmed. GREEN may save MANUALLY,
+    # but it must not synthesize a PLAYING result from an active player alone.
+    verify_start='        if result == "VERIFY" and exact_active and self._preview_player_active():'
+    verify_end='        confirmed = result == "PLAYING"'
+    if source.count(verify_start)!=1 or source.count(verify_end)!=1:
+        raise ValueError("R74.14 VERIFY state source drift")
+    p1=source.index(verify_start)
+    p2=source.index(verify_end,p1)
+    if p2-p1>1300 or p2-p1<100:
+        raise ValueError("Unexpected VERIFY confirmation block length")
+    source=(source[:p1] +
+            '        # R7414: no implicit VERIFY->PLAYING promotion from player-active state.\\n' +
+            source[p2:])
     source=once(source,GREEN_CAPTION_ORIGINAL,GREEN_CAPTION_REPLACE,"button label")
     source=once(source,GREEN_FOCUS_ORIGINAL,GREEN_FOCUS_REPLACE,"GREEN focus hint")
     source=once(source,LOCK_ORIGINAL,LOCK_REPLACE,"manual lock verification gate")
