@@ -104,12 +104,11 @@ class CryptFirstZapTests(unittest.TestCase):
         self.assertFalse(self.m._r743_crypto_pending())
         self.assertFalse(self.m._encrypted_fallback_allowed_once())
         self.assertEqual(self.m.crypted_state,"NO")
-    def test_manual_lock_with_stale_saved_no_recovers_after_grace_without_native_video(self):
+    def test_manual_lock_stale_saved_no_does_not_override_locked_fta_after_grace(self):
         self.set_age(1.12)
         self.assertFalse(self.m._r743_crypto_pending())
-        self.assertTrue(self.m._encrypted_fallback_allowed_once())
-        self.assertEqual(self.m.crypted_state,"?")
-        self.assertTrue(any("CRYPT_MANUAL_RECOVER" in str(t) for t in self.logs))
+        self.assertFalse(self.m._encrypted_fallback_allowed_once())
+        self.assertEqual(self.m.crypted_state,"NO")
     def test_manual_lock_does_not_override_native_working_fta(self):
         self.set_age(1.12)
         self.m.video_event_seen=True
