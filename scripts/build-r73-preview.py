@@ -24,7 +24,7 @@ OLD = "1.0.46-r72.7-fuzzy-cache-beta"
 NEW = "1.0.46-r73-preview-browser-beta"
 CHANGELOG = P + "CHANGELOG-r73-PREVIEW-BROWSER.txt"
 B64 = ROOT/"payload/r727-fuzzy-cache.b64"
-BASE_SHA256 = "PIN_AT_FIRST_BUILD"
+BASE_SHA256 = "cd638f40b1bbfcbbc9007634a59683f159cb415a4668190269a5aa1ec4ab0d62"
 
 def exactly(src, old, new):
     n = src.count(old)
