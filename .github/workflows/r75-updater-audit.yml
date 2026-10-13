@@ -27,5 +27,5 @@ jobs:
             print('UPDATER FULL',src[:26000])
             print('PACKAGE FILES',[(k,len(v)) for k,v in c.items() if
                 'metadata_shadow' in k or 'updater' in k or 'settings' in k or k.endswith('plugin.py')])
-            print('PACK BASE',b.b.base.pack.__file__ if hasattr(b.b.base.pack,'__file__') else 'UNKNOWN')
+            print('PACK_OK',len(c),'files, updater bytes',len(src))
           PY
