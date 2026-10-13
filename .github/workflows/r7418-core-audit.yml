@@ -1,0 +1,39 @@
+name: R7418 Core Fuzzy CPU Audit
+on:
+  push:
+    branches: [audit/r7418-no-match-cpu]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Inspect actual R74 full fuzzy matching core
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location("builder","scripts/build-r74-unified.py")
+          mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+          with tempfile.TemporaryDirectory() as d:
+              dest=Path(d)/"r74.ipk";mod.build(dest)
+              pak=mod.b.b.base.pack
+              files=pak.members_from(pak.unpack_ar(dest.read_bytes())["data.tar.gz"])
+              src=files[mod.CORE].decode()
+              tree=ast.parse(src)
+              keys=("rank_matches","fast_rank_matches","fast_rank_matches_all_servers",
+                    "_fast_candidate_pool","_fast_cache_get","_fast_cache_key","_ensure_search_indexes",
+                    "_ensure_preview_coverage_indexes","match_score_details","_candidate_pool",
+                    "_get_candidates","_preview_identity_norm","_search_candidates")
+              for n in ast.walk(tree):
+                  if isinstance(n,ast.FunctionDef) and (n.name in keys or
+                        n.name.startswith("rank_match") or n.name.startswith("_rank")):
+                      s=ast.get_source_segment(src,n)
+                      print("METHOD_START",n.name,"LEN",len(s))
+                      print(s[:35000])
+                      print("METHOD_END",n.name)
+              print("LINE_COUNT",len(src.splitlines()))
+          PY
