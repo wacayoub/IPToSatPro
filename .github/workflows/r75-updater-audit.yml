@@ -1,0 +1,31 @@
+name: R75 Inspect Updater and Package Metadata
+on:
+  push:
+    branches: [feature/r75-smart-index-optimized]
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Inspect actual R74 updater and packing
+        run: |
+          python3 - <<'PY'
+          import importlib.util,tempfile
+          from pathlib import Path
+          sp=importlib.util.spec_from_file_location("b","scripts/build-r74-unified.py")
+          b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
+          with tempfile.TemporaryDirectory() as td:
+            dest=Path(td)/'r74.ipk';b.build(dest)
+            pk=b.b.b.base.pack
+            c=pk.members_from(pk.unpack_ar(dest.read_bytes())["data.tar.gz"])
+            src=c[b.UPDATER].decode()
+            print('UPDATER FILE',b.UPDATER,len(src))
+            print('UPDATER FULL',src[:26000])
+            print('PACKAGE FILES',[(k,len(v)) for k,v in c.items() if
+                'metadata_shadow' in k or 'updater' in k or 'settings' in k or k.endswith('plugin.py')])
+            print('PACK BASE',b.b.base.pack.__file__ if hasattr(b.b.base.pack,'__file__') else 'UNKNOWN')
+          PY
