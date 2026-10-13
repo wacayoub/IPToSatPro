@@ -22,6 +22,7 @@ jobs:
           python3 scripts/final_r75_audit.py
       - name: Run one by one all past R70-R75 regression files
         run: |
+          set +e
           set -u
           count=0
           failed=""
