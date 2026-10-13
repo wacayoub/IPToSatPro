@@ -1,0 +1,35 @@
+name: IPToSatPro Read-Only Perf Diagnostic Test
+on:
+  push:
+    branches: [audit/r74-cpu-ram-zap]
+  workflow_dispatch:
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax and defensive /proc reader validation
+        run: |
+          python3 -m py_compile tools/iptosat_perf_audit.py
+          python3 - <<'PY'
+          import importlib.util
+          s=importlib.util.spec_from_file_location('perf','tools/iptosat_perf_audit.py')
+          p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
+          assert p.cpu_util((1000,600),(1100,630)) == 70.0
+          assert p.cpu_util((1000,600),(1000,600)) == 0.0
+          assert p.cpu_snapshot()[0]>0
+          assert isinstance(p.processes(4),dict)
+          assert p.mem_available_mb()[0]>0
+          assert p.process_label(0,'enigma2')=='ENIGMA2'
+          print('PARSER_TESTS_PASS')
+          PY
+      - name: Low-impact read-only sample
+        run: |
+          python3 tools/iptosat_perf_audit.py --seconds 3 > /tmp/perf_output.txt
+          cat /tmp/perf_output.txt
+          grep -q 'Audit read-only; no plugins, mappings or services were modified' /tmp/perf_output.txt
+          grep -q 'System CPU: avg' /tmp/perf_output.txt
+          grep -q 'RAM: total' /tmp/perf_output.txt
