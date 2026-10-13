@@ -1,0 +1,37 @@
+name: R75 Final Acceptance - Current Runtime and Safety
+on:
+  push:
+    branches: [audit/r75-finalization-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  r75-current:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Real-package identity, defaults and persistent-state audit
+        run: python3 scripts/final_r75_audit.py
+      - name: Validate current R73.6-8 plus every R74-R75 regression one by one
+        run: |
+          set -eu
+          count=0
+          for f in scripts/test_r736*.py scripts/test_r737*.py scripts/test_r738*.py scripts/test_r74*.py scripts/test_r75*.py; do
+            [ -f "$f" ] || continue
+            echo "::group::CURRENT_REGRESSION $f"
+            python3 -m unittest discover -s scripts -p "$(basename "$f")" -q
+            echo "::endgroup::"
+            count=$((count+1))
+          done
+          test "$count" -ge 20
+          echo "R75_CURRENT_MODULES_PASSED=$count"
+      - name: Attach real-package audit evidence (no production publication)
+        uses: actions/upload-artifact@v4
+        with:
+          name: r75-final-acceptance-evidence
+          path: staging/final-r75-audit.json
+          retention-days: 30
