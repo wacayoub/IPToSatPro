@@ -1,0 +1,12 @@
+{
+  "version": "1.0.46-r75.0-smart-index-beta",
+  "size": 436354,
+  "sha256": "cc272acfd54c7a23516b292016d1b1e81d6d3d74b8b70007afc0dcaae17bdec1",
+  "notes": "R75 BETA: R74.11-18 consolidated; indexed nominee caching and no-match debounce; FTA native priority; quick Preview/24 + YELLOW/192; direct manual GREEN; UNMAP; beIN audio safe. Not receiver validated yet.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r75-smart-index-optimized/payload/r75-smart-index.b64"
+  ],
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false
+}
