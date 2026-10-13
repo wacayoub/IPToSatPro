@@ -1,0 +1,50 @@
+name: R7418 no-match CPU control-flow audit
+on:
+  push:
+    branches: [audit/r7418-no-match-cpu]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Analyze genuine assembled R74 no-match timers and search
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          sp=importlib.util.spec_from_file_location('build','scripts/build-r74-unified.py')
+          m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m)
+          with tempfile.TemporaryDirectory() as tmp:
+            ipk=Path(tmp)/'r74.ipk';m.build(ipk)
+            pk=m.b.b.base.pack
+            src=pk.members_from(pk.unpack_ar(ipk.read_bytes())['data.tar.gz'])[m.MONITOR].decode()
+            tr=ast.parse(src)
+            cls=next(n for n in tr.body if isinstance(n,ast.ClassDef) and n.name=='SatFallbackMonitor')
+            sel={
+              '_on_start','_evaluate','_evaluate_probe','_retry_fallback',
+              '_queue_background_smartmatch','_smartmatch_poll',
+              '_schedule_neighbor_prepare','_prepare_neighbor_rankings',
+              '_fallback_with_native_pat_guard','_fallback_if_matched',
+              '_start_guard','_r744_access_check','_r743_crypto_retry',
+              '_r745_no_signal_once','_r745_arm_cached_nosignal',
+              '_r745_cached_probe','_on_end','_startup_reconcile',
+              '_load_overrides','_load_learned_mappings'
+            }
+            for n in cls.body:
+              if isinstance(n,ast.FunctionDef) and (n.name in sel or
+                  'no_match' in n.name or 'cooldown' in n.name or
+                  'retry' in n.name or 'smartmatch' in n.name or
+                  'neighbor' in n.name):
+                  s=ast.get_source_segment(src,n)
+                  print('METHOD_START',n.name,'LEN',len(s))
+                  print(s[:16000])
+                  print('METHOD_END',n.name)
+            print("COUNTS",[(x,src.count(x)) for x in
+                  ("NO_MATCH","MATCH_NONE","MATCH_QUICK_HIT","NO_CANDIDATES",
+                   "neighbor_prepare_timer","smartmatch_timer.start",
+                   "self.timer.start","NO_MATCH_COOLDOWN","sat_ref_string")])
+          PY
