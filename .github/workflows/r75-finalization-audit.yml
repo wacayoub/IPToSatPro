@@ -22,17 +22,25 @@ jobs:
           python3 scripts/final_r75_audit.py
       - name: Run one by one all past R70-R75 regression files
         run: |
-          set -eu
+          set -u
           count=0
+          failed=""
           for f in scripts/test_r7*.py; do
             [ -f "$f" ] || continue
             echo "::group::REGRESSION $f"
             python3 -m unittest discover -s scripts -p "$(basename "$f")" -q
+            rc=$?
             echo "::endgroup::"
             count=$((count+1))
+            if [ "$rc" -ne 0 ]; then
+              failed="$failed $(basename "$f")"
+              echo "::warning file=$f::Historical regression test failed; continue remaining cases"
+            fi
           done
-          test "$count" -ge 25
           echo "TOTAL_TEST_FILES=$count"
+          echo "FAILED_MODULES=$failed"
+          test "$count" -ge 25
+          test -z "$failed"
       - name: Publish report as retained CI artifact only (no production changes)
         uses: actions/upload-artifact@v4
         with:
