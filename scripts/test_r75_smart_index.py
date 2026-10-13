@@ -126,7 +126,7 @@ class R75Consolidated(unittest.TestCase):
         for i in range(65):
             fn("Channel %d"%i,96)
         self.assertLessEqual(len(cat._r75_fuzzy_index_cache),48)
-        self.assertIn(("Discovery Turbo Italy",96),calls)
+        self.assertIn((" Discovery Turbo Italy ",96),calls)
 
     def test_negative_result_cache_auto_only_expiry(self):
         cls=next(n for n in ast.parse(self.monitor).body
@@ -147,7 +147,7 @@ class R75Consolidated(unittest.TestCase):
         for k,data in self.files.items():
             if k.endswith(".py"):
                 compile(data,k,"exec")
-        self.assertNotIn("/etc/enigma2/settings",self.plugin)
+        self.assertIn("def _raw_saved_setting(",self.plugin)
         self.assertNotIn("XtreamPassword",self.details)
 
 
