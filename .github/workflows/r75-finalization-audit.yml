@@ -22,10 +22,10 @@ jobs:
         run: |
           set -eu
           count=0
-          for f in scripts/test_r70_*.py scripts/test_r71_*.py scripts/test_r72_*.py scripts/test_r73_*.py scripts/test_r74_*.py scripts/test_r75_*.py; do
+          for f in scripts/test_r7*.py; do
             [ -f "$f" ] || continue
             echo "::group::REGRESSION $f"
-            python3 "$f" -q
+            python3 -m unittest discover -s scripts -p "$(basename "$f")" -q
             echo "::endgroup::"
             count=$((count+1))
           done
