@@ -1,0 +1,34 @@
+name: R7418 Fuzzy Pool Budget Audit
+on:
+  push:
+    branches: [audit/r7418-no-match-cpu]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Print MAX_FUZZY_POOL and existing fuzz-reuse contracts
+        run: |
+          python3 - <<'PY'
+          import ast,importlib.util,tempfile
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location("b","scripts/build-r74-unified.py")
+          b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
+          with tempfile.TemporaryDirectory() as td:
+              f=Path(td)/'r74.ipk';b.build(f)
+              pk=b.b.b.base.pack
+              fs=pk.members_from(pk.unpack_ar(f.read_bytes())['data.tar.gz'])
+              core=fs[b.CORE].decode()
+              m=fs[b.MONITOR].decode()
+              for line in core.splitlines():
+                  if 'MAX_FUZZY_POOL' in line or 'def normalize_name(' in line:
+                      print('CORE',line[:160])
+              for line in m.splitlines():
+                  if ('rows = catalog.rank_matches' in line or
+                      '_r725_no_match_key' in line or
+                      'if generation != int(self.smartmatch_generation)' in line):
+                      print('MONITOR',line[:160])
+          PY
