@@ -24,6 +24,8 @@ jobs:
           assert isinstance(p.processes(4),dict)
           assert p.mem_available_mb()[0]>0
           assert p.process_label(0,'enigma2')=='ENIGMA2'
+          import os
+          assert p.process_label(os.getpid(),'python3')=='AUDIT (SELF)'
           print('PARSER_TESTS_PASS')
           PY
       - name: Low-impact read-only sample
