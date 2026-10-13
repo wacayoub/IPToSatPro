@@ -56,6 +56,10 @@ def proc_stat(pid):
 
 
 def process_label(pid, comm):
+    # The diagnostic is itself Python with "iptosat" in argv: never count it
+    # as a real plugin background worker in CPU comparisons.
+    if pid == os.getpid():
+        return "AUDIT (SELF)"
     name = comm.lower()
     if "enigma2" in name:
         return "ENIGMA2"
