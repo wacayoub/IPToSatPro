@@ -1,0 +1,29 @@
+name: R75 Previous Neo Dark Palette Only
+on:
+  push:
+    branches: [fix/r75-neo-dark-classic-palette]
+  workflow_dispatch:
+jobs:
+  exact-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile theme-only script
+        run: python3 -m py_compile scripts/r75_neo_dark_classic_theme.py scripts/test_r75_neo_classic_palette.py
+      - name: Build real R75 IPK and validate classic appearance with identical layout
+        run: python3 -m unittest discover -s scripts -p test_r75_neo_classic_palette.py -v
+      - name: R75 core safety tests
+        run: python3 -m unittest discover -s scripts -p test_r75_smart_index.py -v
+      - name: Do not push final or change production feed
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          prod=json.loads(Path('update.json').read_text())
+          assert 'r70' in prod['version'].lower()
+          print('PRODUCTION_UNCHANGED',prod['version'])
+          PY
