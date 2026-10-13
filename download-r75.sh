@@ -44,17 +44,21 @@ echo "VERIFIED_PACKAGE $OUT"
 if [ "${1:-}" = "--install" ]; then
   # Backup persistent receiver state BEFORE touching opkg. No credential leaks.
   BACKUP="/tmp/iptosatpro-pre-r75-$(date +%Y%m%d-%H%M%S).tar.gz"
-  if [ -d /etc/enigma2/SatIPTVBridge ]; then
-    tar czf "$BACKUP" /etc/enigma2/SatIPTVBridge /etc/enigma2/settings 2>/dev/null || {
-      echo 'BACKUP_FAILED: no installation performed'
-      exit 2
-    }
-  else
-    tar czf "$BACKUP" /etc/enigma2/settings 2>/dev/null || {
-      echo 'BACKUP_FAILED: no installation performed'
-      exit 2
-    }
+  # Save previous receiver plugin CODE and critical persistent mappings.
+  # Large IPTV catalog.jsonl/snapshot files are intentionally NOT duplicated.
+  set -- /usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge
+  if [ -f /etc/enigma2/settings ]; then
+    set -- "$@" /etc/enigma2/settings
   fi
+  for FILE in overrides.json manual_aliases.json resolved_mappings.json rejected_sources.json player_overrides.json import_spec.json refresh_state.json; do
+    if [ -f "/etc/enigma2/SatIPTVBridge/$FILE" ]; then
+      set -- "$@" "/etc/enigma2/SatIPTVBridge/$FILE"
+    fi
+  done
+  tar czf "$BACKUP" "$@" 2>/dev/null || {
+    echo 'BACKUP_FAILED: no installation performed'
+    exit 2
+  }
   echo "RECEIVER_STATE_BACKUP $BACKUP"
   opkg install --force-reinstall "$OUT"
   echo "R75 INSTALL_OK. Restart ONLY Enigma2 GUI using OpenATV menu."
