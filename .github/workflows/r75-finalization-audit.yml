@@ -1,0 +1,39 @@
+name: R75 Finalization - Read Only All Modules Audit
+on:
+  push:
+    branches: [audit/r75-finalization-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-package-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Source compilation and actual R75 reproducible package checks
+        run: |
+          python3 -m py_compile scripts/final_r75_audit.py
+          python3 scripts/final_r75_audit.py
+      - name: Run one by one all past R70-R75 regression files
+        run: |
+          set -eu
+          count=0
+          for f in scripts/test_r70_*.py scripts/test_r71_*.py scripts/test_r72_*.py scripts/test_r73_*.py scripts/test_r74_*.py scripts/test_r75_*.py; do
+            [ -f "$f" ] || continue
+            echo "::group::REGRESSION $f"
+            python3 "$f" -q
+            echo "::endgroup::"
+            count=$((count+1))
+          done
+          test "$count" -ge 25
+          echo "TOTAL_TEST_FILES=$count"
+      - name: Publish report as retained CI artifact only (no production changes)
+        uses: actions/upload-artifact@v4
+        with:
+          name: r75-final-module-audit
+          path: staging/final-r75-audit.json
+          retention-days: 30
