@@ -1,0 +1,94 @@
+name: Build Test and Stage R75 Smart Index Beta
+on:
+  push:
+    branches: [feature/r75-smart-index-optimized]
+    paths-ignore:
+      - 'payload/r75-smart-index.b64'
+      - 'staging/r75-smart-index.update.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  r75:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile all R75 components and downloader
+        run: |
+          python3 -m py_compile scripts/build-r75-smart-index.py scripts/r75_smart_index_patch.py scripts/test_r75_smart_index.py
+          sh -n download-r75.sh
+      - name: Build ACTUAL R75 Enigma2 IPK
+        run: python3 scripts/build-r75-smart-index.py /tmp/iptosatpro-r75-smart-index.ipk
+      - name: R75 acceptance and indexed cache tests
+        run: python3 -m unittest discover -s scripts -p test_r75_smart_index.py -v
+      - name: R74.18 bounded cancellation, 900/96 comparison
+        run: python3 -m unittest discover -s scripts -p test_r7418_bounded_cancel_fuzzy.py -v
+      - name: Guard previous SAT audio and Preview
+        run: |
+          python3 -m unittest discover -s scripts -p test_r7417_fta_signal_native.py -v
+          python3 -m unittest discover -s scripts -p test_r7416_unmap_crypto.py -v
+          python3 -m unittest discover -s scripts -p test_r7415_firstpaint_green.py -v
+          python3 -m unittest discover -s scripts -p test_r7414_fast_candidates_manual_lock.py -v
+      - name: Validate R74.10 identity country and player safety
+        run: |
+          python3 -m unittest discover -s scripts -p test_r748_country_codes.py -v
+          python3 -m unittest discover -s scripts -p test_r749_reordered_filmbox.py -v
+          python3 -m unittest discover -s scripts -p test_r7410_untrusted_prefix.py -v
+      - name: Check checksum and native file structure
+        run: |
+          python3 - <<'PY'
+          import hashlib,importlib.util
+          from pathlib import Path
+          p=Path("/tmp/iptosatpro-r75-smart-index.ipk")
+          data=p.read_bytes()
+          assert len(data)>300000
+          spec=importlib.util.spec_from_file_location("r75","scripts/build-r75-smart-index.py")
+          r=importlib.util.module_from_spec(spec);spec.loader.exec_module(r)
+          pack=r.base.b.b.base.pack
+          f=pack.members_from(pack.unpack_ar(data)["data.tar.gz"])
+          c=pack.members_from(pack.unpack_ar(data)["control.tar.gz"])
+          assert b"r75.0-smart-index-beta" in c["control"]
+          assert r.P+"plugin.py" in f
+          assert r.P+"core.py" in f
+          assert r.P+"monitor.py" in f
+          print("REAL_R75_IPK_OK",len(data),hashlib.sha256(data).hexdigest())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iptosatpro-r75-smart-index-beta
+          path: /tmp/iptosatpro-r75-smart-index.ipk
+          retention-days: 14
+      - name: Publish checksum verified R75 BETA to feature branch ONLY
+        run: |
+          mkdir -p payload staging
+          base64 -w0 /tmp/iptosatpro-r75-smart-index.ipk > payload/r75-smart-index.b64
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          pkg=Path('/tmp/iptosatpro-r75-smart-index.ipk').read_bytes()
+          obj={
+            "version":"1.0.46-r75.0-smart-index-beta",
+            "size":len(pkg),
+            "sha256":hashlib.sha256(pkg).hexdigest(),
+            "notes":"R75 BETA: R74.11-18 consolidated; indexed nominee caching and no-match debounce; FTA native priority; quick Preview/24 + YELLOW/192; direct manual GREEN; UNMAP; beIN audio safe. Not receiver validated yet.",
+            "parts":["https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r75-smart-index-optimized/payload/r75-smart-index.b64"],
+            "beta":True,
+            "receiver_tested":False,
+            "production_published":False
+          }
+          Path('staging/r75-smart-index.update.json').write_text(json.dumps(obj,indent=2)+'\n')
+          print("R75_SHA256",obj["sha256"],"SIZE",obj["size"])
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add payload/r75-smart-index.b64 staging/r75-smart-index.update.json
+          if git diff --cached --quiet; then
+            echo 'R75 staging already up to date'
+          else
+            git commit -m 'ci: stage checksum-verified R75 smart index beta [skip ci]'
+            git push origin HEAD:feature/r75-smart-index-optimized
+          fi
