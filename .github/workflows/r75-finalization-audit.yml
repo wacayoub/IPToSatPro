@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install test-only image dependency
+        run: python3 -m pip install --quiet Pillow
       - name: Source compilation and actual R75 reproducible package checks
         run: |
           python3 -m py_compile scripts/final_r75_audit.py
