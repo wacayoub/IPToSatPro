@@ -1,0 +1,31 @@
+name: R7418 Bounded Fuzzy Background CPU
+on:
+  push:
+    branches: [fix/r7418-bounded-cancellable-fuzzy]
+  workflow_dispatch:
+jobs:
+  budget-cancel-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Syntax + R74 real core and monitor CPU budget tests
+        run: |
+          python3 -m py_compile scripts/r7418_bounded_cancel_fuzzy.py
+          python3 -m unittest discover -s scripts -p test_r7418_bounded_cancel_fuzzy.py -v
+      - name: Prior native SAT/AAC regression tests
+        run: |
+          python3 -m unittest discover -s scripts -p test_r7417_fta_signal_native.py -v
+          python3 -m unittest discover -s scripts -p test_r746_locked_black.py -v
+          python3 -m unittest discover -s scripts -p test_r74_tod_bein_audio_hotfix.py -v
+      - name: No release/update mutation
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=str(json.loads(Path('update.json').read_text()).get('version',''))
+          assert 'r70' in x.lower(), x
+          print('PRODUCTION_UNCHANGED',x)
+          PY
