@@ -56,7 +56,7 @@ with tempfile.TemporaryDirectory() as temporary:
     plugin=r75[b.PLUGIN].decode()
     updater=r75[b.UPDATER].decode()
     must_have={
-        "identity country / prefix":(plugin,["R7410_","R748_","R749_"]),
+        "identity country / prefix":(core,["_R748_COUNTRY_LABELS","_r749_reordered_identity",\n                                            "country_relation==\"CONFLICT\""]),
         "instant preview / manual":(plugin,["R7412_FAST_PREVIEW_SHORTLIST",
                                           "R7414_PREVIEW_FAST_SEED_MANUAL_LOCK",
                                           "R7415_FIRSTPAINT_GREEN_ANY_FOCUS"]),
