@@ -41,7 +41,7 @@ print("R75 VERIFIED",version,"bytes="+str(len(raw)),
 PY
 mv "$WORK/result.ipk" "$OUT"
 echo "VERIFIED_PACKAGE $OUT"
-if [ "\${1:-}" = "--install" ]; then
+if [ "${1:-}" = "--install" ]; then
   # Backup persistent receiver state BEFORE touching opkg. No credential leaks.
   BACKUP="/tmp/iptosatpro-pre-r75-$(date +%Y%m%d-%H%M%S).tar.gz"
   if [ -d /etc/enigma2/SatIPTVBridge ]; then
