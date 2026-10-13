@@ -1,0 +1,43 @@
+name: R75 Online Download Checksum and Installer QA
+on:
+  push:
+    branches: [feature/r75-smart-index-optimized]
+    paths:
+      - 'download-r75.sh'
+      - 'staging/r75-smart-index.update.json'
+      - '.github/workflows/r75-online-installer-qa.yml'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: POSIX syntax and explicit --install flag
+        run: |
+          sh -n download-r75.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          raw=Path("download-r75.sh").read_text()
+          assert ' = "--install" ]; then' in raw
+          assert chr(92)+chr(36)+chr(123) not in raw, 'escaped shell expansion'
+          assert 'opkg install --force-reinstall' in raw
+          assert 'sha256' in raw.lower()
+          assert 'BACKUP_FAILED: no installation performed' in raw
+          print("INSTALL_FLAG_CHECK_OK")
+          PY
+      - name: Actual GitHub RAW download and SHA256 check without installing
+        run: |
+          sh download-r75.sh
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          pkg=Path('/tmp/iptosatpro-r75-smart-index.ipk')
+          feed=json.loads(Path('staging/r75-smart-index.update.json').read_text())
+          actual=pkg.read_bytes()
+          assert len(actual)==feed['size']
+          assert hashlib.sha256(actual).hexdigest()==feed['sha256']
+          print('R75_ONLINE_SHA256_VERIFIED',len(actual))
+          PY
