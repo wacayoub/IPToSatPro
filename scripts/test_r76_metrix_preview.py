@@ -81,6 +81,9 @@ class R76Acceptance(unittest.TestCase):
         layout.validate_skin(hd,set(layout.HOME_WIDGETS),hd=True)
         self.assertIn('self.skin = _theme_skin(R76_METRIX_HD if _r76_is_hd else R76_METRIX_FHD)',self.plugin)
         self.assertIn('from enigma import getDesktop',self.plugin)
+        self.assertIn('("Metrix OpenATV R76 (default)", "metrix")',self.plugin)
+        self.assertIn('r76_home_layout',self.plugin)
+        self.assertIn('("classic","monitor","metrix")',self.plugin)
 
     def test_home_max_real_information(self):
         home=ET.fromstring(literal(ast.parse(self.plugin),"R76_METRIX_FHD"))
@@ -130,7 +133,7 @@ class R76Acceptance(unittest.TestCase):
             self.assertEqual(set(x),set(y))
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
-        self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__"})
+        self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_r723_select_home_layout","_r723_set_home_layout"})
         self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_r7413_keep_preview_visible"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
