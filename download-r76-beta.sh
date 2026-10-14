@@ -5,7 +5,7 @@
 # --rollback restores previous plugin CODE (mapping files remain untouched).
 set -eu
 umask 077
-VERSION="1.0.46-r76.5-postings-fast-preview-beta"
+VERSION="1.0.46-r76.6-cold-rank-fast-beta"
 BASE="https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b"
 PLUGIN="/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
 CONFIG="/etc/enigma2/SatIPTVBridge"
@@ -63,7 +63,7 @@ python3 - "$WORK/manifest.json" "$WORK/payload.b64" "$WORK/result.ipk" <<'PY'
 import base64,hashlib,json,sys
 with open(sys.argv[1],encoding="utf-8") as f:m=json.load(f)
 with open(sys.argv[2],"rb") as f:encoded=f.read()
-ver="1.0.46-r76.5-postings-fast-preview-beta"
+ver="1.0.46-r76.6-cold-rank-fast-beta"
 url=("https://raw.githubusercontent.com/wacayoub/IPToSatPro/"
      "feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64")
 if m.get("version")!=ver or m.get("beta") is not True:
