@@ -22,6 +22,15 @@ jobs:
         run: |
           python -m py_compile scripts/r7611_preview_cold_index_patch.py scripts/build-r7611-preview-cold.py scripts/stage-r7611-preview-cold.py
           python -m unittest discover -s scripts -p test_r7611_preview_cold.py -v
+          python -m unittest discover -s scripts -p test_r7611_receiver_audit.py -v
+      - name: Verify explicit R76.11 receiver installer and pinned immutable package
+        run: |
+          sh -n download-r7611-beta.sh
+          grep -F 'if [ "$#" -eq 0 ]; then MODE="--check"' download-r7611-beta.sh
+          grep -F 'expected_sha="3c3f7b0e623808681884aef4f7975965b2eccdbc224cc4ba0b4393830a7d24d5"' download-r7611-beta.sh
+          grep -F 'expected_size=459492' download-r7611-beta.sh
+          grep -F 'R76.9 or R76.10 required' download-r7611-beta.sh
+          grep -F 'MAPPING_BACKUP_FAILED' download-r7611-beta.sh
       - name: Preserve base plugin and R76.10 safety
         run: |
           python -m unittest discover -s scripts -p test_r7610_normal48.py -v
