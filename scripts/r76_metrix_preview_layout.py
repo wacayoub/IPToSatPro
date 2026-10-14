@@ -29,13 +29,16 @@ HOME_WIDGETS={
  "home_iptv_detail":(66,509,302,52,17,"#B7D1E4"),
  "home_selected_info":(66,575,302,46,16,"#B7D1E4"),
  "home_sat_context":(66,656,303,45,17,"#B7D1E4"),
- "home_lock_badge":(64,726,180,35,18,"#84E5BC"),
+ "home_lock_badge":(64,711,180,33,18,"#84E5BC"),
+ "r76_system_label":(64,357,308,36,17,"#86BDE2"),
+ "r76_mapping_label":(64,748,305,29,16,"#B8D4E5"),
  # SAT panel
  "r72_sat_head":(442,123,470,27,20,"#82BDE8"),
  "r72_sat_name":(442,162,740,43,32,"#FFFFFF"),
  "r72_sat_position":(442,213,735,30,20,"#C9D8E5"),
  "r72_sat_provider":(442,253,730,31,19,"#D8E7F2"),
  "r72_sat_foot":(442,302,800,28,17,"#B7CCDA"),
+ "r76_epg_label":(442,331,1074,23,17,"#E6CC85"),
  "r72_sat_signal_title":(1260,162,322,23,17,"#B6CBDD"),
  "home_snr_bar":(1258,228,257,18,0,"#1786CE"),
  "r72_sat_signal":(1519,211,72,42,26,"#75D5FF"),
@@ -44,7 +47,8 @@ HOME_WIDGETS={
  "r72_iptv_name":(442,427,690,42,29,"#FFFFFF"),
  "r72_iptv_provider":(442,476,740,24,19,"#CDDDEA"),
  "r72_iptv_role":(442,511,745,26,19,"#AFD0E1"),
- "r72_iptv_foot":(442,554,1100,24,17,"#B6C8D9"),
+ "r72_iptv_foot":(442,554,772,24,17,"#B6C8D9"),
+ "r76_catalog_label":(1230,554,355,24,17,"#83BEEA"),
  "r72_mapping_status":(1230,395,168,37,19,"#FFFFFF"),
  "r72_play_status":(1410,395,174,37,19,"#8DEAC1"),
  # dense KPI 3 x 2, only real existing R72 data
@@ -269,6 +273,83 @@ R76_METRIX_HD = """{home_hd}"""
                 _startup_log("R76_METRIX_FALLBACK", str(_r76_err)[:100])
 '''
     src=replace_once(src,anchor,anchor+inject)
+    # Extra diagnostics are strictly read-only and throttle local reads to 12s,
+    # using the dashboard's existing 2.5s timer (no new timers or network).
+    # Values unavailable on a given receiver are explicitly marked N/A.
+    src=replace_once(src,
+        '        self["home_status"] = Label("STARTING")',
+        '''        self["r76_system_label"] = Label("CPU N/A · RAM N/A")
+        self["r76_mapping_label"] = Label("Mappings N/A")
+        self["r76_epg_label"] = Label("EPG N/A")
+        self["r76_catalog_label"] = Label("Catalog N/A")
+        self._r76_extras_last = 0.0
+        self._r76_cpu_sample = None
+        self._r76_extras = {"system":"CPU N/A · RAM N/A",
+            "mapping":"Mappings N/A","epg":"EPG N/A","catalog":"Catalog N/A"}
+        self["home_status"] = Label("STARTING")''')
+    anchor='''        self["log_preview"].setText(self._bridge_suggestion(snap, decision))
+'''
+    diag='''        # R76 read-only diagnostics: local /proc + current EPG cache + maps.
+        # No stream probes, catalog downloads, decoder restarts or mapping edits.
+        _r76_now = time.monotonic()
+        if _r76_now - self._r76_extras_last >= 12.0:
+            self._r76_extras_last = _r76_now
+            _r76_cpu = "N/A"
+            _r76_ram = "N/A"
+            try:
+                with open("/proc/stat","r") as _r76_proc:
+                    _r76_parts = [int(p) for p in _r76_proc.readline().split()[1:9]]
+                _r76_total = sum(_r76_parts)
+                _r76_idle = _r76_parts[3] + _r76_parts[4]
+                if self._r76_cpu_sample is not None:
+                    _r76_dt = _r76_total - self._r76_cpu_sample[0]
+                    _r76_di = _r76_idle - self._r76_cpu_sample[1]
+                    if _r76_dt > 0:
+                        _r76_cpu = "%.0f%%" % max(0.0,min(100.0,
+                            100.0*(1.0-_r76_di/float(_r76_dt))))
+                self._r76_cpu_sample = (_r76_total,_r76_idle)
+            except Exception:
+                pass
+            try:
+                with open("/proc/meminfo","r") as _r76_proc:
+                    _r76_mem = {}
+                    for _r76_line in _r76_proc:
+                        _r76_pair = _r76_line.split(":")
+                        if len(_r76_pair)==2 and _r76_pair[0] in ("MemTotal","MemAvailable"):
+                            _r76_mem[_r76_pair[0]] = int(_r76_pair[1].strip().split()[0])
+                _r76_mt = _r76_mem.get("MemTotal",0)
+                _r76_ma = _r76_mem.get("MemAvailable",0)
+                if _r76_mt>0 and 0<=_r76_ma<=_r76_mt:
+                    _r76_ram = "%.0f%%" % (100.0*(1.0-_r76_ma/float(_r76_mt)))
+            except Exception:
+                pass
+            self._r76_extras["system"] = "CPU %s · RAM %s" % (_r76_cpu,_r76_ram)
+            try:
+                _r76_maps = _load_overrides()
+                _r76_valid = sum(1 for _r76_map in _r76_maps.values()
+                    if isinstance(_r76_map,dict) and _r76_map.get("channel_id")
+                    and not _r76_map.get("user_unmapped"))
+                self._r76_extras["mapping"] = "Saved mappings: %d" % _r76_valid
+            except Exception:
+                self._r76_extras["mapping"] = "Saved mappings N/A"
+            try:
+                _r76_service = self.session.nav.getCurrentService()
+                _r76_info = _r76_service.info() if _r76_service else None
+                _r76_event = _r76_info.getEvent(0) if _r76_info else None
+                _r76_title = str(_r76_event.getEventName() or "") if _r76_event else ""
+                self._r76_extras["epg"] = "EPG: " + (_r76_title[:84] if _r76_title else "not available")
+            except Exception:
+                self._r76_extras["epg"] = "EPG not available"
+            try:
+                self._r76_extras["catalog"] = "IPTV catalog: %d" % int(count)
+            except Exception:
+                self._r76_extras["catalog"] = "IPTV catalog N/A"
+        self["r76_system_label"].setText(self._r76_extras["system"])
+        self["r76_mapping_label"].setText(self._r76_extras["mapping"])
+        self["r76_epg_label"].setText(self._r76_extras["epg"])
+        self["r76_catalog_label"].setText(self._r76_extras["catalog"])
+'''
+    src=replace_once(src,anchor,anchor+diag)
     # Reuse all displayed R72 monitor fields: no fake values, no new polling.
     # Enigma2 requires every widget name to be initialized in screen.__init__.
     tree=ast.parse(src)
