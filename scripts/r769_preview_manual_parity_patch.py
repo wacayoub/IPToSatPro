@@ -92,83 +92,122 @@ MANUAL_SORT_METHOD = '''    def _sort_candidates_with_cached_evidence(self, chan
 # Keep the existing two-panel Enigma2 Preview layout and its remote actions.
 # Only change displayed contents: the Manual Mapping score/status/market/audio/
 # REAL resolution/provider are shown in the right-side source list.
+
+# The same eListboxPythonMultiContent base, text row, and GREEN/YELLOW/RED
+# color semantics as Manual Mapping.  Only pixel geometry changes to fit the
+# right-hand Preview pane.  The left SAT list remains PreviewBrowserList.
+MANUAL_WIDGET = '''class PreviewManualMappingList(SmartMatchAlternativesList):
+    """Manual Mapping's own list renderer sized for the Preview right pane."""
+    def __init__(self, items=None, width=1054, item_height=43, font_size=18):
+        SmartMatchAlternativesList.__init__(self, items)
+        self.row_width = int(width)
+        self.row_height = int(item_height)
+        try:
+            self.l.setFont(0, gFont("Regular", int(font_size)))
+            self.l.setItemHeight(self.row_height)
+        except Exception:
+            pass
+
+    def row(self, text, state):
+        color = self.GREEN if state == "BEST" else (self.RED if state == "REJECT" else self.YELLOW)
+        return [
+            text,
+            MultiContentEntryText(
+                pos=(0, 0), size=(self.row_width, self.row_height), font=0,
+                flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER, text=text,
+                color=color, color_sel=color
+            )
+        ]
+
+
+'''
+
 MANUAL_RESULTS_METHOD = '''    def _render_source_list(self, keep_index=True):
+        """Use Manual Mapping's actual BEST/ALT/REJECT rows inside Preview."""
         idx = self._source_index_now() if keep_index else self.selected_index
         rows = []
         best_marked = False
         manual = self._manual_overrides.get(self._sat_key()) if isinstance(self._manual_overrides, dict) else None
-        manual_fp = str(manual.get("channel_id") or "") if isinstance(manual,dict) else ""
-        for n,ch in enumerate(self.channels,1):
+        manual_fp = str(manual.get("channel_id") or "") if isinstance(manual, dict) else ""
+        for n, ch in enumerate(self.channels, 1):
             fp = channel_fingerprint(ch)
-            details = ch.get("_preview_details") if isinstance(ch.get("_preview_details"),dict) else {}
-            indexed = bool(ch.get("_r763_fast_index") or ch.get("_r7414_seed"))
+            details = ch.get("_preview_details") if isinstance(ch.get("_preview_details"), dict) else {}
+            seeded = bool(ch.get("_r763_fast_index") or ch.get("_r7414_seed"))
             try: score = float(ch.get("_preview_score"))
-            except (ValueError,TypeError): score = None
+            except (ValueError, TypeError): score = None
             if fp in self._user_rejected_ids:
                 decision = "USER REJECT"
             elif (manual_fp and fp == manual_fp) or details.get("manual") or ch.get("_r735_verified_manual_lock"):
                 decision = "MANUAL"
             else:
                 decision = self._candidate_decision(ch)
-            usable = decision in ("MANUAL","SAFE","ALLOWED")
-            if decision == "MANUAL":
-                flag = "LOCKED"
-            elif indexed or score is None:
-                flag = "INDEX"
-            elif decision == "USER REJECT":
-                flag = "USER REJECT"
-            elif usable and not best_marked:
-                flag = "BEST " + decision
-            else:
-                flag = decision
-            if usable and score is not None:
+            usable = decision in ("MANUAL", "SAFE", "ALLOWED")
+            row_state = "REJECT"
+            if decision == "USER REJECT":
+                label_flag = "USER REJECT"
+            elif decision in ("REJECT",):
+                label_flag = "REJECT"
+            elif decision == "MANUAL":
+                row_state = "BEST"
                 best_marked = True
-            tag,state = self._source_tag(ch, best_available=(usable and score is not None and flag.startswith("BEST")))
-            if tag == "AUDIO MISMATCH":
-                flag = "AUDIO MISMATCH"
-            elif tag in ("PLAYING","FAILED","CHECK PICTURE/AUDIO"):
-                flag += " / " + tag
-            elif tag.startswith("SAFE • LOCKED") and "LOCKED" not in flag:
-                flag += " / LOCKED"
+                label_flag = "LOCKED"
+            elif usable and not best_marked and score is not None:
+                row_state = "BEST"
+                best_marked = True
+                label_flag = "BEST " + decision
+            elif usable:
+                row_state = "ALT"
+                label_flag = decision if score is not None else "INDEX"
+            else:
+                row_state = "ALT"
+                label_flag = "REVIEW" if not seeded else "INDEX"
+            # The Preview player's result is an additional hint, not proof from
+            # a naming score. Keep the user's Manual Mapping color/status.
+            play_result = self._preview_results.get((self._sat_key(), fp))
+            if play_result == "PLAYING":
+                label_flag += " • PLAYING"
+            elif play_result == "FAILED":
+                label_flag += " • FAILED"
             role = ch.get("server_role") or "SERVER"
             short_role = _short_role(role)
-            server = _friendly_server_name(role,ch.get("server_label") or ch.get("source") or "")
-            # Preserve IPTV country prefixes (FR:/DE:/AR:) without name normalization.
+            server = _friendly_server_name(role, ch.get("server_label") or ch.get("source") or "")
+            # Raw IPTV prefix is important: FR: / DE: / AR: never stripped.
             name = " ".join(str(ch.get("name") or "IPTV").split())
-            if len(name)>39:name=name[:38]+"…"
+            if len(name) > 39:
+                name = name[:38] + "…"
             health = self._health_record(ch) or {}
             try:
                 width = int(health.get("width") or ch.get("actual_width") or 0)
                 height = int(health.get("height") or ch.get("actual_height") or 0)
-            except (ValueError,TypeError):
-                width=height=0
-            if width>0 and height>0:
-                resolution="REAL %dx%d"%(width,height)
+            except (ValueError, TypeError):
+                width = height = 0
+            if width > 0 and height > 0:
+                resolution = "REAL %dx%d" % (width, height)
             else:
-                try: label=effective_quality_info(ch)[0] or "?"
-                except Exception: label="?"
-                resolution="DECLARED "+str(label).upper()[:6]
-            if score is None:
-                score_label="INDEX" if indexed else "--"
-            else:
-                score_label="%.1f"%score
-            market=str(ch.get("market") or "-")
-            language=str(ch.get("language") or "-")
-            text="%d. [%s] %s %s • %s • %s/%s • %s • %s"%(n,short_role,
-                 score_label,flag,name,market[:3],language[:3],resolution,server[:17])
-            rows.append(self["source_list"].row(text[:120],state))
+                try: label = effective_quality_info(ch)[0] or "?"
+                except Exception: label = "?"
+                resolution = "DECLARED " + str(label).upper()[:6]
+            score_label = "%.1f" % score if score is not None else "INDEX" if seeded else "--"
+            market = str(ch.get("market") or "-")
+            language = str(ch.get("language") or "-")
+            text = "%d. [%s] %s %s • %s • %s/%s • %s • %s" % (
+                n, short_role, score_label, label_flag, name,
+                market[:3], language[:3], resolution, server[:17]
+            )
+            rows.append(self["source_list"].row(text[:120], row_state))
         if not rows:
-            rows=[self["source_list"].row("NO MATCH • YELLOW: search all IPTV sources","NO_SOURCE")]
-        try:self["source_list"].setList(rows)
+            rows = [self["source_list"].row("NO MATCH • YELLOW: search all IPTV sources", "REJECT")]
+        try: self["source_list"].setList(rows)
         except Exception:
-            try:self["source_list"].l.setList(rows)
-            except Exception:pass
+            try: self["source_list"].l.setList(rows)
+            except Exception: pass
         if self.channels:
-            idx=max(0,min(int(idx),len(self.channels)-1))
-            try:self["source_list"].moveToIndex(idx)
-            except Exception:pass
-            self.selected_index=idx
+            idx = max(0, min(int(idx), len(self.channels) - 1))
+            try: self["source_list"].moveToIndex(idx)
+            except Exception: pass
+            self.selected_index = idx
 '''
+
 
 def replace_class_method(src, class_name, method_name, replacement):
     import ast
@@ -193,6 +232,9 @@ def patch_plugin(src):
     src=once(src,OLD_CONTEXT,NEW_CONTEXT,"Preview context")
     src=once(src,OLD_WORKER,NEW_WORKER,"Preview 48/16 worker")
     src=replace_class_method(src,"SatIPTVBridgePreview","_sort_candidates_with_cached_evidence",MANUAL_SORT_METHOD)
+    # Replace the widget itself, not merely its formatted candidate text.
+    src=once(src,"class SatIPTVBridgePreview(",MANUAL_WIDGET+"class SatIPTVBridgePreview(","Manual widget class")
+    src=once(src,'self["source_list"] = PreviewBrowserList([], width=1054, item_height=43, font_size=18)','self["source_list"] = PreviewManualMappingList([], width=1054, item_height=43, font_size=18)',"Preview uses Manual Mapping widget")
     src=replace_class_method(src,"SatIPTVBridgePreview","_render_source_list",MANUAL_RESULTS_METHOD)
     compile(src,"plugin.py","exec")
     return src
