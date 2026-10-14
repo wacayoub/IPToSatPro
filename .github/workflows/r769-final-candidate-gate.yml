@@ -1,0 +1,56 @@
+name: R76.9 Final-Candidate Release Gate (No Receiver Install)
+on:
+  push:
+    branches:
+      - release/r769-finalization-20261014
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  final-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline native layout dependency
+        run: python -m pip install Pillow
+      - name: Compile release scripts and validate shell
+        run: |
+          python -m py_compile scripts/release_r769_gate.py scripts/build-r76-metrix-preview.py scripts/r769_preview_manual_parity_patch.py scripts/r768_context_region_patch.py scripts/r767_eleven_themes_menu.py
+          sh -n download-r76-beta.sh
+      - name: Validate 11 native themes and remote menu semantics
+        run: |
+          python -m unittest discover -s scripts -p test_r767_menu_themes.py -v
+          python -m unittest discover -s scripts -p test_r76_metrix_preview.py -v
+      - name: Validate live SAT market/Manual/Preview parity
+        run: |
+          python -m unittest discover -s scripts -p test_r768_region.py -v
+          python -m unittest discover -s scripts -p test_r769_preview_manual.py -v
+          python -m unittest discover -s scripts -p test_r748_country_codes.py -v
+          python -m unittest discover -s scripts -p test_r749_reordered_filmbox.py -v
+      - name: Validate bounded background ranking and cache
+        run: |
+          python -m unittest discover -s scripts -p test_r764_multi_seed.py -v
+          python -m unittest discover -s scripts -p test_r765_postings.py -v
+          python -m unittest discover -s scripts -p test_r766_cold_rank.py -v
+          python -m unittest discover -s scripts -p test_r7418_bounded_cancel_fuzzy.py -v
+      - name: Validate protected SAT player and no-signal behaviors
+        run: |
+          python -m unittest discover -s scripts -p test_r7417_fta_signal_native.py -v
+          python -m unittest discover -s scripts -p test_r74_tod_bein_audio_hotfix.py -v
+      - name: Validate preserved mappings and reproducible staging package
+        run: python scripts/release_r769_gate.py
+      - name: Enforce production publication remains unchanged
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          main=json.loads(pathlib.Path("update.json").read_text())
+          cand=json.loads(pathlib.Path("staging/r76-metrix-preview.update.json").read_text())
+          assert main["version"]=="1.0.46-r70-final"
+          assert cand["production_published"] is False
+          assert cand["receiver_tested"] is False
+          print("PRODUCTION_NOT_PROMOTED: candidate requires Vu+ field acceptance")
+          PY
