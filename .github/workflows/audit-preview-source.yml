@@ -1,0 +1,39 @@
+name: Inspect r69 Preview code (read only, no publish)
+on:
+  push:
+    branches:
+      - feature/r70-unified-rc
+    paths:
+      - '.github/workflows/audit-preview-source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Extract code from SHA-pinned published baseline for inspection
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,io,tarfile,subprocess
+          from pathlib import Path
+          raw=base64.b64decode(Path('payload/r69-beta.b64').read_bytes())
+          assert hashlib.sha256(raw).hexdigest()=='123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed'
+          Path('r69-baseline.ipk').write_bytes(raw)
+          data=subprocess.check_output(['ar','p','r69-baseline.ipk','data.tar.gz'])
+          Path('preview-audit').mkdir()
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:
+            for name in ('plugin.py','core.py','monitor.py','neo_theme.py'):
+              path='./usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'+name
+              Path('preview-audit',name).write_bytes(t.extractfile(path).read())
+          PY
+      - name: Source review artifact only (no IPK; no releases)
+        uses: actions/upload-artifact@v4
+        with:
+          name: r69-preview-audit-source
+          path: preview-audit/
+          retention-days: 1
