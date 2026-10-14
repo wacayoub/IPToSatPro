@@ -18,7 +18,7 @@ from pathlib import Path
 PLUG=Path("/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge")
 CONF=Path("/etc/enigma2/SatIPTVBridge")
 BACKUPROOT=Path("/home/root/iptosatpro-r76-backups")
-EXPECTED="1.0.46-r76.6-cold-rank-fast-beta"
+EXPECTED="1.0.46-r76.7-eleven-home-themes-beta"
 
 
 def check(condition,label):
@@ -93,6 +93,26 @@ def run():
                                  "no inline video component; full candidate list"))
             core_file=PLUG/"core.py"
             core_source=core_file.read_text(encoding="utf-8") if core_file.is_file() else ""
+            theme_file=PLUG/"home_themes_r767.py"
+            results.append(check(theme_file.is_file(),
+                                 "11 HD/FHD dashboard skins installed"))
+            if theme_file.is_file():
+                try:
+                    skins=ast.parse(theme_file.read_text(encoding="utf-8"))
+                    defs={}
+                    for statement in skins.body:
+                        if isinstance(statement,ast.Assign):
+                            for dest in statement.targets:
+                                if isinstance(dest,ast.Name):
+                                    defs[dest.id]=ast.literal_eval(statement.value)
+                    results.append(check(
+                        len(defs.get("THEME_FHD",{}))==11 and
+                        len(defs.get("THEME_HD",{}))==11,
+                        "11 FHD + 11 HD native theme definitions"))
+                except Exception:
+                    results.append(check(False,"theme module parse"))
+            results.append(check("R767_ELEVEN_HOME_THEMES" in contents,
+                                 "new grouped Settings and saved-theme selector"))
             results.append(check("R766_COLD_RANK_FAST" in core_source and
                                  "relation_cache = {}" in core_source,
                                  "R76.6 optimized normal Preview ranking installed"))
