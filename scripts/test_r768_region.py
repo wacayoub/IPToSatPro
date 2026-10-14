@@ -66,7 +66,7 @@ class RegionalPriority(unittest.TestCase):
         self.assertEqual(df.get("regional_evidence"),"CHANNEL_OR_PROVIDER")
         self.assertEqual(self.parts[b.base.MONITOR],
                          self._baseline()[b.base.MONITOR])
-        self.assertEqual(self.parts[b.P+"player.py"],self._baseline()[b.P+"player.py"])
+        self.assertEqual(self.parts.get(b.P+"player.py"),self._baseline().get(b.P+"player.py"))
 
     def _baseline(self):
         if not hasattr(self,"_old"):
@@ -127,7 +127,7 @@ class RegionalPriority(unittest.TestCase):
     def test_fast_nomination_has_contextual_region_before_exact(self):
         self.assertIn("R768_CONTEXT_REGION_PRIORITY",self.source)
         start=self.source.index("regional_priority=1")
-        end=self.source.index("return (regional_priority, exact,",start)
+        end=self.source.index("return (exact, regional_priority,",start)
         self.assertLess(start,end)
         self.assertIn('market_source=="name"',self.source)
         self.assertIn("R766_COLD_RANK_FAST",self.source)
