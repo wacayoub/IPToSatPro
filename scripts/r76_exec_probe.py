@@ -8,6 +8,11 @@ b=importlib.util.module_from_spec(sp);sp.loader.exec_module(b)
 with tempfile.TemporaryDirectory() as td:
     out=Path(td)/"r76.ipk"; print("BUILD",b.build(out)["version"])
     files=b.pack.members_from(b.pack.unpack_ar(out.read_bytes())["data.tar.gz"])
+    for name,raw in files.items():
+        if name.endswith("neo_theme.py"):
+            skin_code=raw.decode()
+            print("NEO_THEME",name,"len",len(skin_code))
+            print(skin_code[:10000])
     text=files[b.PLUGIN].decode()
     lines=text.splitlines()
     tree=ast.parse(text)
