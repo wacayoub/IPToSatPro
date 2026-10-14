@@ -18,7 +18,7 @@ from pathlib import Path
 PLUG=Path("/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge")
 CONF=Path("/etc/enigma2/SatIPTVBridge")
 BACKUPROOT=Path("/home/root/iptosatpro-r76-backups")
-EXPECTED="1.0.46-r76.2-metrix-professional-no-video-beta"
+EXPECTED="1.0.46-r76.3-fast-candidates-medal-beta"
 
 
 def check(condition,label):
@@ -91,6 +91,8 @@ def run():
             results.append(check('self["r76_video"]' not in contents and
                                  'VideoWindow(decoder=0' not in contents,
                                  "no inline video component; full candidate list"))
+            results.append(check("R763_FAST_INDEX_BEST_MEDAL" in contents,
+                                 "fast indexed Preview first-paint present"))
             results.append(check("R7413_PREVIEW_INLINE_NO_HIDE" in contents,
                                  "existing Preview OK logic retained"))
             results.append(check('("Metrix OpenATV R76 (default)", "metrix")' in contents,
