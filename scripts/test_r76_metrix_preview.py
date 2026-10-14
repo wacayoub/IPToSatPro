@@ -239,8 +239,8 @@ class R76Acceptance(unittest.TestCase):
         self.assertLess(iptv[3],tiles[0][1])
         self.assertGreaterEqual(sat[0],420)
         self.assertGreaterEqual(rect("key_red")[1],800)
-        self.assertIn("R76.2  •  METRIX PROFESSIONAL",self.plugin)
-        self.assertIn("METRIX OPENATV  •  SAT / IPTV  •  LIVE STATUS",self.plugin)
+        self.assertIn('self["version"] = Label("R76.7  •  "+_r76_layout.replace("_"," ").upper())',self.plugin)
+        self.assertIn("SAT / IPTV  •  LIVE STATUS  •  HOME THEMES",self.plugin)
         self.assertNotIn('self["subtitle"] = Label("R72  •  SATELLITE',self.plugin)
 
     def test_remote_actions_and_mapping_logic_unchanged(self):
