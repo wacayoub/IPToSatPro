@@ -66,6 +66,30 @@ Paquet candidat (ancien chemin conservé pour éviter tout redéploiement):
 
 La **réussite des seuls tests Python/CI ne remplace pas ces preuves**.
 
+## Diagnostic local sans VuLink (lecture seule)
+- Script : `scripts/r769_receiver_audit.py`, sur cette branche.
+- Ne demande aucun compte, aucun token, aucune connexion et n'installe rien.
+- Vérifie la R76.9 installée, le code Python, l'interface HD/FHD et les
+  protections du moteur de matching. Affiche les changements de hashes des
+  mappings depuis la dernière sauvegarde sans restaurer ni modifier un fichier.
+- Lit uniquement un extrait borné des logs locaux pour en extraire le nombre
+  d'événements et les durées numériques des traitements PREVIEW_RANK_BG et
+  MATCH_BG_DONE (médiane/p95/max) ; il n'affiche ni URL ni nom des chaînes.
+- Une différence de hash de mapping peut correspondre à une modification
+  volontaire de l'utilisateur : ce contrôle est informatif.
+- Les mesures de classement de candidats ne mesurent PAS le délai jusqu'à
+  l'image ou au son. Les tests de lecture et de zapping restent sur TV.
+- Tests d'audit utilisant le vrai IPK : `test_r769_receiver_audit.py`.
+- Exécution récepteur possible sans installation de paquet :
+
+```sh
+wget -qO /tmp/r769_receiver_audit.py https://raw.githubusercontent.com/wacayoub/IPToSatPro/7f21ca9ce1958e57278b503c42781584a4f604f5/scripts/r769_receiver_audit.py && python3 /tmp/r769_receiver_audit.py --json
+```
+
+La version source est épinglée à un commit précis, pas à une branche mobile.
+Un résultat `static_pass: true` n'est jamais une validation de l'image,
+du son, des codecs UHD, du temps de zapping ou de la stabilité du décodeur.
+
 ## Installation uniquement si un essai volontaire est décidé
 Le script `download-r76-beta.sh` se lance sans argument en **mode check**:
 il vérifie le manifest et l'IPK sans installer; `--install` est une
