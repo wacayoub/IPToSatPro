@@ -244,7 +244,7 @@ def check_receiver(plugin_root=DEFAULT_PLUGIN, config_root=DEFAULT_CONFIG,
     check("updater_version_matches", ("CURRENT_VERSION = \"" + VERSION + "\"") in updater_src)
     check("preview_manual_rank_parity", all(token in plugin_src for token in (
         "R769_PREVIEW_MANUAL_PARITY", "PreviewManualMappingList",
-        "fast_rank_matches_all_servers(", "_r7610_preview_sat_context")))
+        "fast_rank_matches_all_servers(", "_r769_preview_sat_context")))
     check("region_priority", "R768_CONTEXT_REGION_PRIORITY" in core_src)
     check("normal48_bounded_candidate_pool", all(token in core_src for token in (
         "R7610_NORMAL48_FAST_BUDGET",
