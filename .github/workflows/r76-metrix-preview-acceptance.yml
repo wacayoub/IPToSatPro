@@ -1,0 +1,39 @@
+name: R76 Metrix Home + Neo Preview B Acceptance
+on:
+  push:
+    branches: [feature/r76-metrix-home-preview-b]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-enigma2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deterministic build dependencies
+        run: python -m pip install Pillow
+      - name: Compile R76 code
+        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/test_r76_metrix_preview.py
+      - name: Verify FHD and HD Enigma2 XML widgets
+        run: python scripts/r76_metrix_preview_layout.py
+      - name: Rebuild real R76 IPK and run software acceptance
+        run: python -m unittest discover -s scripts -p test_r76_metrix_preview.py -v
+      - name: R75 smart-index regression
+        run: python -m unittest discover -s scripts -p test_r75_smart_index.py -v
+      - name: R75 classic palette regression
+        run: python -m unittest discover -s scripts -p test_r75_neo_classic_palette.py -v
+      - name: Rebuild IPK and save byte verified package
+        run: |
+          mkdir -p staging-output
+          python scripts/build-r76-metrix-preview.py staging-output/iptosatpro-r76-metrix-preview-b-beta.ipk | tee staging-output/build-info.json.log
+          sha256sum staging-output/iptosatpro-r76-metrix-preview-b-beta.ipk > staging-output/SHA256SUMS
+      - name: Upload QA beta (NOT a production release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: r76-metrix-preview-b-qa-ipk
+          path: staging-output/
+          retention-days: 14
