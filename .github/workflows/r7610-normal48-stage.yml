@@ -23,6 +23,8 @@ jobs:
         run: |
           python -m py_compile scripts/r7610_normal48_fast_budget.py scripts/build-r7610-normal48.py scripts/stage-r7610-normal48.py
           python -m unittest discover -s scripts -p test_r7610_normal48.py -v
+      - name: Trace actual normal/deep Catalog ranking call path
+        run: python scripts/probe_r7610_dispatch.py
       - name: Verify receiver installer defaults to check-only and compiles
         run: |
           sh -n download-r7610-beta.sh
