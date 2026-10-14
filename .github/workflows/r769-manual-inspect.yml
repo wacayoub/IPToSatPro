@@ -1,0 +1,18 @@
+name: R76.9 Manual Mapping location audit
+on:
+  push:
+    branches: [feature/r769-preview-manual-parity]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install Pillow
+      - run: python scripts/audit_r769_find_manual.py
