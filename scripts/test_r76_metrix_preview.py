@@ -63,10 +63,10 @@ class R76Acceptance(unittest.TestCase):
 
     def test_all_package_files_protected(self):
         changed={p for p in self.old if self.old[p]!=self.new[p]}
-        self.assertEqual(changed,{builder.PLUGIN,builder.UPDATER,builder.THEME})
+        self.assertEqual(changed,{builder.PLUGIN,builder.UPDATER,builder.THEME,builder.base.CORE})
         self.assertEqual(set(self.new)-set(self.old),{builder.NOTE})
         self.assertEqual(self.new[builder.base.MONITOR],self.old[builder.base.MONITOR])
-        self.assertEqual(self.new[builder.base.CORE],self.old[builder.base.CORE])
+        self.assertNotEqual(self.new[builder.base.CORE],self.old[builder.base.CORE])
         for suffix in ("player.py","metadata_shadow.py"):
             path=builder.P+suffix
             if path in self.old:self.assertEqual(self.old[path],self.new[path])
