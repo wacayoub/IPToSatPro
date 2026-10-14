@@ -240,7 +240,7 @@ def check_receiver(plugin_root=DEFAULT_PLUGIN, config_root=DEFAULT_CONFIG,
     found_version = re.search(r'(?m)^PLUGIN_VERSION\s*=\s*["\x27]([^"\x27]+)', plugin_src)
     if found_version:
         version = found_version.group(1)[:90]
-    check("exact_r7610_installed", version == VERSION)
+    check("exact_r7611_installed", version == VERSION)
     check("updater_version_matches", ("CURRENT_VERSION = \"" + VERSION + "\"") in updater_src)
     check("preview_manual_rank_parity", all(token in plugin_src for token in (
         "R769_PREVIEW_MANUAL_PARITY", "PreviewManualMappingList",
