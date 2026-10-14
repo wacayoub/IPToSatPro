@@ -1,0 +1,38 @@
+name: VuLink V3 Private Relay QA
+on:
+  push:
+    branches:
+      - feature/vulink-v3-github-relay
+    paths:
+      - "vulink/**"
+      - ".github/workflows/vulink-v3-qa.yml"
+  workflow_dispatch:
+jobs:
+  github-private-relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile VuLink Enigma2 / QR / API agent
+        run: |
+          python3 -m py_compile vulink/__init__.py vulink/plugin.py vulink/bridge.py vulink/v2.py vulink/v3.py vulink/v3_setup.py vulink/qrpng.py
+          sh -n vulink/install.sh
+      - name: Run V1, V2 and V3 security regressions
+        run: python3 -m unittest discover -s vulink/tests -p 'test_*.py' -v
+      - name: Verify minimal outbound-only protocol and no shell injection
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          agent=Path("vulink/v3.py").read_text()
+          assert "https://api.github.com/repos/" in agent
+          assert 'if info.get("private") is not True' in agent
+          assert "PREFIX_REQUEST" in agent and "PREFIX_RESULT" in agent
+          assert "decode_request(" in agent
+          for danger in ("shell=True","eval(", "os.system(", "subprocess.run(",
+                         "listen(22)", "0.0.0.0", "ftp://"):
+              assert danger not in agent, danger
+          assert "WHERE_SESSIONSTART" in Path("vulink/plugin.py").read_text()
+          print("VULINK_V3_PRIVATE_RELAY_SECURITY_PASS")
+          PY
