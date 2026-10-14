@@ -354,41 +354,56 @@ class RelayAgent:
                 self.pending_action = None
 
     def _loop(self):
-        try:
-            cfg = read_config(self.path)
-            api = self.api_factory(cfg["repo"], cfg["token"])
-            api.assert_private_repo()
-            issue = api.register(cfg["device_id"], cfg.get("issue_no", 0))
-            self.issue_no = issue
-            if cfg.get("issue_no") != issue:
-                cfg["issue_no"] = issue
-                # Discard prior comments when new device session is registered.
-                cfg["last_comment_id"] = 0
-                cfg["last_comment_time"] = _iso_now()
-                save_config(cfg, self.path)
-            self.last_status = "connected"
-            while not self._stop.is_set():
-                self._complete_approved(api, cfg)
-                latest = int(cfg.get("last_comment_id") or 0)
-                since = cfg.get("last_comment_time")
-                comments = api.comments(issue, since=since)
-                for comment in comments:
-                    if self._stop.is_set():
-                        break
-                    comment_id = int(comment.get("id") or 0)
-                    if comment_id <= latest:
-                        continue
-                    req = decode_request(comment, cfg["device_id"], cfg["owner"])
-                    if req:
-                        self._process(api, cfg, req)
-                    latest = comment_id
-                    cfg["last_comment_id"] = latest
-                    cfg["last_comment_time"] = comment.get("created_at", cfg.get("last_comment_time", _iso_now()))
+        """Reconnect after network errors; refuse misconfigured or public repos."""
+        while not self._stop.is_set():
+            try:
+                cfg = read_config(self.path)
+                api = self.api_factory(cfg["repo"], cfg["token"])
+                api.assert_private_repo()
+                issue = api.register(cfg["device_id"], cfg.get("issue_no", 0))
+                self.issue_no = issue
+                if cfg.get("issue_no") != issue:
+                    cfg["issue_no"] = issue
+                    # New registration invalidates an old command cursor.
+                    cfg["last_comment_id"] = 0
+                    cfg["last_comment_time"] = _iso_now()
                     save_config(cfg, self.path)
                 self.last_status = "connected"
-                self._stop.wait(POLL_SECONDS)
-        except (OSError, ValueError, KeyError, TypeError, PermissionError,
-                urllib.error.URLError, urllib.error.HTTPError) as exc:
-            self.last_status = "offline_" + type(exc).__name__
-        except Exception:
-            self.last_status = "offline_InternalError"
+                while not self._stop.is_set():
+                    self._complete_approved(api, cfg)
+                    latest = int(cfg.get("last_comment_id") or 0)
+                    since = cfg.get("last_comment_time")
+                    # GitHub comment timestamps have one-second resolution.
+                    # Revisit one extra second and deduplicate by numeric ID.
+                    if since:
+                        try:
+                            prev = _from_iso(since) - dt.timedelta(seconds=2)
+                            since = prev.isoformat().replace("+00:00", "Z")
+                        except (ValueError, TypeError):
+                            since = None
+                    comments = api.comments(issue, since=since)
+                    for comment in comments:
+                        if self._stop.is_set():
+                            break
+                        comment_id = int(comment.get("id") or 0)
+                        if comment_id <= latest:
+                            continue
+                        req = decode_request(comment, cfg["device_id"], cfg["owner"])
+                        if req:
+                            self._process(api, cfg, req)
+                        latest = comment_id
+                        cfg["last_comment_id"] = latest
+                        cfg["last_comment_time"] = comment.get(
+                            "created_at", cfg.get("last_comment_time", _iso_now()))
+                        save_config(cfg, self.path)
+                    self.last_status = "connected"
+                    self._stop.wait(POLL_SECONDS)
+            except PermissionError:
+                self.last_status = "private_repo_or_credentials_required"
+                return
+            except (OSError, ValueError, KeyError, TypeError, urllib.error.URLError) as exc:
+                self.last_status = "reconnecting_" + type(exc).__name__
+                self._stop.wait(35)
+            except Exception:
+                self.last_status = "reconnecting_InternalError"
+                self._stop.wait(35)
