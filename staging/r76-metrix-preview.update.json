@@ -1,7 +1,7 @@
 {
-  "version": "1.0.46-r76.3-fast-candidates-medal-beta",
-  "size": 442422,
-  "sha256": "6639a08fb4874ada13bb7b6027c8640af5b6aba511b5dedc64c38101e1d86cc5",
+  "version": "1.0.46-r76.4-all-indexed-firstpaint-beta",
+  "size": 443164,
+  "sha256": "c54c542578f26118138b54392bc501c7501486d934e1aad1bb1b38f39c004c9c",
   "parts": [
     "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64"
   ],
