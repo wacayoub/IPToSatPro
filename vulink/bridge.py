@@ -292,7 +292,13 @@ class PairingServer:
 
 def create_qr_image(url, filepath):
     """Generate QR locally if a compatible renderer is available; never phone home."""
-    # QR is optional: the displayed local URL + one-time code always works.
+    # Guaranteed offline QR rendering: no external service or OpenATV addon.
+    try:
+        from .qrpng import write_qr_png
+        return write_qr_png(url, filepath)
+    except (ImportError, OSError, ValueError):
+        pass
+    # Optional compatibility renderers used only if the embedded encoder fails.
     try:
         import qrcode
         qr = qrcode.QRCode(border=3, box_size=6)
