@@ -122,7 +122,7 @@ class R767ThemeMenu(unittest.TestCase):
         self.assertIn("reopen plugin to apply",chooser)
         dashboard=methods["__init__"]
         self.assertIn("R767_ELEVEN_HOME_THEMES",dashboard)
-        self.assertIn('self["version"] = Label("R76.7  •  "+_r76_layout.replace("_"," ").upper())',dashboard)
+        self.assertIn('self["version"] = Label("R76.7.1  •  "+_r76_layout.replace("_"," ").upper())',dashboard)
         self.assertIn("THEME_HD if _r76_is_hd else THEME_FHD",dashboard)
         self.assertIn("_r76_layout = \"neo_dark\"",dashboard)
         self.assertIn("_r76_layout = \"studio\"",dashboard)
