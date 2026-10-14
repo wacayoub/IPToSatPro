@@ -45,8 +45,21 @@ for filename in bridge.py plugin.py v2.py qrpng.py __init__.py; do
 done
 
 python3 - "$WORK" <<'PY'
-import pathlib, sys
+import pathlib, sys, hashlib
 base=pathlib.Path(sys.argv[1])
+expected={
+ "bridge.py":"8346dffe7f98b9187241829388b92d34c71700b6",
+ "plugin.py":"389b5e1c33a7ec47e0cf480f1cd765e1742f2dee",
+ "v2.py":"82b55ba5df6b6637f1b7966eff6ec49b49d0cba7",
+ "qrpng.py":"1c59db4cd9ae80ca6e4ef26a3f7fd106cccf7119",
+ "__init__.py":"37aa9c748e07ee20a2fad065d72973e7da656835"
+}
+for name,wanted in expected.items():
+    data=(base/name).read_bytes()
+    git_sha=hashlib.sha1(("blob "+str(len(data))+"\\0").encode().replace(b"\\\\0",b"\\0")+data).hexdigest()
+    if git_sha != wanted:
+        raise SystemExit("INTEGRITY_FAILED: "+name)
+print("VULINK_V2_CONTENT_PIN_VERIFIED")
 for name in ("bridge.py","plugin.py","v2.py","qrpng.py","__init__.py"):
     text=(base/name).read_text(encoding="utf-8")
     compile(text,str(base/name),"exec")
