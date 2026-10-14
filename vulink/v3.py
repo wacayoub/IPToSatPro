@@ -105,7 +105,7 @@ class GithubAPI:
     def call(self, method, relative, data=None, params=None):
         if method not in ("GET", "POST"):
             raise ValueError("unsupported method")
-        if not relative.startswith("/") or not re.fullmatch(r"/[A-Za-z0-9/_-]*", relative):
+        if relative != "" and (not relative.startswith("/") or not re.fullmatch(r"/[A-Za-z0-9/_-]*", relative)):
             raise ValueError("unsupported GitHub endpoint")
         # Only a known repo metadata endpoint or this repo's Issues API.
         if relative not in ("", "/issues") and not re.fullmatch(
@@ -314,12 +314,14 @@ class RelayAgent:
             return
         # Other operations are NEVER auto-executed.
         with self._lock:
-            if self.pending_action is not None:
-                self._respond(api, cfg, req, "rejected", {"reason": "device_busy"})
-                return
-            self.pending_action = {"operation": req["operation"],
-                                   "expires": time.monotonic() + PENDING_TTL_SECONDS,
-                                   "status": "pending", "request": req}
+            is_busy = self.pending_action is not None
+            if not is_busy:
+                self.pending_action = {"operation": req["operation"],
+                                       "expires": time.monotonic() + PENDING_TTL_SECONDS,
+                                       "status": "pending", "request": req}
+        if is_busy:
+            self._respond(api, cfg, req, "rejected", {"reason": "device_busy"})
+            return
         self._respond(api, cfg, req, "awaiting_tv_approval",
                       {"reason": "approve_on_receiver_green_or_deny_yellow"})
 
