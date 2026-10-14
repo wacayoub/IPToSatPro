@@ -5,7 +5,7 @@
 Native Enigma2 XML only; 1660x900 FHD and 1245x675 HD 16:9.
 No network calls, new background threads, remote bindings, mapping writes,
 key changes, changes to player/monitor/core or native bouquets.
-Playback triggered ONLY by the existing OK handler, not by list navigation.
+Original OK playback handler preserved, without embedded preview widget.
 """
 import ast
 import xml.etree.ElementTree as ET
@@ -83,7 +83,7 @@ PREVIEW_WIDGETS={
  "left_head":(51,255,548,30,20,"#69E1C3"),
  "right_head":(655,255,928,30,20,"#89CFFF"),
  "sat_list":(50,296,535,456,19,"#ECF4F8"),
- "source_list":(653,641,927,111,18,"#ECF4F8"),
+ "source_list":(653,296,927,456,18,"#ECF4F8"),
  "verify":(50,768,1530,24,17,"#A8BED0"),
  "detail":(50,795,1530,22,17,"#E7F1FA"),
  "key_red":(30,830,301,48,19,"#FFFFFF"),
@@ -91,9 +91,8 @@ PREVIEW_WIDGETS={
  "key_yellow":(653,830,301,48,19,"#FFFFFF"),
  "key_blue":(966,830,301,48,19,"#FFFFFF"),
  "key_menu":(1279,830,351,48,19,"#FFFFFF"),
- "r76_video":(840,293,600,338,0,""),
 }
-PREVIEW_CLASSIC_NAMES=set(PREVIEW_WIDGETS)-{"r76_video"}
+PREVIEW_CLASSIC_NAMES=set(PREVIEW_WIDGETS)
 
 
 def add_rect(root,x,y,w,h,color,z="0",text=None):
@@ -151,7 +150,6 @@ def make_preview():
     add_rect(root,30,253,569,4,"#27C7AC","1")
     add_rect(root,635,253,995,4,"#347BA5","1")
     add_rect(root,43,97,144,91,"#192C3A")
-    add_rect(root,804,282,670,386,"#060B13","1")
     add_rect(root,39,762,1580,61,"#101C29")
     add_rect(root,30,827,1600,59,"#101C29")
     for x,w,c in ((30,301,"#8A343E"),(342,301,"#257955"),
@@ -163,8 +161,6 @@ def make_preview():
             attrs.update({"font":f"Regular;{size}","foregroundColor":color,
                 "backgroundColor":"#121F2D","scrollbarMode":"showOnDemand",
                 "itemHeight":"36" if name=="source_list" else "42"})
-        elif name=="r76_video":
-            attrs["zPosition"]="2"
         elif name=="sat_picon":
             attrs.update({"alphatest":"on","scale":"1"})
         else:
@@ -368,8 +364,8 @@ def theme_module():
     h=make_preview(); hd=scale_skin(h,.75)
     validate_skin(h,set(PREVIEW_WIDGETS));validate_skin(hd,set(PREVIEW_WIDGETS),hd=True)
     return ('''# -*- coding: utf-8 -*-
-"""R76 Neo Dark Classic Preview+ B, native HD/FHD VideoWindow.
-Only visual layout; OK retains R74.13 player trigger and GREEN manual lock.
+"""R76 Neo Dark Classic two-list SAT/IPTV browser, native HD/FHD.
+No embedded video widget; existing OK and GREEN actions unchanged.
 """
 PREVIEW_R74_FHD = """'''+h+'''"""
 PREVIEW_R76_HD = """'''+hd+'''"""
@@ -388,23 +384,10 @@ def patch_preview_plugin(src):
             except Exception:
                 self.skin = _theme_skin(PREVIEW_R76_HD)'''
     src=replace_once(src,old,new)
-    needle='''        self["title"] = Label("PREVIEW BROWSER PRO  |  NEO DARK R74")'''
-    addition='''        # R76: single existing decoder, not a second PiP decoder.
-        # Main player still starts exclusively on OK; never on cursor movement.
-        try:
-            from Components.VideoWindow import VideoWindow
-            self["r76_video"] = VideoWindow(decoder=0, fb_width=1280, fb_height=720)
-            self.onLayoutFinish.append(self["r76_video"].hide)
-        except Exception:
-            self["r76_video"] = Label("Video window unavailable")
-'''
-    src=replace_once(src,needle,addition+needle)
-    needle='''    def _r7413_keep_preview_visible(self):'''
-    src=replace_once(src,needle,needle+'''
-        # R76: reveal video widget only after existing OK player request.
-        try: self["r76_video"].show()
-        except Exception: pass
-''')
+    # The stock Preview still owns OK fullscreen tests and GREEN manual lock.
+    src=replace_once(src,
+        'self["title"] = Label("PREVIEW BROWSER PRO  |  NEO DARK R74")',
+        'self["title"] = Label("PREVIEW BROWSER PRO  |  NEO DARK CLASSIC")')
     # Keep initial focus, SAT navigation, all color buttons, existing OK logic.
     # Do not touch play_match, fast zap, stream watchdog or overrides.
     compile(src,"plugin.py","exec")
