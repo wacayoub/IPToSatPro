@@ -1,7 +1,7 @@
 #!/bin/sh
-# VuLink v0.1 beta: safe, isolated plugin deployment on OpenATV/Enigma2.
+# VuLink Pro V2 beta: safe, isolated plugin deployment on OpenATV/Enigma2.
 set -eu
-BRANCH="feature/vulink-qr-pair-v1"
+BRANCH="feature/vulink-pro-v2"
 RAW="https://raw.githubusercontent.com/wacayoub/IPToSatPro/$BRANCH/vulink"
 TARGET="/usr/lib/enigma2/python/Plugins/Extensions/VuLink"
 BACKUPS="/home/root/vulink-backups"
@@ -39,7 +39,7 @@ command -v python3 >/dev/null || { echo "PYTHON3_MISSING"; exit 3; }
 
 WORK="$(mktemp -d /tmp/vulink-install.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
-for filename in bridge.py plugin.py qrpng.py __init__.py; do
+for filename in bridge.py plugin.py v2.py qrpng.py __init__.py; do
   wget -q -O "$WORK/$filename" "$RAW/$filename" || {
     echo "DOWNLOAD_FAILED: $filename"; exit 3; }
 done
@@ -47,12 +47,13 @@ done
 python3 - "$WORK" <<'PY'
 import pathlib, sys
 base=pathlib.Path(sys.argv[1])
-for name in ("bridge.py","plugin.py","qrpng.py","__init__.py"):
+for name in ("bridge.py","plugin.py","v2.py","qrpng.py","__init__.py"):
     text=(base/name).read_text(encoding="utf-8")
     compile(text,str(base/name),"exec")
     print("VALID_PYTHON",name,len(text))
 body=(base/"bridge.py").read_text(encoding="utf-8")
 assert 'VERSION = "0.1.0"' in body
+assert 'class ProPairingServer(PairingServer)' in (base/"v2.py").read_text(encoding="utf-8")
 assert 'class PairingServer:' in body
 print("VULINK_PACKAGE_CHECK_PASS")
 PY
@@ -74,14 +75,15 @@ else
 fi
 
 mkdir -p "$TARGET"
-for filename in bridge.py plugin.py qrpng.py __init__.py; do
+for filename in bridge.py plugin.py v2.py qrpng.py __init__.py; do
   cp "$WORK/$filename" "$TARGET/$filename"
   chmod 644 "$TARGET/$filename"
 done
 printf '%s\n' "$SAVED" > "$BACKUPS/last-path"
 chmod 600 "$BACKUPS/last-path"
-echo "INSTALLED VuLink 0.1.0-beta"
-echo "No IPTV mappings, configuration, passwords or services modified."
+echo "INSTALLED VuLink Pro V2 2.0.0-beta1"
+echo "No IPTV mappings, credentials or player code modified."
+echo "Phone actions require GREEN approval on Vu+ screen; YELLOW denies."
 echo "QR generated offline (built in), or address+code as fallback."
-echo "Restart Enigma2 GUI; open Plugins > VuLink - Connexion QR diagnostic."
+echo "Restart Enigma2 GUI; open Plugins > VuLink Pro V2 - QR Maintenance."
 echo "Rollback: sh /tmp/install-vulink.sh --rollback"
