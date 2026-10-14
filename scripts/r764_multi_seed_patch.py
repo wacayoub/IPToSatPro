@@ -65,10 +65,15 @@ NEW_TARGET='''    # Common SAT broadcast affixes: OSNtv vs OSN, HBOtv vs HBO.
     if not target:'''
 
 OLD_CANDIDATE='''        candidate=set(_r763_re.findall(r"[a-z0-9]+",key.lower()))-noise'''
-NEW_CANDIDATE='''        candidate=set(
+NEW_CANDIDATE='''        if target[-1] not in key.lower():
+            continue
+        candidate=set(
             (t[:-2] if t.endswith("tv") and len(t)>3 else t)
             for t in _r763_re.findall(r"[a-z0-9]+",key.lower())
             if t not in noise)'''
+
+OLD_OVERLAP="        overlap=len(set(target)&candidate)"
+NEW_OVERLAP="        # Final identity token: Family does not match Action.\n        if target[-1] not in candidate:\n            continue\n        overlap=len(set(target)&candidate)"
 
 OLD_BOUND='''        if i>=12000:
             break'''
@@ -95,6 +100,7 @@ def patch_plugin(src):
        ("seed merge",OLD_ASSIGN,NEW_ASSIGN),
        ("SAT alias normalization",OLD_TARGET,NEW_TARGET),
        ("IPTV alias normalization",OLD_CANDIDATE,NEW_CANDIDATE),
+       ("distinguishing identity",OLD_OVERLAP,NEW_OVERLAP),
        ("all indexed servers",OLD_BOUND,NEW_BOUND)):
         src=replace_one(src,old,new,name)
     compile(src,"plugin.py","exec")
