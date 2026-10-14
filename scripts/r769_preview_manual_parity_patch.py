@@ -133,7 +133,7 @@ MANUAL_RESULTS_METHOD = '''    def _render_source_list(self, keep_index=True):
             role = ch.get("server_role") or "SERVER"
             short_role = _short_role(role)
             server = _friendly_server_name(role,ch.get("server_label") or ch.get("source") or "")
-            # Preserve IPTV country prefixes (FR:/DE:/AR:), unlike presentation_name().
+            # Preserve IPTV country prefixes (FR:/DE:/AR:) without name normalization.
             name = " ".join(str(ch.get("name") or "IPTV").split())
             if len(name)>39:name=name[:38]+"…"
             health = self._health_record(ch) or {}
