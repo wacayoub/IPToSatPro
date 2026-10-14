@@ -119,7 +119,7 @@ class R767ThemeMenu(unittest.TestCase):
         self.assertIn("_r76_home_pref_path",setter)
         self.assertNotIn("_r723_home_pref_path",setter)
         self.assertIn("os.rename",setter)
-        self.assertIn("reopen IPToSat Pro",chooser)
+        self.assertIn("reopen plugin to apply",chooser)
         dashboard=methods["__init__"]
         self.assertIn("R767_ELEVEN_HOME_THEMES",dashboard)
         self.assertIn("THEME_HD if _r76_is_hd else THEME_FHD",dashboard)
