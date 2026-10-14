@@ -45,10 +45,46 @@ def _safe_bool_file(path):
         return False
 
 
+
+def _preview_stage_statistics():
+    """Aggregate ONLY integers from PREVIEW_RANK_BG lines, never raw log content."""
+    try:
+        log = CONF_ROOT / "bridge.log"
+        with log.open("rb") as stream:
+            stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, stream.tell() - 512 * 1024))
+            raw = stream.read(512 * 1024).decode("utf-8", "replace")
+    except OSError:
+        return {"available": False}
+    stages = {"elapsed_ms": [], "index_ms": [], "scoring_ms": [], "candidates": [], "scored": []}
+    errors = 0
+    for line in raw.splitlines()[-2200:]:
+        if not re.search(r"\|\s*PREVIEW_RANK_BG\s*\|", line):
+            continue
+        if re.search(r"\berror=(?!\s*(?:$|\|))\S+", line):
+            errors += 1
+        for source, target in (("elapsed", "elapsed_ms"), ("index", "index_ms"),
+                               ("scoring", "scoring_ms"), ("candidate_count", "candidates"),
+                               ("scored", "scored")):
+            found = re.search(r"\b" + source + r"=(\d{1,8})(?:ms)?\b", line)
+            if found:
+                stages[target].append(int(found.group(1)))
+    aggregates = {}
+    for key, values in stages.items():
+        if values:
+            ordered = sorted(values)
+            aggregates[key] = {"samples": len(ordered),
+                               "median": ordered[len(ordered) // 2],
+                               "p95": ordered[max(0, (len(ordered) * 95 + 99) // 100 - 1)],
+                               "max": ordered[-1]}
+    return {"available": True, "stage_metrics": aggregates,
+            "error_count": errors}
+
 def extended_report():
     """Add safe numeric platform facts; no file content, channels or credentials."""
     report = collect_report()
     report["schema"] = "vulink-pro-v2-diagnostic"
+    report["preview_performance"] = _preview_stage_statistics()
     report["vulink"] = {
         "version": V2_VERSION,
         "remote_ssh_access": False,
