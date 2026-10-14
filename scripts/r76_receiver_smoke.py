@@ -18,7 +18,7 @@ from pathlib import Path
 PLUG=Path("/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge")
 CONF=Path("/etc/enigma2/SatIPTVBridge")
 BACKUPROOT=Path("/home/root/iptosatpro-r76-backups")
-EXPECTED="1.0.46-r76.0-metrix-preview-b-beta"
+EXPECTED="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
 
 
 def check(condition,label):
