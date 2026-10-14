@@ -92,6 +92,24 @@ if [ "$MODE" = "--check" ]; then
   echo "Install explicitly with: sh /tmp/download-r7611-beta.sh --install"
   exit 0
 fi
+# Idempotent reinstall guard: code and version markers must all agree.
+# This is deliberately after SHA verification, before any persistent backup
+# or opkg operation. Never replace or rewrite user mappings on a second run.
+# R7611_ALREADY_INSTALLED_GUARD
+if grep -Fq 'PLUGIN_VERSION = "1.0.46-r76.11-preview-coldstart-fast-beta"' "$PLUGIN/plugin.py"; then
+  if [ -f "$PLUGIN/core.py" ] && [ -f "$PLUGIN/updater.py" ] &&
+     grep -Fq 'R7611_NORMAL_PREVIEW_NO_COLD_DECORATED_SCAN' "$PLUGIN/core.py" &&
+     grep -Fq 'R7610_NORMAL48_FAST_BUDGET' "$PLUGIN/core.py" &&
+     grep -Fq 'CURRENT_VERSION = "1.0.46-r76.11-preview-coldstart-fast-beta"' "$PLUGIN/updater.py"; then
+    echo "ALREADY_INSTALLED: $VERSION"
+    echo "NO_OPKG_ACTION: installation is already complete."
+    echo "NO_BACKUP_OR_MAPPINGS_CHANGED"
+    exit 0
+  fi
+  echo "INSTALLED_R7611_INCONSISTENT: refusing to overwrite; inspect installed files."
+  echo "Receiver unchanged."
+  exit 7
+fi
 # Avoid overwriting the only known-good R75 backup with broken R76.0 code.
 # The user must first restore the verified R75 snapshot using --rollback.
 if grep -q 'PLUGIN_VERSION = "1.0.46-r76.0-metrix-preview-b-beta"' "$PLUGIN/plugin.py"; then
