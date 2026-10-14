@@ -221,9 +221,12 @@ def patch_plugin(src):
                 ("Metrix OpenATV R76 (default)", "metrix"),
             ])'''
     new_box='''            title="HOME THEMES  •  11 choices  •  reopen plugin to apply",
-            list=list(__import__(__package__+".home_themes_r767",
-                                 fromlist=["THEME_CHOICES"]).THEME_CHOICES))'''
+            list=list(THEME_CHOICES))'''
     src=replace_once(src,old_box,new_box,"theme ChoiceBox")
+    src=replace_once(src,
+        '    def _r723_select_home_layout(self):\n        from Screens.ChoiceBox import ChoiceBox',
+        '    def _r723_select_home_layout(self):\n        from Screens.ChoiceBox import ChoiceBox\n        from .home_themes_r767 import THEME_CHOICES',
+        "theme import")
     src=replace_once(src,'if chosen not in ("classic","monitor","metrix"):',
         'if chosen not in '+repr(choices)+':',"theme validation")
     # Keep existing settings-and-mappings intact; theme preference is *only*
@@ -283,6 +286,9 @@ def patch_plugin(src):
              ("Online Update", "update"),
           ),
         }
+        if name=="group_appearance":
+            self._r723_select_home_layout()
+            return
         entries=list(groups.get(name,()))
         if not entries:
             return
