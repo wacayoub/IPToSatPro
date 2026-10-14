@@ -140,7 +140,7 @@ class FirstPaintTest(unittest.TestCase):
         self.assertIn("R764_MULTI_CANDIDATE_FIRST_PAINT",self.src)
         self.assertIn("if not complete and len(cached[2] or []) < 24:",self.src)
         self.assertIn("PREVIEW_RANK_BG",self.src)
-        self.assertIn("candidate_budget = 192 if self._r71_worker_deep else 24",self.src)
+        self.assertIn("candidate_budget = 192 if self._r71_worker_deep else 48",self.src)
         self.assertIn("self.candidate_expand_timer.start(20, True)",self.src)
         self.assertEqual(self.build_info["changes"],sorted([builder.PLUGIN,builder.THEME,builder.UPDATER,builder.base.CORE]))
         self.assertFalse(self.build_info["receiver_tested"])
