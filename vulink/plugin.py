@@ -50,7 +50,7 @@ class VuLinkScreen(Screen):
               font="Regular;20" halign="center" foregroundColor="#101923"
               transparent="1" zPosition="3" />
       <widget name="v3_status" position="42,478" size="1050,30" font="Regular;19" foregroundColor="#78D3FF" transparent="1" />
-      <widget name="approval" position="42,513" size="1000,57" font="Regular;21" foregroundColor="#FFDD78" transparent="1" />
+      <widget name="approval" position="42,511" size="1000,46" font="Regular;21" foregroundColor="#FFDD78" transparent="1" />
       <eLabel position="28,564" size="1100,52" backgroundColor="#182D3E" />
       <widget name="key_red" position="50,574" size="1000,34"
               font="Regular;21" foregroundColor="#EAA4A4" transparent="1" />
