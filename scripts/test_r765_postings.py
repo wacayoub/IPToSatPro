@@ -59,8 +59,17 @@ class FastPostingR765(unittest.TestCase):
         modified={name for name in b if b[name]!=a[name]}
         self.assertEqual(modified,{("Catalog","fast_preview_mega_matches"),
                                    ("Catalog","_fast_cache_put")})
-        self.assertEqual(self.core.count("match_score_details("),
-                         self.old[builder.base.CORE].decode().count("match_score_details("))
+        # R76.8 wraps the original scorer; its complete existing safety
+        # gates must remain byte/AST equivalent, even though the total number
+        # of references now increases by two.
+        orig=[n for n in before.body if isinstance(n,ast.FunctionDef)
+              and n.name=="match_score_details"]
+        wrapped=[n for n in after.body if isinstance(n,ast.FunctionDef)
+                 and n.name=="match_score_details"]
+        self.assertEqual(len(orig),1)
+        self.assertEqual(len(wrapped),2)
+        self.assertEqual(ast.dump(orig[0],include_attributes=False),
+                         ast.dump(wrapped[0],include_attributes=False))
         self.assertIn("while len(order) > 96:",self.core)
         self.assertIn("if limit <= 24 and roles_cap <= 8 else",self.core)
         self.assertIn("max(760, roles_cap * max(3, len(self.server_roles())) * 2)",self.core)
