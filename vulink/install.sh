@@ -49,7 +49,7 @@ import pathlib, sys, hashlib
 base=pathlib.Path(sys.argv[1])
 expected={
  "bridge.py":"8346dffe7f98b9187241829388b92d34c71700b6",
- "plugin.py":"749b51fb8ee813b91864cf5e5752dbd7129e460b",
+ "plugin.py":"37bc1a8b25e05518125b70d02b945386ceed9245",
  "v2.py":"9699cf9ccddce5867f298aeab411420b61db2825",
  "v3.py":"affe154479bd26d85f60338d98c8ddf77da9f082",
  "v3_setup.py":"53863789fdbb846f2150515c5452c9430eb4912f",
