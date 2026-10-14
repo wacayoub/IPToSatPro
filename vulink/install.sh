@@ -52,7 +52,7 @@ expected={
  "plugin.py":"37bc1a8b25e05518125b70d02b945386ceed9245",
  "v2.py":"9699cf9ccddce5867f298aeab411420b61db2825",
  "v3.py":"affe154479bd26d85f60338d98c8ddf77da9f082",
- "v3_setup.py":"53863789fdbb846f2150515c5452c9430eb4912f",
+ "v3_setup.py":"13c287443af83e98d8053564c692e2d3c7121a99",
  "qrpng.py":"1c59db4cd9ae80ca6e4ef26a3f7fd106cccf7119",
  "__init__.py":"37aa9c748e07ee20a2fad065d72973e7da656835"
 }
