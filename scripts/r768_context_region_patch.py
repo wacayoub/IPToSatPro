@@ -20,7 +20,7 @@ NEW_RETURN = '''            # R768_CONTEXT_REGION_PRIORITY: explicit matching ma
                     and not context.get("global_fallback")
                     and market and market_source=="name"):
                 regional_priority=2 if market==first else 0
-            return (regional_priority, exact, prefix_fit, compact, fam, overlap,
+            return (exact, regional_priority, prefix_fit, compact, fam, overlap,
                     market_rank, lang_rank, -abs(len(tokens)-len(wanted_tokens)),
                     -int(ch.get("server_priority") or 0))'''
 WRAPPER = '''
