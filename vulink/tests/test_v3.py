@@ -55,6 +55,22 @@ class V3SecurityTests(unittest.TestCase):
         payload["body"] += "A" * 3500
         self.assertIsNone(v3.decode_request(payload, DEVICE, OWNER))
 
+    def test_setup_explains_http_status_without_leaking_tokens(self):
+        """Regression: previous V3 displayed only 'HTTPError' to receiver user."""
+        source = (Path(__file__).resolve().parents[1] / "v3_setup.py").read_text()
+        compile(source, "v3_setup.py", "exec")
+        self.assertIn("except urllib.error.HTTPError as exc:", source)
+        self.assertIn('print("VULINK_GITHUB_HTTP_STATUS:", code)', source)
+        self.assertIn("if code == 401:", source)
+        self.assertIn("elif code == 403:", source)
+        self.assertIn("elif code == 404:", source)
+        self.assertIn("Only select repositories", source)
+        self.assertIn('api.call("GET", "/issues"', source)
+        self.assertIn("getpass.getpass(", source)
+        self.assertNotIn("print(token)", source)
+        self.assertNotIn("print(str(exc))", source)
+        self.assertNotIn("print(exc)", source)
+
     def test_private_repository_is_mandatory(self):
         client = v3.GithubAPI("wacayoub/VuLink-Relay", "github_pat_FAKE_TEST_VALUE_NOT_USABLE")
         for data in [
