@@ -54,9 +54,7 @@ class PreviewColdSafety(unittest.TestCase):
         self.assertEqual(diffs,{"_preview_nomination_pool"})
         before=ast.get_source_segment(self.oldcore,self.old_methods["_preview_nomination_pool"])
         after=ast.get_source_segment(self.newcore,self.new_methods["_preview_nomination_pool"])
-        self.assertEqual(after,b.fix.patch_core(self.oldcore)[
-            self.newcore.index("    def _preview_nomination_pool("):
-        ].split("\n    def ",1)[0] if False else after)
+        self.assertEqual(b.fix.patch_core(self.oldcore),self.newcore)
         self.assertIn("preview_index = self._ensure_preview_decorated_index()",before)
         self.assertNotIn("preview_index = self._ensure_preview_decorated_index()",after)
         self.assertEqual(b.fix.patch_core(self.newcore),self.newcore)
@@ -66,7 +64,7 @@ class PreviewColdSafety(unittest.TestCase):
         assigns=[i for i,n in enumerate(fn.body)
                  if isinstance(n,ast.Assign)
                  and any(isinstance(t,ast.Name) and t.id=="preview_index" for t in n.targets)]
-        self.assertEqual(len(assigns),2)  # cold variable and optional empty fallback
+        self.assertEqual(len(assigns),1)  # nested fallback is inside following If
         i=assigns[0]
         node=fn.body[i]
         follow=fn.body[i+1]
