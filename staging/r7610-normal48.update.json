@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.10-preview-normal48-fast-beta",
+  "size": 459220,
+  "sha256": "6bfeafb046fb09b97283f5313cda95f3a11f51221572451395bf8c099ae13725",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r7610-normal48.b64"
+  ],
+  "notes": "R76.10 beta fixes R76.9 normal 48/16 cold-index and candidate-pool thresholds; DEEP 192/64 and manual mapping, player, TV GUI and settings preserved. Needs on-device performance/audio/video validation.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
