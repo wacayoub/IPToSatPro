@@ -18,7 +18,7 @@ from pathlib import Path
 PLUG=Path("/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge")
 CONF=Path("/etc/enigma2/SatIPTVBridge")
 BACKUPROOT=Path("/home/root/iptosatpro-r76-backups")
-EXPECTED="1.0.46-r76.5-postings-fast-preview-beta"
+EXPECTED="1.0.46-r76.6-cold-rank-fast-beta"
 
 
 def check(condition,label):
@@ -91,6 +91,11 @@ def run():
             results.append(check('self["r76_video"]' not in contents and
                                  'VideoWindow(decoder=0' not in contents,
                                  "no inline video component; full candidate list"))
+            core_file=PLUG/"core.py"
+            core_source=core_file.read_text(encoding="utf-8") if core_file.is_file() else ""
+            results.append(check("R766_COLD_RANK_FAST" in core_source and
+                                 "relation_cache = {}" in core_source,
+                                 "R76.6 optimized normal Preview ranking installed"))
             results.append(check("R765_POSTINGS_FAST_FIRSTPAINT" in contents,
                                  "prebuilt token-postings firstpaint present"))
             results.append(check("R764_MULTI_CANDIDATE_FIRST_PAINT" in contents and
