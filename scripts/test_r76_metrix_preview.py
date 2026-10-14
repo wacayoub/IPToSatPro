@@ -144,6 +144,28 @@ class R76Acceptance(unittest.TestCase):
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
 
+    def test_openatv_screen_callback_uses_bound_method_not_lambda(self):
+        """OpenATV Screen.applySkin: non-bound callbacks are fed to exec().
+
+        Regression for real Vu+ OSD crash:
+        'exec() arg 1 must be a string, bytes or code object'.
+        OpenATV's Screen uses isinstance(method,type(self.close)) onLayoutFinish.
+        """
+        self.assertIn('self.onLayoutFinish.append(self["r76_video"].hide)',self.plugin)
+        self.assertNotIn('self.onLayoutFinish.append(lambda',self.plugin)
+        class MockScreen:
+            def close(self): pass
+        class MockVideo:
+            def hide(self): return "hidden"
+        screen=MockScreen()
+        cb=MockVideo().hide
+        self.assertIsInstance(cb,type(screen.close))
+        self.assertEqual(cb(),"hidden")
+        invalid=lambda:None
+        self.assertNotIsInstance(invalid,type(screen.close))
+        with self.assertRaises(TypeError):
+            exec(invalid,globals(),locals())
+
     def test_no_overlap_video_candidate_or_buttons(self):
         hi=ET.fromstring(literal(ast.parse(self.theme),"PREVIEW_R74_FHD"))
         wd={x.attrib["name"]:x for x in hi if x.tag=="widget"}
