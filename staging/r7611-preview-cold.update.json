@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.11-preview-coldstart-fast-beta",
+  "size": 459492,
+  "sha256": "3c3f7b0e623808681884aef4f7975965b2eccdbc224cc4ba0b4393830a7d24d5",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r7611-preview-cold.b64"
+  ],
+  "notes": "R76.11 beta skips cold decorated-index rebuild on the actual normal Preview ranking route; DEEP 192/64 and manual mapping, player, TV GUI and settings preserved. Needs on-device performance/audio/video validation.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
