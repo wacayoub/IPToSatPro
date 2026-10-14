@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""VuLink Pro V2 - on-TV approved maintenance via LAN pairing (no SSH tunnel)."""
+"""VuLink Pro V3: local QR plus GitHub private relay, no exposed SSH/FTP."""
 import os
 import tempfile
 from pathlib import Path
@@ -12,13 +12,24 @@ from Components.Pixmap import Pixmap
 
 from .bridge import create_qr_image
 from .v2 import ProPairingServer
+from .v3 import RelayAgent
 from enigma import eTimer
+
+_V3_AGENT = RelayAgent()
+
+def v3_autostart(reason, **_kwargs):
+    # Enigma2 session start/stop: no browser or SSH intervention required.
+    if reason == 0:
+        _V3_AGENT.start()
+    elif reason == 1:
+        _V3_AGENT.stop()
+
 
 
 class VuLinkScreen(Screen):
     skin = """
     <screen name="VuLinkScreen" position="center,center" size="1160,640"
-            title="VuLink Pro V2 • Maintenance locale" backgroundColor="#0C1722">
+            title="VuLink Pro V3 • GitHub Relay" backgroundColor="#0C1722">
       <eLabel position="0,0" size="1160,74" backgroundColor="#192B3B" />
       <widget name="title" position="38,20" size="1070,36" font="Regular;31"
               foregroundColor="#FFFFFF" transparent="1" />
@@ -30,7 +41,7 @@ class VuLinkScreen(Screen):
               foregroundColor="#FFFFFF" transparent="1" />
       <widget name="code" position="42,325" size="700,47" font="Regular;33"
               foregroundColor="#FFDD78" transparent="1" />
-      <widget name="hint" position="42,392" size="700,100" font="Regular;20"
+      <widget name="hint" position="42,392" size="700,82" font="Regular;20"
               foregroundColor="#B4C9DB" transparent="1" />
       <eLabel position="797,161" size="276,276" backgroundColor="#FFFFFF" />
       <widget name="qr" position="805,169" size="260,260"
@@ -38,7 +49,8 @@ class VuLinkScreen(Screen):
       <widget name="qr_fallback" position="811,226" size="249,140"
               font="Regular;20" halign="center" foregroundColor="#101923"
               transparent="1" zPosition="3" />
-      <widget name="approval" position="42,497" size="1000,57" font="Regular;21" foregroundColor="#FFDD78" transparent="1" />
+      <widget name="v3_status" position="42,478" size="1050,30" font="Regular;19" foregroundColor="#78D3FF" transparent="1" />
+      <widget name="approval" position="42,513" size="1000,57" font="Regular;21" foregroundColor="#FFDD78" transparent="1" />
       <eLabel position="28,564" size="1100,52" backgroundColor="#182D3E" />
       <widget name="key_red" position="50,574" size="1000,34"
               font="Regular;21" foregroundColor="#EAA4A4" transparent="1" />
@@ -52,7 +64,7 @@ class VuLinkScreen(Screen):
         self._pending_id = None
         self.approval_timer = eTimer()
         self.approval_timer.callback.append(self._refresh)
-        self["title"] = Label("VuLink PRO V2 • DIAGNOSTIC & MAINTENANCE")
+        self["title"] = Label("VuLink PRO V3 • CHATGPT / Vu+ RELAY")
         self["status"] = Label("Initialisation de la session temporaire...")
         self["instructions"] = Label("1. Connecte ton telephone au meme reseau Wi-Fi.\n"
                                       "2. Scanne le QR ou entre le code ci-dessous.")
@@ -62,6 +74,7 @@ class VuLinkScreen(Screen):
                               "4. Pour une action, confirme sur la TV.\n"
                               "Aucun acces SSH/FTP ni secret transmis.")
         self["approval"] = Label("Aucune action en attente")
+        self["v3_status"] = Label("V3 GitHub : initialisation...")
         self["qr"] = Pixmap()
         self["qr_fallback"] = Label("QR optionnel\nUtilise l'adresse\net le code")
         self["key_red"] = Label("VERT : APPROUVER • JAUNE : REFUSER • ROUGE/EXIT : FERMER")
@@ -81,7 +94,7 @@ class VuLinkScreen(Screen):
             code = self.pair.code
             self["address"].setText("Adresse : " + self.pair.base_url)
             self["code"].setText("Code : %s-%s-%s" % (code[:4], code[4:8], code[8:]))
-            self["status"].setText("SESSION PRO V2 • QR local • 10 min • Actions sur accord TV")
+            self["status"].setText("V3 GitHub prive + QR local • Actions sur accord TV")
             self.approval_timer.start(1000, False)
             fd, path = tempfile.mkstemp(prefix="vulink-qr-", suffix=".png")
             os.close(fd)
@@ -101,6 +114,16 @@ class VuLinkScreen(Screen):
             self._cleanup()
 
     def _refresh(self):
+        v3 = _V3_AGENT.summary()
+        if v3["connected"]:
+            self["v3_status"].setText("GitHub PRIVE CONNECTE • Appareil " + v3["device_id"] +
+                                       " • Issue #" + str(v3["issue_no"]))
+        else:
+            self["v3_status"].setText("GitHub V3 : " + v3["status"] +
+                                       " (QR local utilisable separement)")
+        if v3["waiting_for_tv"]:
+            self["approval"].setText("V3 A APPROUVER : " + v3["waiting_for_tv"])
+            return
         if self.pair is None:
             return
         pending = self.pair.pending()
@@ -119,11 +142,19 @@ class VuLinkScreen(Screen):
                 self["approval"].setText("Aucune action en attente")
 
     def _approve(self):
+        if _V3_AGENT.summary()["waiting_for_tv"]:
+            _V3_AGENT.tv_decide(True)
+            self._refresh()
+            return
         if self.pair is not None and self._pending_id:
             self.pair.decide(self._pending_id, True)
             self._refresh()
 
     def _deny(self):
+        if _V3_AGENT.summary()["waiting_for_tv"]:
+            _V3_AGENT.tv_decide(False)
+            self._refresh()
+            return
         if self.pair is not None and self._pending_id:
             self.pair.decide(self._pending_id, False)
             self._refresh()
@@ -153,12 +184,16 @@ def open_vulink(session, **_kwargs):
 
 def Plugins(**_kwargs):
     return [
-        PluginDescriptor(name="VuLink Pro V2 - QR Maintenance",
+        PluginDescriptor(name="VuLink Pro V3 - ChatGPT Connect",
                          description="Diagnostic et maintenance locale sur accord du Vu+",
                          where=PluginDescriptor.WHERE_PLUGINMENU,
                          fnc=open_vulink),
-        PluginDescriptor(name="VuLink Pro V2 - QR Maintenance",
+        PluginDescriptor(name="VuLink Pro V3 - ChatGPT Connect",
                          description="Ouvrir une session de maintenance privee",
                          where=PluginDescriptor.WHERE_EXTENSIONSMENU,
                          fnc=open_vulink),
+        PluginDescriptor(name="VuLink V3 private relay",
+                         description="Auto-start GitHub outbound relay if configured",
+                         where=PluginDescriptor.WHERE_SESSIONSTART,
+                         fnc=v3_autostart),
     ]
