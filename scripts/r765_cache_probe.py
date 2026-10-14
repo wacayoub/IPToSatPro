@@ -31,3 +31,15 @@ for file in (build.PLUGIN,build.base.CORE):
                                    "_candidate_pool","_token_index","rank_matches")):
                         print("%3d %s"%(pos+1,line))
                 print("===END")
+
+# Full hot-path bodies for R76.6 no-scan optimization
+for name in ("_ensure_preview_decorated_index","_fast_candidate_pool","fast_preview_mega_matches"):
+  src=parts[build.base.CORE].decode()
+  tree=ast.parse(src)
+  for cls in tree.body:
+    if not isinstance(cls,ast.ClassDef):continue
+    for fn in cls.body:
+      if isinstance(fn,ast.FunctionDef) and fn.name==name:
+        print("R766_SOURCE_BEGIN",name)
+        print(ast.get_source_segment(src,fn)[:24000])
+        print("R766_SOURCE_END",name)
