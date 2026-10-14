@@ -394,7 +394,7 @@ def patch_preview_plugin(src):
         try:
             from Components.VideoWindow import VideoWindow
             self["r76_video"] = VideoWindow(decoder=0, fb_width=1280, fb_height=720)
-            self.onLayoutFinish.append(lambda: self["r76_video"].hide())
+            self.onLayoutFinish.append(self["r76_video"].hide)
         except Exception:
             self["r76_video"] = Label("Video window unavailable")
 '''
