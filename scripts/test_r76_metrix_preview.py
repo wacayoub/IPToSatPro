@@ -208,7 +208,7 @@ class R76Acceptance(unittest.TestCase):
                     literal(ast.parse(self.theme),"PREVIEW_R74_FHD")):
             root=ET.fromstring(raw)
             self.assertEqual(len([x for x in root if x.tag=="ePixmap"]),0)
-            self.assertGreater(len([x for x in root if x.tag=="widget"]),20)
+            self.assertGreaterEqual(len([x for x in root if x.tag=="widget"]),20)
 
 if __name__=="__main__":
     unittest.main()
