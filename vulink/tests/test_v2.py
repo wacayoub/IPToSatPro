@@ -142,6 +142,32 @@ class VuLinkV2Tests(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError) as e:
                 get("api/report")
             self.assertEqual(e.exception.code, 401)
+            # Android screenshot regression: /app must offer a recovery form.
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                get("app")
+            self.assertEqual(e.exception.code, 401)
+            unauthorized_html = e.exception.read()
+            self.assertIn(b'form action="/pair" method="post"', unauthorized_html)
+            self.assertIn(b"Se connecter", unauthorized_html)
+            # Recovery from the error page, with the TV's current code.
+            with post("pair", {"code": service.code}) as response:
+                self.assertIn(b"VuLink Pro V2", response.read())
+            with get("api/report") as response:
+                self.assertEqual(json.load(response)["schema"], "vulink-pro-v2-diagnostic")
+            # QR bootstrap must set an Android-compatible Lax cookie,
+            # while retaining HttpOnly and per-action CSRF protection.
+            class NoRedirect(urllib.request.HTTPRedirectHandler):
+                def redirect_request(self, *args, **kwargs):
+                    return None
+            no_redirect = urllib.request.build_opener(
+                urllib.request.ProxyHandler({}), NoRedirect())
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                no_redirect.open(base_url + "p/" + service.code, timeout=4)
+            self.assertEqual(e.exception.code, 303)
+            cookie_header = e.exception.headers.get("Set-Cookie", "")
+            self.assertIn("HttpOnly", cookie_header)
+            self.assertIn("SameSite=Lax", cookie_header)
+            self.assertIn("Path=/", cookie_header)
             with get("p/" + service.code) as response:
                 self.assertIn(b"VuLink Pro V2", response.read())
                 self.assertIn("vulink_v2", str(jar))
