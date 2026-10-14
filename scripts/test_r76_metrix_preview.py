@@ -166,6 +166,34 @@ class R76Acceptance(unittest.TestCase):
         self.assertIn('BEST ', self.plugin)
         self.assertNotIn('REAL MESURE', self.plugin[self.plugin.index('def _render_source_list(self, keep_index=True):'):self.plugin.index('def _format_epg_event',self.plugin.index('def _render_source_list(self, keep_index=True):'))])
 
+    def test_preview_candidate_displays_original_iptv_prefix(self):
+        # Execute the name expression from the ACTUAL rebuilt package's
+        # Preview method, not a separate reimplementation of the formatter.
+        tree=ast.parse(self.plugin)
+        cls=next(n for n in tree.body if isinstance(n,ast.ClassDef)
+                 and n.name=="SatIPTVBridgePreview")
+        render=next(n for n in cls.body if isinstance(n,ast.FunctionDef)
+                    and n.name=="_render_source_list")
+        assignments=[
+            node for node in ast.walk(render)
+            if isinstance(node,ast.Assign)
+            and any(isinstance(t,ast.Name) and t.id=="name" for t in node.targets)
+            and 'ch.get(' in ast.unparse(node.value)
+        ]
+        self.assertEqual(len(assignments),1)
+        expression=assignments[0].value
+        self.assertNotIn("presentation_name",ast.unparse(expression))
+        for expected in ("FR: DISNEY CHANNEL HD","DE: DISNEY CHANNEL",
+                         "UK: BBC ONE HD","VIP: CANAL+","4K: ELEVEN SPORTS",
+                         "ES: LA 1 HD","PT: DISNEY CHANNEL"):
+            result=eval(compile(ast.Expression(expression),"<iptv label>","eval"),
+                        {},{"ch":{"name":expected}})
+            self.assertEqual(result,expected)
+        # Blank and multiline inputs should be safe for an Enigma2 list.
+        result=eval(compile(ast.Expression(expression),"<iptv label>","eval"),
+                    {},{"ch":{"name":"FR: DISNEY\nCHANNEL HD"}})
+        self.assertEqual(result,"FR: DISNEY CHANNEL HD")
+
     def test_r763_index_synthetic_latency_and_no_wrong_identity(self):
         # Execute exact patched helper against a stub indexed catalogue, not IPTV streams.
         import sys,types,time
