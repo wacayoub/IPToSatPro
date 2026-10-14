@@ -119,7 +119,7 @@ class R76Acceptance(unittest.TestCase):
             self.assertEqual(root.attrib["backgroundColor"],"#090F18")
         self.assertIn('VideoWindow(decoder=0, fb_width=1280, fb_height=720)',self.plugin)
         self.assertIn('self["r76_video"].show()',self.plugin)
-        self.assertIn('self["r76_video"].hide()',self.plugin)
+        self.assertIn('self.onLayoutFinish.append(self["r76_video"].hide)',self.plugin)
 
     def test_preview_video_not_autoplay_on_navigation(self):
         before=ast.parse(self.old_plugin)
