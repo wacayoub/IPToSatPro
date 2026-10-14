@@ -22,7 +22,7 @@ def load(name,file):
 
 base=load("r75_builder","build-r75-smart-index.py")
 layout=load("r76_layout","r76_metrix_preview_layout.py")
-VERSION="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
+VERSION="1.0.46-r76.2-metrix-professional-no-video-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
@@ -69,11 +69,11 @@ def build(destination=None):
         assert control.count("Version: "+OLD)==1
         changed_control=control.replace("Version: "+OLD,"Version: "+VERSION,1)
         desc=(
-          "R76 beta: selected Metrix OpenATV style for Home, native 1660x900 "
+          "R76.2 beta: professional Metrix OpenATV Home, native 1660x900 "
           "and 1245x675 layouts with safe margins, existing live R72 monitor fields; "
-          "Neo Dark Classic Preview+ balanced 2-panel SAT/IPTV browser with native "
-          "VideoWindow on main decoder 0, only triggered after existing OK player "
-          "request. Unchanged COLOR/number key actions, saved mappings, player, "
+          "Neo Dark Classic 2-panel browser with full-height IPTV candidates, "
+          "removed inline VideoWindow while stock OK video test remains intact. "
+          "Unchanged COLOR/number key actions, saved mappings, player, "
           "monitor, core, watchdog, FTA priority, backup streams, timeshift, "
           "EPGImport and update production. Static/CI simulation not actual "
           "video-hardware validation; NEVER claim PLAYING from match metadata. "
