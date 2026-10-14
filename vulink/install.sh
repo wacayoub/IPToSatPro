@@ -56,7 +56,7 @@ expected={
 }
 for name,wanted in expected.items():
     data=(base/name).read_bytes()
-    git_sha=hashlib.sha1(("blob "+str(len(data))+"\\0").encode().replace(b"\\\\0",b"\\0")+data).hexdigest()
+    git_sha=hashlib.sha1(b"blob "+str(len(data)).encode("ascii")+bytes([0])+data).hexdigest()
     if git_sha != wanted:
         raise SystemExit("INTEGRITY_FAILED: "+name)
 print("VULINK_V2_CONTENT_PIN_VERIFIED")
