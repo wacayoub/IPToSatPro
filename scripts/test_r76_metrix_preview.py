@@ -79,7 +79,7 @@ class R76Acceptance(unittest.TestCase):
         hd=literal(tree,"R76_METRIX_HD")
         layout.validate_skin(fhd,set(layout.HOME_WIDGETS))
         layout.validate_skin(hd,set(layout.HOME_WIDGETS),hd=True)
-        self.assertIn('self.skin = _theme_skin(R76_METRIX_HD if _r76_is_hd else R76_METRIX_FHD)',self.plugin)
+        self.assertIn('THEME_HD if _r76_is_hd else THEME_FHD',self.plugin)
         self.assertIn('from enigma import getDesktop',self.plugin)
         self.assertIn('("Metrix OpenATV R76 (default)", "metrix")',self.plugin)
         self.assertIn('r76_home_layout',self.plugin)
