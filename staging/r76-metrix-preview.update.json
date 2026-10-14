@@ -1,7 +1,7 @@
 {
   "version": "1.0.46-r76.9-preview-manual-parity-beta",
-  "size": 458564,
-  "sha256": "38a434033193a45f2d08ac94fcd684d0a74810c6482cb4d3eea86b366e5a9a8b",
+  "size": 458724,
+  "sha256": "2fcba58d3a7c56accadcae7c31a19ea84d0ba539b9ea5caab558b6e1cfb13bd8",
   "parts": [
     "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r769-preview-manual-parity/payload/r76-metrix-preview.b64"
   ],
