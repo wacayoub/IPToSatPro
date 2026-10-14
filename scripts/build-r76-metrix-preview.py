@@ -22,7 +22,7 @@ def load(name,file):
 
 base=load("r75_builder","build-r75-smart-index.py")
 layout=load("r76_layout","r76_metrix_preview_layout.py")
-VERSION="1.0.46-r76.0-metrix-preview-b-beta"
+VERSION="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
