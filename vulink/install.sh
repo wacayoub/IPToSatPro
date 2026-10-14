@@ -39,7 +39,7 @@ command -v python3 >/dev/null || { echo "PYTHON3_MISSING"; exit 3; }
 
 WORK="$(mktemp -d /tmp/vulink-install.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
-for filename in bridge.py plugin.py __init__.py; do
+for filename in bridge.py plugin.py qrpng.py __init__.py; do
   wget -q -O "$WORK/$filename" "$RAW/$filename" || {
     echo "DOWNLOAD_FAILED: $filename"; exit 3; }
 done
@@ -47,7 +47,7 @@ done
 python3 - "$WORK" <<'PY'
 import pathlib, sys
 base=pathlib.Path(sys.argv[1])
-for name in ("bridge.py","plugin.py","__init__.py"):
+for name in ("bridge.py","plugin.py","qrpng.py","__init__.py"):
     text=(base/name).read_text(encoding="utf-8")
     compile(text,str(base/name),"exec")
     print("VALID_PYTHON",name,len(text))
@@ -74,7 +74,7 @@ else
 fi
 
 mkdir -p "$TARGET"
-for filename in bridge.py plugin.py __init__.py; do
+for filename in bridge.py plugin.py qrpng.py __init__.py; do
   cp "$WORK/$filename" "$TARGET/$filename"
   chmod 644 "$TARGET/$filename"
 done
@@ -82,6 +82,6 @@ printf '%s\n' "$SAVED" > "$BACKUPS/last-path"
 chmod 600 "$BACKUPS/last-path"
 echo "INSTALLED VuLink 0.1.0-beta"
 echo "No IPTV mappings, configuration, passwords or services modified."
-echo "QR: uses python-qrcode or qrencode if present; otherwise address+code."
+echo "QR generated offline (built in), or address+code as fallback."
 echo "Restart Enigma2 GUI; open Plugins > VuLink - Connexion QR diagnostic."
 echo "Rollback: sh /tmp/install-vulink.sh --rollback"
