@@ -230,19 +230,43 @@ R76_METRIX_HD = """{home_hd}"""
 
 '''
     src=replace_once(src,'SETTINGS_FHD = """',constants+'SETTINGS_FHD = """')
-    # The existing R723 classic/monitor preference, settings and key binds remain.
-    # Only override active screen skin in-memory; never rewrite user settings.
+    # The Metrix skin is the R76 default, but the existing MENU Appearance
+    # choice remains functional. Persist R76 preference separately: no edits
+    # to previous R723 preference files unless a user explicitly selects a mode.
+    src=replace_once(src,'("R72 Live Monitor + Premium Icons", "monitor"),',
+        '("R72 Live Monitor + Premium Icons", "monitor"),\n'
+        '                ("Metrix OpenATV R76 (default)", "metrix"),')
+    src=replace_once(src,'if chosen not in ("classic","monitor"):',
+        'if chosen not in ("classic","monitor","metrix"):')
+    # Existing save method writes the previous preference as before, and only
+    # explicit Appearance selection creates the new R76 choice file.
+    src=replace_once(src,
+        '            os.rename(tmp_path,path)\n            self.session.open(',
+        '''            os.rename(tmp_path,path)
+            _r76_choice_tmp = self._r76_home_pref_path + ".tmp"
+            with open(_r76_choice_tmp, "w") as _r76_writer:
+                _r76_writer.write(chosen + "\\n")
+            os.rename(_r76_choice_tmp, self._r76_home_pref_path)
+            self.session.open(''')
     anchor='os.path.join(os.path.dirname(__file__), "images", "r723-classic-premium.png")))'
     inject='''
-        # R76 default Metrix style; desktop bounds, not television diagonal.
-        # A safe fallback retains the existing R723 skin if desktop probing fails.
+        # R76: read-only skin selection; Metrix is the default for this version.
+        self._r76_home_pref_path = "/etc/enigma2/SatIPTVBridge/r76_home_layout"
         try:
-            from enigma import getDesktop as _r76_get_desktop
-            _r76_size = _r76_get_desktop(0).size()
-            _r76_is_hd = _r76_size.width() < 1660 or _r76_size.height() < 900
-            self.skin = _theme_skin(R76_METRIX_HD if _r76_is_hd else R76_METRIX_FHD)
-        except Exception as _r76_err:
-            _startup_log("R76_METRIX_FALLBACK", str(_r76_err)[:100])
+            with open(self._r76_home_pref_path,"r") as _r76_reader:
+                _r76_layout = _r76_reader.read(32).strip()
+        except Exception:
+            _r76_layout = "metrix"
+        if _r76_layout not in ("metrix","classic","monitor"):
+            _r76_layout = "metrix"
+        if _r76_layout == "metrix":
+            try:
+                from enigma import getDesktop as _r76_get_desktop
+                _r76_size = _r76_get_desktop(0).size()
+                _r76_is_hd = _r76_size.width() < 1660 or _r76_size.height() < 900
+                self.skin = _theme_skin(R76_METRIX_HD if _r76_is_hd else R76_METRIX_FHD)
+            except Exception as _r76_err:
+                _startup_log("R76_METRIX_FALLBACK", str(_r76_err)[:100])
 '''
     src=replace_once(src,anchor,anchor+inject)
     # Reuse all displayed R72 monitor fields: no fake values, no new polling.
