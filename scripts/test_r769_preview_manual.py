@@ -71,6 +71,24 @@ class PreviewManualParity(unittest.TestCase):
         self.assertEqual(ctx["provider"],"Unknown")
         self.assertNotIn("market_preferences",ctx)
         self.assertEqual(state["calls"],2)
+    def test_preview_right_list_is_manual_mapping_style(self):
+        render=ast.get_source_segment(self.code,self.method("_render_source_list"))
+        order=ast.get_source_segment(self.code,self.method("_sort_candidates_with_cached_evidence"))
+        # Ranked results use the same tier and identity/quality tie-breakers as
+        # Manual Mapping; receiver data is labelled REAL only when measured.
+        for token in ('"MANUAL":5', '"SAFE":4', '"ALLOWED":3', '"REVIEW":2',
+                      "quality_fit_key(", '"provider_identity"', "identity_band"):
+            self.assertIn(token,order)
+        self.assertIn('rows.sort(key=key,reverse=True)',order)
+        for token in ('score_label="%.1f"%score',"market[:3]","language[:3]",
+                      '"REAL %dx%d"','"DECLARED "',"self._source_tag(",
+                      'name = " ".join(str(ch.get("name")'):
+            self.assertIn(token,render)
+        self.assertNotIn("presentation_name(",render)
+        # Existing PreviewList widgets, callbacks and video preview stay intact.
+        self.assertIn('self["source_list"].setList(rows)',render)
+        self.assertIn('self["source_list"].moveToIndex(idx)',render)
+
     def test_no_live_context_scan_with_known_static_provider(self):
         helper=next(x for x in self.tree.body if isinstance(x,ast.FunctionDef)
                     and x.name=="_r769_preview_sat_context")
