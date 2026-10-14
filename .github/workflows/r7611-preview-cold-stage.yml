@@ -1,0 +1,62 @@
+name: R76.11 Actual Preview Cold-Start Acceptance (NO production)
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r7611-cold-preview-beta
+  cancel-in-progress: true
+jobs:
+  verify-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install Pillow
+      - name: Verify ACTUAL Preview 48/16 call route and cold index behavior
+        run: |
+          python -m py_compile scripts/r7611_preview_cold_index_patch.py scripts/build-r7611-preview-cold.py scripts/stage-r7611-preview-cold.py
+          python -m unittest discover -s scripts -p test_r7611_preview_cold.py -v
+      - name: Preserve base plugin and R76.10 safety
+        run: |
+          python -m unittest discover -s scripts -p test_r7610_normal48.py -v
+          python -m unittest discover -s scripts -p test_r7610_receiver_audit.py -v
+          python -m unittest discover -s scripts -p test_r769_preview_manual.py -v
+          python scripts/release_r769_gate.py
+      - name: Stage isolated beta with checksum and NO hardware claim
+        run: |
+          python scripts/stage-r7611-preview-cold.py
+          python - <<'PY'
+          import base64,hashlib,json,pathlib
+          meta=json.loads(pathlib.Path("staging/r7611-preview-cold.update.json").read_text())
+          data=base64.b64decode(pathlib.Path("payload/r7611-preview-cold.b64").read_bytes())
+          assert meta["version"]=="1.0.46-r76.11-preview-coldstart-fast-beta"
+          assert meta["size"]==len(data)
+          assert meta["sha256"]==hashlib.sha256(data).hexdigest()
+          assert meta["beta"] is True and meta["receiver_tested"] is False
+          assert meta["production_published"] is False
+          assert meta["installation_requires_explicit_flag"] is True
+          assert json.loads(pathlib.Path("update.json").read_text())["version"]=="1.0.46-r70-final"
+          print("R7611_PREVIEW_COLD_BETA_CHECKSUM_OK",meta["size"],meta["sha256"])
+          PY
+      - name: Upload beta QA package (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: r7611-preview-cold-qa
+          path: |
+            staging/r7611-preview-cold.update.json
+            payload/r7611-preview-cold.b64
+          retention-days: 14
+      - name: Stage in isolated branch only
+        run: |
+          git add staging/r7611-preview-cold.update.json payload/r7611-preview-cold.b64
+          if ! git diff --cached --quiet; then
+            git -c user.name='IPToSatPro CI' -c user.email='actions@users.noreply.github.com' \
+                commit -m 'stage(r7611): checksum-pinned preview cold beta [skip ci]'
+            git push origin HEAD:release/r769-finalization-20261014
+          fi
