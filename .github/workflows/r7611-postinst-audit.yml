@@ -1,0 +1,22 @@
+name: R76.11 Postinst Hook Forensic (Read-only)
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/audit_r7611_postinst_only.py
+      - .github/workflows/r7611-postinst-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Analyze actual R76.11 opkg post-install hook offline
+        run: |
+          python -m py_compile scripts/audit_r7611_postinst_only.py
+          python scripts/audit_r7611_postinst_only.py
