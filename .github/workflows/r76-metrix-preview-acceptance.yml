@@ -17,7 +17,7 @@ jobs:
       - name: Install deterministic build dependencies
         run: python -m pip install Pillow
       - name: Compile R76 code
-        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/r763_preview_fast_medal_patch.py scripts/test_r76_metrix_preview.py
+        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/r763_preview_fast_medal_patch.py scripts/r764_multi_seed_patch.py scripts/test_r76_metrix_preview.py scripts/test_r764_multi_seed.py
       - name: Validate receiver deployment scripts and staging compiler
         run: |
           sh -n download-r76-beta.sh
@@ -30,6 +30,8 @@ jobs:
         run: python scripts/r76_exec_probe.py
       - name: Investigate candidate ranking and rendering (source-only)
         run: python scripts/r763_candidate_probe.py
+      - name: R76.4 real one-source-cache regression (24 providers / 13k keys)
+        run: python -m unittest discover -s scripts -p test_r764_multi_seed.py -v
       - name: R75 smart-index regression
         run: python -m unittest discover -s scripts -p test_r75_smart_index.py -v
       - name: R75 classic palette regression
@@ -54,7 +56,7 @@ jobs:
           payload=base64.b64decode(pathlib.Path("payload/r76-metrix-preview.b64").read_bytes())
           assert hashlib.sha256(payload).hexdigest()==manifest["sha256"]
           assert manifest["production_published"] is False and manifest["receiver_tested"] is False
-          assert manifest["version"]=="1.0.46-r76.3-fast-candidates-medal-beta"
+          assert manifest["version"]=="1.0.46-r76.4-all-indexed-firstpaint-beta"
           print("R76_DEPLOYMENT_PIN_VALID")
           PY
           git add payload/r76-metrix-preview.b64 staging/r76-metrix-preview.update.json
