@@ -126,7 +126,7 @@ class R76Acceptance(unittest.TestCase):
         def defs(tree):
             return {n.name:n for n in tree.body if isinstance(n,ast.ClassDef)}
         original=defs(before); updated=defs(after)
-        self.assertEqual(set(original),set(updated))
+        self.assertEqual(set(original),set(updated)-{"PreviewManualMappingList"})
         # No method body may change aside from dashboard/preview constructors and
         # Preview already-OK-only presentation callback (zero media policy changes).
         changes={}
@@ -168,7 +168,7 @@ class R76Acceptance(unittest.TestCase):
         self.assertIn('"REAL %dx%d"',render)
         self.assertIn('"DECLARED "',render)
         self.assertIn('"INDEX"',render)
-        self.assertIn('flag = "BEST " + decision',render)
+        self.assertIn('label_flag = "BEST " + decision',render)
         self.assertIn('fp in self._user_rejected_ids',render)
         self.assertNotIn("🎖",render)
         self.assertNotIn('REAL MESURE',render)
