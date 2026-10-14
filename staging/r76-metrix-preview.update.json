@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.0-metrix-preview-b-beta",
+  "size": 441038,
+  "sha256": "4603450e070eacbd546095eb0858055603d162bb3fd80c39d5e9ac540d183ada",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64"
+  ],
+  "notes": "R76 Metrix OpenATV dashboard + Neo Dark Preview+ B beta. HD/FHD native skins, real read-only dashboard diagnostics, original player/monitor/mappings/key actions protected. On-device Enigma2/video validation required.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
