@@ -138,6 +138,46 @@ class V3SecurityTests(unittest.TestCase):
                 backup.assert_not_called()
             self.assertEqual(api.responses[-1][1]["status"], "denied")
 
+    def test_autonomous_github_request_reply_cycle(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "relay.json"
+            v3.save_config({"repo":"wacayoub/VuLink-Relay",
+                            "owner":OWNER,"token":"github_pat_TEST_DEVICE_PRIVATE_TOKEN",
+                            "device_id":DEVICE,"issue_no":0,
+                            "last_comment_id":0}, path)
+            issued = command("preview_performance")
+            issued["id"] = 810
+            issued["created_at"] = dt.datetime.now(dt.timezone.utc).replace(
+                microsecond=0).isoformat().replace("+00:00","Z")
+            class StubPrivateGitHub:
+                def __init__(self):
+                    self.replies=[]
+                def assert_private_repo(self): pass
+                def register(self, device_id, existing_issue=0):return 47
+                def comments(self, issue, since=None):return [issued]
+                def reply(self, issue, response):
+                    self.replies.append((issue, response))
+                    return {"id":999}
+            fake = StubPrivateGitHub()
+            agent = v3.RelayAgent(path=path, api_factory=lambda repo,token:fake)
+            with patch.object(v3,"run_readonly",return_value={"index_ms":2642}) as method:
+                self.assertTrue(agent.start())
+                for _ in range(40):
+                    if fake.replies:
+                        break
+                    time.sleep(0.05)
+                agent.stop()
+                self.assertEqual(len(fake.replies),1)
+                self.assertEqual(fake.replies[0][0],47)
+                response=fake.replies[0][1]
+                self.assertEqual(response["status"],"completed")
+                self.assertEqual(response["result"]["index_ms"],2642)
+                self.assertEqual(response["request_id"],"test-request-1234")
+                method.assert_called_once_with("preview_performance")
+                saved=v3.read_config(path)
+                self.assertEqual(saved["last_comment_id"],810)
+                self.assertEqual(saved["issue_no"],47)
+
     def test_agent_screen_ui_reuses_green_yellow_actions(self):
         source = (Path(__file__).resolve().parents[1] / "plugin.py").read_text(encoding="utf-8")
         for expected in ('WHERE_SESSIONSTART','_V3_AGENT.start()','_V3_AGENT.stop()',
