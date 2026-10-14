@@ -139,9 +139,67 @@ class R76Acceptance(unittest.TestCase):
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
         self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","_r723_select_home_layout","_r723_set_home_layout"})
-        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__"})
+        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_render_source_list","_load_selected_sat_candidates"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
+
+    def test_r763_candidates_index_starts_without_scoring(self):
+        self.assertIn("R763_FAST_INDEX_BEST_MEDAL", self.plugin)
+        self.assertIn("def _r763_preview_instant_index", self.plugin)
+        self.assertIn("first = _r763_preview_instant_index(self.sat_name, cat, limit=24)", self.plugin)
+        self.assertIn("self.candidate_expand_timer.start(20, True)", self.plugin)
+        self.assertIn("catalog.fast_preview_mega_matches(", self.plugin)
+        # The early rows remain marked as provisional REVIEW, and never auto map.
+        self.assertIn('row["_manual_candidate"]=True', self.plugin)
+        self.assertIn('row["_r763_fast_index"]=True', self.plugin)
+        self.assertIn('"INSTANT INDEX ONLY - unverified; background ranking pending"', self.plugin)
+        self.assertNotIn("_r763_instant_auto_lock", self.plugin)
+
+    def test_r763_medal_is_evidence_gated_and_quality_compact(self):
+        self.assertIn('medal="🎖 " if best_measured else ""', self.plugin)
+        self.assertIn('speed_count>=1 and overall_fp and cfp==overall_fp', self.plugin)
+        self.assertIn('compact_quality="M:%dx%d"', self.plugin)
+        self.assertIn('compact_quality="C:%s"', self.plugin)
+        self.assertIn('score_label="IDX"', self.plugin)
+        self.assertIn('decision_short={"USER REJECT":"REJ"', self.plugin)
+        self.assertIn('BEST ', self.plugin)
+        self.assertNotIn('REAL MESURE', self.plugin[self.plugin.index('def _render_source_list(self, keep_index=True):'):self.plugin.index('def _format_epg_event',self.plugin.index('def _render_source_list(self, keep_index=True):'))])
+
+    def test_r763_index_synthetic_latency_and_no_wrong_identity(self):
+        # Execute exact patched helper against a stub indexed catalogue, not IPTV streams.
+        import sys,types,time
+        code=ast.parse(self.plugin)
+        fn=next(n for n in code.body if isinstance(n,ast.FunctionDef)
+                and n.name=="_r763_preview_instant_index")
+        module=ast.Module(body=[fn],type_ignores=[])
+        base="r763_testpack"
+        pkg=types.ModuleType(base);pkg.__path__=[]
+        core=types.ModuleType(base+".core")
+        core.normalize_name=lambda s: str(s).lower().strip()
+        sys.modules[base]=pkg
+        sys.modules[base+".core"]=core
+        try:
+            ns={"__package__":base,"_r7414_fast_exact_seed":lambda name,cat:[]}
+            exec(compile(module,"candidate_helper.py","exec"),ns)
+            groups={"other channel %04d"%i:[] for i in range(6500)}
+            groups["osn movies family"]=[
+                {"name":"OSN Movies Family","url":"http://host/tv/1",
+                 "server_role":"PRIMARY"}]
+            groups["osn movies comedy"]=[
+                {"name":"OSN Movies Comedy","url":"http://host/tv/2",
+                 "server_role":"PRIMARY"}]
+            cat=type("CatalogStub",(),{"_exact":groups})()
+            before=time.perf_counter()
+            got=ns["_r763_preview_instant_index"]("OSNtv Movies Family",cat,24)
+            elapsed=time.perf_counter()-before
+            self.assertLess(elapsed,0.5)
+            self.assertEqual([c["name"] for c in got],["OSN Movies Family"])
+            self.assertTrue(got[0]["_manual_candidate"])
+            self.assertTrue(got[0]["_r763_fast_index"])
+            self.assertEqual(got[0]["_preview_score"],0.0)
+        finally:
+            sys.modules.pop(base+".core",None)
+            sys.modules.pop(base,None)
 
     def test_openatv_has_no_inline_video_window_or_callback(self):
         """Never introduce an onLayoutFinish lambda or second video window."""
