@@ -114,7 +114,10 @@ RENDER_OLD='''            quality = self._quality_record_text(ch)
 
 RENDER_NEW='''            # R763: short evidence labels; M=actually measured from
             # cached stream telemetry. C=unverified catalogue quality.
-            name = presentation_name(ch.get("name") or "IPTV")
+            # Show the playlist name except for whitespace cleanup.
+            # presentation_name() may drop FR:/DE:/UK:/VIP:/4K: prefixes;
+            # ranking still uses its own normalized channel identity.
+            name = " ".join(str(ch.get("name") or "IPTV").split())
             if len(name) > 30:
                 name = name[:29] + "…"
             observed=self._health_record(ch)
