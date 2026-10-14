@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory() as tmp:
     core=members[b.CORE].decode()
     tree=ast.parse(core)
     catalog=next(x for x in tree.body if isinstance(x,ast.ClassDef) and x.name=="Catalog")
-    for name in ("fast_rank_matches_all_servers","fast_preview_mega_matches","_fast_candidate_pool"):
+    for name in ("fast_rank_matches_all_servers","_preview_nomination_pool","fast_preview_mega_matches","_fast_candidate_pool"):
         method=next((x for x in catalog.body if isinstance(x,ast.FunctionDef) and x.name==name),None)
         if method is None:
             print("R7610_PROBE MISSING",name)
