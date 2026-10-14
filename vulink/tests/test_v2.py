@@ -17,6 +17,26 @@ from vulink import v2
 
 
 class VuLinkV2Tests(unittest.TestCase):
+    def test_preview_stage_metrics_strip_sensitive_log_text(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)
+            log=p/"bridge.log"
+            log.write_text(
+                "2026-10-14 | PREVIEW_RANK_BG | sat='SECRET: NILE HD' "
+                "candidate_count=48 elapsed=11714ms index=11000ms scoring=714ms scored=48 error=\n"
+                "2026-10-14 | PREVIEW_RANK_BG | provider=PRIVATE "
+                "candidate_count=0 elapsed=34269ms index=34000ms scoring=269ms scored=0 error=NoCandidates\n"
+                "2026-10-14 | IPTV_OK | account=DO-NOT-LEAK latency=900ms\n")
+            with mock.patch.object(v2, "CONF_ROOT", p):
+                report=v2._preview_stage_statistics()
+            self.assertEqual(report["stage_metrics"]["elapsed_ms"]["median"],34269)
+            self.assertEqual(report["stage_metrics"]["index_ms"]["max"],34000)
+            self.assertEqual(report["stage_metrics"]["scoring_ms"]["samples"],2)
+            self.assertEqual(report["error_count"],1)
+            self.assertNotIn("PRIVATE",json.dumps(report))
+            self.assertNotIn("SECRET",json.dumps(report))
+            self.assertNotIn("DO-NOT-LEAK",json.dumps(report))
+
     def test_pro_session_is_private_and_short_lived(self):
         obj = v2.ProPairingServer(ip="192.168.0.2")
         self.assertIsNone(obj._make_session("192.168.0.4", "WRONG"))
