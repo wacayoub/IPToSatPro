@@ -1,0 +1,60 @@
+name: R76.10 Normal48 Beta — Build and Stage (NO production)
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r7610-staged-branch
+  cancel-in-progress: true
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Dependencies for deterministic original R76.9 build
+        run: python -m pip install Pillow
+      - name: Run actual 48/16 real-IPK regression
+        run: |
+          python -m py_compile scripts/r7610_normal48_fast_budget.py scripts/build-r7610-normal48.py scripts/stage-r7610-normal48.py
+          python -m unittest discover -s scripts -p test_r7610_normal48.py -v
+      - name: Revalidate R76.9 source package and user settings
+        run: |
+          python -m unittest discover -s scripts -p test_r769_preview_manual.py -v
+          python -m unittest discover -s scripts -p test_r769_receiver_audit.py -v
+          python scripts/release_r769_gate.py
+      - name: Rebuild and stage checksum-pinned R76.10 beta only
+        run: |
+          python scripts/stage-r7610-normal48.py
+          python - <<'PY'
+          import base64,hashlib,json,pathlib
+          meta=json.loads(pathlib.Path("staging/r7610-normal48.update.json").read_text())
+          raw=base64.b64decode(pathlib.Path("payload/r7610-normal48.b64").read_bytes())
+          assert len(raw)==meta["size"]
+          assert hashlib.sha256(raw).hexdigest()==meta["sha256"]
+          assert meta["beta"] is True
+          assert meta["receiver_tested"] is False and meta["production_published"] is False
+          assert meta["installation_requires_explicit_flag"] is True
+          assert json.loads(pathlib.Path("update.json").read_text())["version"]=="1.0.46-r70-final"
+          print("STAGED_R7610_CHECKSUM_OK",meta["version"],meta["size"],meta["sha256"])
+          PY
+      - name: Upload QA candidate (not stable release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: r7610-normal48-qa
+          path: |
+            payload/r7610-normal48.b64
+            staging/r7610-normal48.update.json
+          retention-days: 14
+      - name: Stage on isolated branch without touching production feed
+        run: |
+          git add payload/r7610-normal48.b64 staging/r7610-normal48.update.json
+          if ! git diff --cached --quiet; then
+            git -c user.name='IPToSatPro CI' -c user.email='actions@users.noreply.github.com'                 commit -m 'stage(r7610): immutable-checksum beta candidate [skip ci]'
+            git push origin HEAD:release/r769-finalization-20261014
+          fi
