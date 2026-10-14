@@ -1,7 +1,7 @@
 {
-  "version": "1.0.46-r76.1-metrix-preview-b-hotfix-beta",
-  "size": 441050,
-  "sha256": "2f72b35bfa2dbc6fbeff560f47f4e36d86a1f6b68b67f9aaf37d51c07cb181d1",
+  "version": "1.0.46-r76.2-metrix-professional-no-video-beta",
+  "size": 440934,
+  "sha256": "304704edb0d0692df9579c28eb67b03a7bcbb359667fa7bf543cb5f17d13ca02",
   "parts": [
     "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64"
   ],
