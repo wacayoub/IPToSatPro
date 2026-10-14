@@ -29,3 +29,23 @@ with tempfile.TemporaryDirectory() as tmp:
     for node in tree.body:
         if isinstance(node,ast.FunctionDef) and any(s in node.name for s in ("manual","rank","_r736_auto_map","_preview_channel_rows")):
             print("R769_GLOBAL",node.name,node.lineno,node.end_lineno,(ast.get_source_segment(src,node) or "")[:12500])
+
+    print("R769_PACKAGE_SOURCE_NAMES",
+          [p for p in fs if p.endswith(".py") and
+           any(word in p.lower() for word in ("alternat","manual","mapping","plugin","source","rank"))])
+    print("R769_ALTERNATIVES_IMPORT",
+          [s for s in src.splitlines()[:320] if "alternativ" in s.lower() or "manual" in s.lower()])
+    for path,data in fs.items():
+        if not path.endswith(".py") or path==b.PLUGIN: continue
+        try: other=ast.parse(data.decode("utf8"))
+        except Exception: continue
+        relevant=[c for c in ast.walk(other) if isinstance(c,ast.ClassDef)
+                  and any(q in c.name.lower() for q in ("alternativ","mapping","manual"))]
+        if not relevant:continue
+        for cls in relevant:
+            print("R769_PACKAGE_CLASS",path,cls.name)
+            for method in cls.body:
+                if not isinstance(method,ast.FunctionDef):continue
+                print("R769_PACKAGE_METHOD",cls.name,method.name,method.lineno,method.end_lineno)
+                if any(q in method.name.lower() for q in ("init","rank","refresh","search","render","candidate","sources","load")):
+                    print("R769_PACKAGE_BODY",cls.name,method.name,(ast.get_source_segment(data.decode("utf8"),method) or "")[:15000])
