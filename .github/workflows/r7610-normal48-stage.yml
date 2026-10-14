@@ -23,6 +23,12 @@ jobs:
         run: |
           python -m py_compile scripts/r7610_normal48_fast_budget.py scripts/build-r7610-normal48.py scripts/stage-r7610-normal48.py
           python -m unittest discover -s scripts -p test_r7610_normal48.py -v
+      - name: Verify receiver installer defaults to check-only and compiles
+        run: |
+          sh -n download-r7610-beta.sh
+          grep -F 'if [ "$#" -eq 0 ]; then MODE="--check"' download-r7610-beta.sh
+          grep -F 'BASE_VERSION_MISMATCH' download-r7610-beta.sh
+          grep -F 'MAPPING_BACKUP_FAILED' download-r7610-beta.sh
       - name: Revalidate R76.9 source package and user settings
         run: |
           python -m unittest discover -s scripts -p test_r769_preview_manual.py -v
