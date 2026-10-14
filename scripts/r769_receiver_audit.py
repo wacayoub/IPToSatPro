@@ -35,7 +35,9 @@ EVENTS = {
     "AUDIO_SAFE_PLAYER",
 }
 EVENT_PATTERN = re.compile(r"\|\s*([A-Z][A-Z0-9_]+)\s*\|")
-ELAPSED_PATTERN = re.compile(r"(?:^|\s)elapsed=(\d+)ms(?:\s|$)")
+ELAPSED_PATTERN = re.compile(r"(?:^|\s)(?:elapsed|cost)=(\d+)ms(?:\s|$)")
+INDEX_PATTERN = re.compile(r"(?:^|\s)index=(\d+)ms(?:\s|$)")
+SCORING_PATTERN = re.compile(r"(?:^|\s)scoring=(\d+)ms(?:\s|$)")
 COUNT_PATTERN = re.compile(r"(?:^|\s)candidate_count=(\d+)(?:\s|$)")
 STAMP_PATTERN = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)")
 
@@ -91,6 +93,8 @@ def summarize_event_lines(lines):
     counts = {event: 0 for event in sorted(EVENTS)}
     samples = {"PREVIEW_RANK_BG": [], "MATCH_BG_DONE": []}
     candidate_counts = []
+    preview_index_ms = []
+    preview_scoring_ms = []
     first_time = last_time = None
     for line in lines:
         marker = EVENT_PATTERN.search(line)
@@ -111,6 +115,12 @@ def summarize_event_lines(lines):
             count = COUNT_PATTERN.search(line)
             if count:
                 candidate_counts.append(int(count.group(1)))
+            index = INDEX_PATTERN.search(line)
+            scoring = SCORING_PATTERN.search(line)
+            if index:
+                preview_index_ms.append(int(index.group(1)))
+            if scoring:
+                preview_scoring_ms.append(int(scoring.group(1)))
     return {
         "event_counts": {k: v for k, v in counts.items() if v},
         "sample_first": first_time,
@@ -125,6 +135,12 @@ def summarize_event_lines(lines):
             for event in sorted(samples)
         },
         "preview_candidate_count_max": max(candidate_counts) if candidate_counts else None,
+        "preview_breakdown_ms": {
+            "index_max": max(preview_index_ms) if preview_index_ms else None,
+            "scoring_max": max(preview_scoring_ms) if preview_scoring_ms else None,
+            "breakdown_samples": min(len(preview_index_ms), len(preview_scoring_ms)),
+        },
+        "interpretation": "PREVIEW_RANK_BG elapsed includes timer/poll and potential worker waiting, not only CPU scoring. MATCH_BG_DONE cost is the backend runtime; p95 with fewer than 20 samples is not robust.",
         "not_measured": [
             "time-to-picture",
             "audio-decoding",
