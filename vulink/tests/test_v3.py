@@ -118,7 +118,7 @@ class V3SecurityTests(unittest.TestCase):
                 relay._process(api, cfg, req)
                 readonly.assert_called_once_with("preview_performance")
             self.assertEqual(api.responses[-1][1]["status"], "completed")
-            self.assertIn("median", api.responses[-1][1])
+            self.assertIn("median", json.dumps(api.responses[-1][1]))
             req = v3.decode_request(command("backup_iptosat"), DEVICE, OWNER)
             with patch.object(v3, "backup_iptosat", return_value={"files":3}) as backup:
                 relay._process(api,cfg,req)
