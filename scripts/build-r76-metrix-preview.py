@@ -27,7 +27,7 @@ r764=load("r764_multi","r764_multi_seed_patch.py")
 r765=load("r765_postings","r765_token_postings_patch.py")
 r766=load("r766_cold","r766_cold_rank_patch.py")
 r767=load("r767_themes","r767_eleven_themes_menu.py")
-VERSION="1.0.46-r76.7-eleven-home-themes-beta"
+VERSION="1.0.46-r76.7.1-prefix-display-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
@@ -78,7 +78,7 @@ def build(destination=None):
         assert control.count("Version: "+OLD)==1
         changed_control=control.replace("Version: "+OLD,"Version: "+VERSION,1)
         desc=(
-          "R76.7 beta: eleven selectable native HD/FHD dashboard skins and four grouped MENU categories; settings persisted only to r76_home_layout, original mappings, player, core ranking and Preview untouched. R76.6 fast cache/ranker preserved. Home 1660x900 "
+          "R76.7.1 beta: original IPTV candidate prefixes, eleven selectable native HD/FHD dashboard skins and four grouped MENU categories; settings persisted only to r76_home_layout, original mappings, player, core ranking and Preview untouched. R76.6 fast cache/ranker preserved. Home 1660x900 "
           "and 1245x675 layouts with safe margins, existing live R72 monitor fields; "
           "Neo Dark Classic 2-panel browser with full-height IPTV candidates, "
           "removed inline VideoWindow while stock OK video test remains intact. "
