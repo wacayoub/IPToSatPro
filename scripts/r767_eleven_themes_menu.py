@@ -209,6 +209,15 @@ def patch_plugin(src):
             _startup_log("R767_THEME_FALLBACK", str(_r76_err)[:100])
             self.skin = _theme_skin(R76_METRIX_FHD)'''
     src=replace_once(src,old,new,"dashboard selection")
+    # Header always reflects chosen theme; no stale 'R76.2 Metrix' on OLED/Matrix.
+    src=replace_once(src,
+        'self["subtitle"] = Label("METRIX OPENATV  •  SAT / IPTV  •  LIVE STATUS")',
+        'self["subtitle"] = Label("SAT / IPTV  •  LIVE STATUS  •  HOME THEMES")',
+        "dashboard subtitle")
+    src=replace_once(src,
+        'self["version"] = Label("R76.2  •  METRIX PROFESSIONAL")',
+        'self["version"] = Label("R76.7  •  "+_r76_layout.replace("_"," ").upper())',
+        "selected theme label")
     src=replace_once(src,ROOT_MENU_OLD,ROOT_MENU_NEW,"menu consolidation")
     src=replace_once(src,
         'title="IPToSat Pro  •  Settings / Tools", list=entries)',
