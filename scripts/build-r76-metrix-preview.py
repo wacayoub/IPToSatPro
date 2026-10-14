@@ -26,12 +26,14 @@ r763=load("r763_preview","r763_preview_fast_medal_patch.py")
 r764=load("r764_multi","r764_multi_seed_patch.py")
 r765=load("r765_postings","r765_token_postings_patch.py")
 r766=load("r766_cold","r766_cold_rank_patch.py")
-VERSION="1.0.46-r76.6-cold-rank-fast-beta"
+r767=load("r767_themes","r767_eleven_themes_menu.py")
+VERSION="1.0.46-r76.7-eleven-home-themes-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
 UPDATER=base.UPDATER
 THEME=P+"preview_theme_r74.py"
+HOME_THEMES=P+"home_themes_r767.py"
 NOTE=P+"CHANGELOG-R76-METRIX-PREVIEW-B.txt"
 pack=base.base.b.b.base.pack
 
@@ -45,7 +47,7 @@ def build(destination=None):
         original=pack.members_from(archive["data.tar.gz"])
         controls=pack.members_from(archive["control.tar.gz"])
 
-        plugin=r765.patch_plugin(r764.patch_plugin(r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode())))))
+        plugin=r767.patch_plugin(r765.patch_plugin(r764.patch_plugin(r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode()))))))
         new_core=r766.patch_core(r765.patch_core(original[base.CORE].decode()))
         original_version='PLUGIN_VERSION = "'+OLD+'"'
         assert plugin.count(original_version)==1
@@ -64,6 +66,8 @@ def build(destination=None):
             "feature/r76-metrix-home-preview-b/staging/r76-metrix-preview.update.json",1)
 
         rebuilt_theme=layout.theme_module()
+        home_themes=r767.generate_module()
+        compile(home_themes,HOME_THEMES,"exec")
         changes={PLUGIN:plugin.encode("utf-8"),UPDATER:updater.encode("utf-8"),
                  THEME:rebuilt_theme,base.CORE:new_core.encode("utf-8")}
         assert set(changes)=={PLUGIN,UPDATER,THEME,base.CORE}
@@ -74,7 +78,7 @@ def build(destination=None):
         assert control.count("Version: "+OLD)==1
         changed_control=control.replace("Version: "+OLD,"Version: "+VERSION,1)
         desc=(
-          "R76.6 beta: do not rescan entire IPTV catalogue for decorated names in normal Preview; reuse previously built index and memoize identity checks across duplicate stream URLs. R76.5 token postings, 96 rank cache, YELLOW deep unchanged; no media/network reads for IDX candidates. Metrix Home 1660x900 "
+          "R76.7 beta: eleven selectable native HD/FHD dashboard skins and four grouped MENU categories; settings persisted only to r76_home_layout, original mappings, player, core ranking and Preview untouched. R76.6 fast cache/ranker preserved. Home 1660x900 "
           "and 1245x675 layouts with safe margins, existing live R72 monitor fields; "
           "Neo Dark Classic 2-panel browser with full-height IPTV candidates, "
           "removed inline VideoWindow while stock OK video test remains intact. "
@@ -84,16 +88,17 @@ def build(destination=None):
           "video-hardware validation; NEVER claim PLAYING from match metadata. "
           "Installed R76 must be validated on receiver before stable publication.\n"
         ).encode("utf-8")
-        archive["data.tar.gz"]=pack.make_tar(archive["data.tar.gz"],changes,{NOTE:desc})
+        archive["data.tar.gz"]=pack.make_tar(archive["data.tar.gz"],changes,{NOTE:desc,HOME_THEMES:home_themes})
         archive["control.tar.gz"]=pack.make_tar(archive["control.tar.gz"],
                                                  {"control":changed_control.encode()})
         output=Path(destination) if destination else ROOT/"iptosatpro-r76-metrix-preview-b-beta.ipk"
         if output.exists():output.unlink()
         raw=pack.assemble(archive,output)
         resulting=pack.members_from(pack.unpack_ar(raw)["data.tar.gz"])
-        assert set(resulting)==set(original)|{NOTE}
+        assert set(resulting)==set(original)|{NOTE,HOME_THEMES}
         for name,data in original.items():
             assert resulting[name]==changes.get(name,data),name
+        assert resulting[HOME_THEMES]==home_themes
         assert resulting.get(P+"player.py")==original.get(P+"player.py")
         assert resulting.get(P+"metadata_shadow.py")==original.get(P+"metadata_shadow.py")
         assert resulting[base.CORE]==new_core.encode("utf-8")
@@ -103,7 +108,7 @@ def build(destination=None):
         for n,blob in resulting.items():
             if n.endswith(".py"):compile(blob,n,"exec")
         return {"version":VERSION,"sha256":hashlib.sha256(raw).hexdigest(),
-          "size":len(raw),"changes":sorted(changes),"added":[NOTE],
+          "size":len(raw),"changes":sorted(changes),"added":[NOTE,HOME_THEMES],
           "unchanged":len(original)-len(changes),"receiver_tested":False,
           "production_published":False,"beta":True,
           "original_r75_sha":base_info["sha256"]}
