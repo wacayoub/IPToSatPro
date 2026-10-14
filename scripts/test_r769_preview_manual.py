@@ -71,23 +71,41 @@ class PreviewManualParity(unittest.TestCase):
         self.assertEqual(ctx["provider"],"Unknown")
         self.assertNotIn("market_preferences",ctx)
         self.assertEqual(state["calls"],2)
-    def test_preview_right_list_is_manual_mapping_style(self):
+    def test_preview_right_list_is_real_manual_mapping_widget(self):
         render=ast.get_source_segment(self.code,self.method("_render_source_list"))
         order=ast.get_source_segment(self.code,self.method("_sort_candidates_with_cached_evidence"))
-        # Ranked results use the same tier and identity/quality tie-breakers as
-        # Manual Mapping; receiver data is labelled REAL only when measured.
-        for token in ('"MANUAL":5', '"SAFE":4', '"ALLOWED":3', '"REVIEW":2',
+        init=ast.get_source_segment(self.code,self.method("__init__"))
+        widgets=[n for n in self.tree.body if isinstance(n,ast.ClassDef) and n.name=="PreviewManualMappingList"]
+        self.assertEqual(len(widgets),1)
+        widget=widgets[0]
+        self.assertEqual(ast.unparse(widget.bases[0]),"SmartMatchAlternativesList")
+        widget_src=ast.get_source_segment(self.code,widget)
+        self.assertIn("SmartMatchAlternativesList.__init__(self, items)",widget_src)
+        self.assertIn('self.GREEN if state == "BEST"',widget_src)
+        self.assertIn('self.RED if state == "REJECT" else self.YELLOW',widget_src)
+        self.assertIn("self.row_width, self.row_height",widget_src)
+        self.assertIn('self["source_list"] = PreviewManualMappingList(',init)
+        self.assertIn('self["sat_list"] = PreviewBrowserList(',init)
+        for token in ('"MANUAL":5','"SAFE":4','"ALLOWED":3','"REVIEW":2',
                       "quality_fit_key(", '"provider_identity"', "identity_band"):
             self.assertIn(token,order)
         self.assertIn('rows.sort(key=key,reverse=True)',order)
-        for token in ('score_label="%.1f"%score',"market[:3]","language[:3]",
-                      '"REAL %dx%d"','"DECLARED "',"self._source_tag(",
+        for token in ('score_label = "%.1f" % score',"market[:3]","language[:3]",
+                      '"REAL %dx%d"','"DECLARED "','label_flag = "BEST " + decision',
                       'name = " ".join(str(ch.get("name")'):
             self.assertIn(token,render)
+        self.assertIn('row_state = "BEST"',render)
+        self.assertIn('row_state = "ALT"',render)
+        self.assertIn('row_state = "REJECT"',render)
         self.assertNotIn("presentation_name(",render)
-        # Existing PreviewList widgets, callbacks and video preview stay intact.
         self.assertIn('self["source_list"].setList(rows)',render)
         self.assertIn('self["source_list"].moveToIndex(idx)',render)
+        self.assertIn('self["source_list"].row(text[:120], row_state)',render)
+        # Same Preview remote control handlers, no replacement modal or tuning.
+        for key in ('"ok": self._ok_action','"green": self._lock',
+                    '"yellow": self._all_sources','"left": self._focus_left',
+                    '"right": self._focus_right'):
+            self.assertIn(key,init)
 
     def test_no_live_context_scan_with_known_static_provider(self):
         helper=next(x for x in self.tree.body if isinstance(x,ast.FunctionDef)
