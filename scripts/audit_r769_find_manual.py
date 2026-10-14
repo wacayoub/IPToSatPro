@@ -28,8 +28,8 @@ with tempfile.TemporaryDirectory() as td:
               print("R769_ROOT_METHOD",node.name,method.name,(ast.get_source_segment(src,method) or "")[:15000])
 
       # R76.9 display comparison: exact methods from the rebuilt IPK, no user data.
-      for cname, wanted in (("SatIPTVBridgeAlternatives", ("_render",)),
-                            ("SatIPTVBridgePreview", ("_render_source_list", "_sort_candidates_with_cached_evidence", "_poll_expanded_candidates"))):
+      for cname, wanted in (("SatIPTVBridgeAlternatives", ("_render", "_display_sort_key", "_display_decision", "_real_resolution_text")),
+                            ("SatIPTVBridgePreview", ("_render_source_list", "_sort_candidates_with_cached_evidence", "_source_tag", "_candidate_decision"))):
         target=next((n for n in tree.body if isinstance(n,ast.ClassDef) and n.name==cname),None)
         if target is None:continue
         for method in target.body:
