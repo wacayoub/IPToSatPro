@@ -17,7 +17,7 @@ jobs:
       - name: Install deterministic build dependencies
         run: python -m pip install Pillow
       - name: Compile R76 code
-        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/test_r76_metrix_preview.py
+        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/r763_preview_fast_medal_patch.py scripts/test_r76_metrix_preview.py
       - name: Validate receiver deployment scripts and staging compiler
         run: |
           sh -n download-r76-beta.sh
@@ -54,7 +54,7 @@ jobs:
           payload=base64.b64decode(pathlib.Path("payload/r76-metrix-preview.b64").read_bytes())
           assert hashlib.sha256(payload).hexdigest()==manifest["sha256"]
           assert manifest["production_published"] is False and manifest["receiver_tested"] is False
-          assert manifest["version"]=="1.0.46-r76.2-metrix-professional-no-video-beta"
+          assert manifest["version"]=="1.0.46-r76.3-fast-candidates-medal-beta"
           print("R76_DEPLOYMENT_PIN_VALID")
           PY
           git add payload/r76-metrix-preview.b64 staging/r76-metrix-preview.update.json
