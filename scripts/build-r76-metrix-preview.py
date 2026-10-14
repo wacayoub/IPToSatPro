@@ -22,7 +22,8 @@ def load(name,file):
 
 base=load("r75_builder","build-r75-smart-index.py")
 layout=load("r76_layout","r76_metrix_preview_layout.py")
-VERSION="1.0.46-r76.2-metrix-professional-no-video-beta"
+r763=load("r763_preview","r763_preview_fast_medal_patch.py")
+VERSION="1.0.46-r76.3-fast-candidates-medal-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
@@ -41,7 +42,7 @@ def build(destination=None):
         original=pack.members_from(archive["data.tar.gz"])
         controls=pack.members_from(archive["control.tar.gz"])
 
-        plugin=layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode()))
+        plugin=r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode())))
         original_version='PLUGIN_VERSION = "'+OLD+'"'
         assert plugin.count(original_version)==1
         plugin=plugin.replace(original_version,'PLUGIN_VERSION = "'+VERSION+'"',1)
@@ -69,7 +70,7 @@ def build(destination=None):
         assert control.count("Version: "+OLD)==1
         changed_control=control.replace("Version: "+OLD,"Version: "+VERSION,1)
         desc=(
-          "R76.2 beta: professional Metrix OpenATV Home, native 1660x900 "
+          "R76.3 beta: provisional indexed first-paint candidates, medal for measured best overall, compact M/C source quality labels; professional Metrix Home 1660x900 "
           "and 1245x675 layouts with safe margins, existing live R72 monitor fields; "
           "Neo Dark Classic 2-panel browser with full-height IPTV candidates, "
           "removed inline VideoWindow while stock OK video test remains intact. "
