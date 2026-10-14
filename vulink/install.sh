@@ -50,7 +50,7 @@ base=pathlib.Path(sys.argv[1])
 expected={
  "bridge.py":"8346dffe7f98b9187241829388b92d34c71700b6",
  "plugin.py":"389b5e1c33a7ec47e0cf480f1cd765e1742f2dee",
- "v2.py":"82b55ba5df6b6637f1b7966eff6ec49b49d0cba7",
+ "v2.py":"9699cf9ccddce5867f298aeab411420b61db2825",
  "qrpng.py":"1c59db4cd9ae80ca6e4ef26a3f7fd106cccf7119",
  "__init__.py":"37aa9c748e07ee20a2fad065d72973e7da656835"
 }
@@ -94,9 +94,9 @@ for filename in bridge.py plugin.py v2.py qrpng.py __init__.py; do
 done
 printf '%s\n' "$SAVED" > "$BACKUPS/last-path"
 chmod 600 "$BACKUPS/last-path"
-echo "INSTALLED VuLink Pro V2 2.0.0-beta1"
+echo "INSTALLED VuLink Pro V2 2.0.1-beta2"
 echo "No IPTV mappings, credentials or player code modified."
 echo "Phone actions require GREEN approval on Vu+ screen; YELLOW denies."
 echo "QR generated offline (built in), or address+code as fallback."
 echo "Restart Enigma2 GUI; open Plugins > VuLink Pro V2 - QR Maintenance."
-echo "Rollback: sh /tmp/install-vulink.sh --rollback"
+echo "Rollback: sh /tmp/install-vulink-v2.sh --rollback"
