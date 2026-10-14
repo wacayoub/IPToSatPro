@@ -140,7 +140,7 @@ class R76Acceptance(unittest.TestCase):
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
         self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","open_settings","_r711_tools_choice","_r723_select_home_layout","_r723_set_home_layout"})
-        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_render_source_list","_load_selected_sat_candidates"})
+        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_render_source_list","_load_selected_sat_candidates","_expand_selected_sat_candidates"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
 
@@ -267,7 +267,7 @@ class R76Acceptance(unittest.TestCase):
         self.assertLess(iptv[3],tiles[0][1])
         self.assertGreaterEqual(sat[0],420)
         self.assertGreaterEqual(rect("key_red")[1],800)
-        self.assertIn('self["version"] = Label("R76.8  •  "+_r76_layout.replace("_"," ").upper())',self.plugin)
+        self.assertIn('self["version"] = Label("R76.9  •  "+_r76_layout.replace("_"," ").upper())',self.plugin)
         self.assertIn("SAT / IPTV  •  LIVE STATUS  •  HOME THEMES",self.plugin)
         self.assertNotIn('self["subtitle"] = Label("R72  •  SATELLITE',self.plugin)
 

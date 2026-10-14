@@ -216,7 +216,7 @@ def patch_plugin(src):
         "dashboard subtitle")
     src=replace_once(src,
         'self["version"] = Label("R76.2  •  METRIX PROFESSIONAL")',
-        'self["version"] = Label("R76.8  •  "+_r76_layout.replace("_"," ").upper())',
+        'self["version"] = Label("R76.9  •  "+_r76_layout.replace("_"," ").upper())',
         "selected theme label")
     src=replace_once(src,ROOT_MENU_OLD,ROOT_MENU_NEW,"menu consolidation")
     src=replace_once(src,

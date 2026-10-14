@@ -28,7 +28,8 @@ r765=load("r765_postings","r765_token_postings_patch.py")
 r766=load("r766_cold","r766_cold_rank_patch.py")
 r767=load("r767_themes","r767_eleven_themes_menu.py")
 r768=load("r768_region","r768_context_region_patch.py")
-VERSION="1.0.46-r76.8-region-priority-beta"
+r769=load("r769_preview","r769_preview_manual_parity_patch.py")
+VERSION="1.0.46-r76.9-preview-manual-parity-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
@@ -48,7 +49,7 @@ def build(destination=None):
         original=pack.members_from(archive["data.tar.gz"])
         controls=pack.members_from(archive["control.tar.gz"])
 
-        plugin=r767.patch_plugin(r765.patch_plugin(r764.patch_plugin(r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode()))))))
+        plugin=r769.patch_plugin(r767.patch_plugin(r765.patch_plugin(r764.patch_plugin(r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode())))))))
         new_core=r768.patch_core(r766.patch_core(r765.patch_core(original[base.CORE].decode())))
         original_version='PLUGIN_VERSION = "'+OLD+'"'
         assert plugin.count(original_version)==1
@@ -64,7 +65,7 @@ def build(destination=None):
         assert updater.count(oldmanifest)==1
         updater=updater.replace(oldmanifest,
             "https://raw.githubusercontent.com/wacayoub/IPToSatPro/"
-            "feature/r768-mena-region-priority/staging/r76-metrix-preview.update.json",1)
+            "feature/r769-preview-manual-parity/staging/r76-metrix-preview.update.json",1)
 
         rebuilt_theme=layout.theme_module()
         home_themes=r767.generate_module()
@@ -79,7 +80,7 @@ def build(destination=None):
         assert control.count("Version: "+OLD)==1
         changed_control=control.replace("Version: "+OLD,"Version: "+VERSION,1)
         desc=(
-          "R76.8 beta: contextual regional shortlist and REVIEW-score adjustment; original IPTV candidate prefixes, eleven selectable native HD/FHD dashboard skins and four grouped MENU categories; settings persisted only to r76_home_layout, original mappings and player untouched. R76.6 cache/ranker preserved with new R76.8 regional nomination/REVIEW adjustment. Home 1660x900 "
+          "R76.9 beta: Preview normal background parity with Manual Mapping (48/16) and safe same-SAT live context, retaining instant first paint, DEEP192, regional priority from R76.8; original IPTV candidate prefixes, eleven selectable native HD/FHD dashboard skins and four grouped MENU categories; settings persisted only to r76_home_layout, original mappings and player untouched. R76.6 cache/ranker preserved with new R76.8 regional nomination/REVIEW adjustment. Home 1660x900 "
           "and 1245x675 layouts with safe margins, existing live R72 monitor fields; "
           "Neo Dark Classic 2-panel browser with full-height IPTV candidates, "
           "removed inline VideoWindow while stock OK video test remains intact. "

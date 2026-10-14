@@ -17,7 +17,7 @@ jobs:
       - name: Install deterministic build dependencies
         run: python -m pip install Pillow
       - name: Compile R76 code
-        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/r763_preview_fast_medal_patch.py scripts/r764_multi_seed_patch.py scripts/r765_token_postings_patch.py scripts/r766_cold_rank_patch.py scripts/r767_eleven_themes_menu.py scripts/r768_context_region_patch.py scripts/test_r768_region.py scripts/test_r767_menu_themes.py scripts/test_r766_cold_rank.py scripts/test_r76_metrix_preview.py scripts/test_r764_multi_seed.py scripts/test_r765_postings.py
+        run: python -m py_compile scripts/r76_metrix_preview_layout.py scripts/build-r76-metrix-preview.py scripts/r763_preview_fast_medal_patch.py scripts/r764_multi_seed_patch.py scripts/r765_token_postings_patch.py scripts/r766_cold_rank_patch.py scripts/r767_eleven_themes_menu.py scripts/r768_context_region_patch.py scripts/r769_preview_manual_parity_patch.py scripts/test_r769_preview_manual.py scripts/test_r768_region.py scripts/test_r767_menu_themes.py scripts/test_r766_cold_rank.py scripts/test_r76_metrix_preview.py scripts/test_r764_multi_seed.py scripts/test_r765_postings.py
       - name: Validate receiver deployment scripts and staging compiler
         run: |
           sh -n download-r76-beta.sh
@@ -36,6 +36,8 @@ jobs:
         run: python scripts/audit_r768_mena_context.py
       - name: R76.8 exact packaged-core regional safety matrix
         run: python -m unittest discover -s scripts -p test_r768_region.py -v
+      - name: R76.9 actual packaged Manual-equivalent Preview acceptance
+        run: python -m unittest discover -s scripts -p test_r769_preview_manual.py -v
       - name: R76.9 read-only comparison of Preview and Manual Mapping
         run: python scripts/audit_r769_preview_manual.py
       - name: R76.4 real one-source-cache regression (24 providers / 13k keys)
@@ -74,12 +76,12 @@ jobs:
           payload=base64.b64decode(pathlib.Path("payload/r76-metrix-preview.b64").read_bytes())
           assert hashlib.sha256(payload).hexdigest()==manifest["sha256"]
           assert manifest["production_published"] is False and manifest["receiver_tested"] is False
-          assert manifest["version"]=="1.0.46-r76.8-region-priority-beta"
+          assert manifest["version"]=="1.0.46-r76.9-preview-manual-parity-beta"
           print("R76_DEPLOYMENT_PIN_VALID")
           PY
           git add payload/r76-metrix-preview.b64 staging/r76-metrix-preview.update.json
           if ! git diff --cached --quiet; then
             git -c user.name='IPToSatPro CI' -c user.email='actions@users.noreply.github.com' \
                 commit -m 'stage(r76): checksum-pinned HD/FHD Metrix beta package [skip ci]'
-            git push origin HEAD:feature/r768-mena-region-priority
+            git push origin HEAD:feature/r769-preview-manual-parity
           fi
