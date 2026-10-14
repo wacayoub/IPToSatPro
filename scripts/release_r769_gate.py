@@ -82,8 +82,12 @@ def verify():
             builder.P + "player.py",
             builder.P + "metadata_shadow.py",
         }
+        assert builder.base.MONITOR in baseline, "monitor source missing from baseline"
         for path in protected_paths:
-            assert path in baseline and result[path] == baseline[path], (
+            # Some packaging generations embed player code in another module
+            # instead of shipping a standalone player.py. Absence on BOTH
+            # sides is protected; additions/removals already fail above.
+            assert result.get(path) == baseline.get(path), (
                 "protected playback/monitor asset changed: " + path)
         assert all("mapping" not in p.lower() and "override" not in p.lower()
                    for p in observed_changed | added), "mapping/override asset changed"
