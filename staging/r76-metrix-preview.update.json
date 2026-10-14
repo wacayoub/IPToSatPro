@@ -1,11 +1,11 @@
 {
-  "version": "1.0.46-r76.7.1-prefix-display-beta",
-  "size": 458202,
-  "sha256": "bac9d272450c24fd76391ffe437e4a3373afee14797af98ebc01438636ba6f77",
+  "version": "1.0.46-r76.8-region-priority-beta",
+  "size": 459292,
+  "sha256": "46991d8691a9979cd757382a0e682fa2d63a03c03f0f318ff1fac968a76d6e88",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r768-mena-region-priority/payload/r76-metrix-preview.b64"
   ],
-  "notes": "R76 Metrix OpenATV dashboard + Neo Dark Preview+ B beta. HD/FHD native skins, real read-only dashboard diagnostics, original player/monitor/mappings/key actions protected. On-device Enigma2/video validation required.",
+  "notes": "R76.8 smart regional priority and REVIEW scoring + Metrix/Neo Preview beta. HD/FHD native skins, real read-only dashboard diagnostics, original player/monitor/mappings/key actions protected. On-device Enigma2/video validation required.",
   "beta": true,
   "receiver_tested": false,
   "production_published": false,
