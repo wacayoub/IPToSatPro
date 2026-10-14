@@ -157,14 +157,21 @@ class R76Acceptance(unittest.TestCase):
         self.assertNotIn("_r763_instant_auto_lock", self.plugin)
 
     def test_r763_medal_is_evidence_gated_and_quality_compact(self):
-        self.assertIn('medal="🎖 " if best_measured else ""', self.plugin)
-        self.assertIn('speed_count>=1 and overall_fp and cfp==overall_fp', self.plugin)
-        self.assertIn('compact_quality="M:%dx%d"', self.plugin)
-        self.assertIn('compact_quality="C:%s"', self.plugin)
-        self.assertIn('score_label="IDX"', self.plugin)
-        self.assertIn('decision_short={"USER REJECT":"REJ"', self.plugin)
-        self.assertIn('BEST ', self.plugin)
-        self.assertNotIn('REAL MESURE', self.plugin[self.plugin.index('def _render_source_list(self, keep_index=True):'):self.plugin.index('def _format_epg_event',self.plugin.index('def _render_source_list(self, keep_index=True):'))])
+        # The R76.9 Manual Mapping-like results replace the old medal/compact
+        # candidate layout. Keep real-vs-declared evidence unmistakable.
+        tree=ast.parse(self.plugin)
+        cls=next(n for n in tree.body if isinstance(n,ast.ClassDef)
+                 and n.name=="SatIPTVBridgePreview")
+        method=next(n for n in cls.body if isinstance(n,ast.FunctionDef)
+                    and n.name=="_render_source_list")
+        render=ast.get_source_segment(self.plugin,method)
+        self.assertIn('"REAL %dx%d"',render)
+        self.assertIn('"DECLARED "',render)
+        self.assertIn('"INDEX"',render)
+        self.assertIn('flag = "BEST " + decision',render)
+        self.assertIn('fp in self._user_rejected_ids',render)
+        self.assertNotIn("🎖",render)
+        self.assertNotIn('REAL MESURE',render)
 
     def test_preview_candidate_displays_original_iptv_prefix(self):
         # Execute the name expression from the ACTUAL rebuilt package's
