@@ -13,7 +13,7 @@ BACKUPROOT="/home/root/iptosatpro-r76-backups"
 PACKAGE="/tmp/iptosatpro-r7610-normal48-beta.ipk"
 if [ "$#" -eq 0 ]; then MODE="--check"; else MODE="$1"; fi
 case "$MODE" in --check|--install|--rollback) ;; *)
-  echo "Usage: sh download-r76-beta.sh [--check|--install|--rollback]"
+  echo "Usage: sh download-r7610-beta.sh [--check|--install|--rollback]"
   exit 2 ;;
 esac
 if [ "$(id -u)" != "0" ]; then
@@ -74,8 +74,14 @@ if m.get("production_published") is not False:
     raise SystemExit("Expected non-production R7610 package")
 raw=base64.b64decode(encoded,validate=False)
 sha=hashlib.sha256(raw).hexdigest()
-if sha!=m.get("sha256") or len(raw)!=m.get("size"):
-    raise SystemExit("SHA256 / size mismatch; receiver unchanged")
+expected_sha="6bfeafb046fb09b97283f5313cda95f3a11f51221572451395bf8c099ae13725"
+expected_size=459220
+if (sha!=expected_sha or m.get("sha256")!=expected_sha or
+        len(raw)!=expected_size or m.get("size")!=expected_size):
+    raise SystemExit("PINNED_SHA256_SIZE_MISMATCH: receiver unchanged")
+if (m.get("receiver_tested") is not False or
+        m.get("installation_requires_explicit_flag") is not True):
+    raise SystemExit("INVALID_BETA_SAFETY_FLAGS: receiver unchanged")
 with open(sys.argv[3],"wb") as f:f.write(raw)
 print("R7610 VERIFIED",ver,"bytes",len(raw),"SHA256",sha)
 PY
