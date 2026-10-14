@@ -211,7 +211,8 @@ class VuLinkV2Tests(unittest.TestCase):
             actual = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii")
                                   + bytes([0]) + payload).hexdigest()
             self.assertEqual(actual, match.group(1), name + " needs installer repin")
-        self.assertIn("VULINK_V2_CONTENT_PIN_VERIFIED", installer)
+        self.assertTrue("VULINK_V2_CONTENT_PIN_VERIFIED" in installer or
+                        "VULINK_V3_CONTENT_PIN_VERIFIED" in installer)
 
     def test_receiver_plugin_wires_green_yellow_and_timer(self):
         source = (Path(__file__).resolve().parents[1] / "plugin.py").read_text()
