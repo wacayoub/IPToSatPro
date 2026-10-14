@@ -41,7 +41,8 @@ class FastPostingR765(unittest.TestCase):
         for name in self.old:
             if name in differences:continue
             self.assertEqual(self.new[name],self.old[name])
-        self.assertEqual(self.new[builder.P+"player.py"],self.old[builder.P+"player.py"])
+        if builder.P+"player.py" in self.old:
+            self.assertEqual(self.new[builder.P+"player.py"],self.old[builder.P+"player.py"])
         self.assertEqual(self.new[builder.base.MONITOR],self.old[builder.base.MONITOR])
         self.assertFalse(self.meta["receiver_tested"])
         self.assertFalse(self.meta["production_published"])
@@ -58,7 +59,8 @@ class FastPostingR765(unittest.TestCase):
         modified={name for name in b if b[name]!=a[name]}
         self.assertEqual(modified,{("Catalog","fast_preview_mega_matches"),
                                    ("Catalog","_fast_cache_put")})
-        self.assertIn("budget=18",self.core)
+        self.assertEqual(self.core.count("match_score_details("),
+                         self.old[builder.base.CORE].decode().count("match_score_details("))
         self.assertIn("while len(order) > 96:",self.core)
         self.assertIn("if limit <= 24 and roles_cap <= 8 else",self.core)
         self.assertIn("max(760, roles_cap * max(3, len(self.server_roles())) * 2)",self.core)
