@@ -173,6 +173,20 @@ class VuLinkV2Tests(unittest.TestCase):
         finally:
             service.stop()
 
+    def test_install_script_pins_actual_content_hashes(self):
+        import hashlib, re
+        root = Path(__file__).resolve().parents[1]
+        installer = (root / "install.sh").read_text()
+        filenames = ["bridge.py", "plugin.py", "v2.py", "qrpng.py", "__init__.py"]
+        for name in filenames:
+            match = re.search(r'"' + re.escape(name) + r'":"([a-f0-9]{40})"', installer)
+            self.assertIsNotNone(match, name + " missing pinned digest")
+            payload = (root / name).read_bytes()
+            actual = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii")
+                                  + bytes([0]) + payload).hexdigest()
+            self.assertEqual(actual, match.group(1), name + " needs installer repin")
+        self.assertIn("VULINK_V2_CONTENT_PIN_VERIFIED", installer)
+
     def test_receiver_plugin_wires_green_yellow_and_timer(self):
         source = (Path(__file__).resolve().parents[1] / "plugin.py").read_text()
         self.assertIn("ProPairingServer()", source)
