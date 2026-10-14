@@ -104,35 +104,45 @@ def add_rect(root,x,y,w,h,color,z="0",text=None):
 
 def make_home():
     root=ET.Element("screen",{"name":"SatIPTVBridgeDashboard","position":"center,center",
-        "size":"1660,900","title":"IPToSatPro R76 - Metrix OpenATV",
-        "backgroundColor":"#090D12","flags":"wfNoBorder"})
-    add_rect(root,0,0,1660,99,"#101820")
-    add_rect(root,38,98,1583,4,"#177EC7","1")
-    add_rect(root,40,110,345,673,"#141A20")
-    add_rect(root,40,110,345,5,"#197FC2","1")
-    for y in (171,238):
-        add_rect(root,56,y,315,60,"#1D3549")
-    add_rect(root,56,388,315,350,"#1C252D")
-    add_rect(root,416,110,1204,250,"#151E26")
-    add_rect(root,416,110,1204,5,"#147DBE","1")
-    add_rect(root,416,372,1204,219,"#151E26")
-    add_rect(root,416,372,1204,5,"#1786CE","1")
-    # 6 metric panels. Less than 36% of screen devoted to decoration.
-    for y in (608,699):
-        for x in (416,817,1218):
-            add_rect(root,x,y,392,85,"#1B2732")
-            add_rect(root,x,y,392,3,"#315D81","1")
-    add_rect(root,40,801,1580,75,"#111A23")
+        "size":"1660,900","title":"IPToSatPro - Metrix OpenATV Professional",
+        "backgroundColor":"#090E15","flags":"wfNoBorder"})
+    # Native Enigma2 FHD layout with safe 40px side margins.
+    add_rect(root,0,0,1660,106,"#111B26")
+    add_rect(root,40,103,1580,3,"#2388D1","1")
+    add_rect(root,40,116,360,670,"#17222D")
+    add_rect(root,40,116,360,4,"#248ED7","1")
+    # Sidebar action buttons, selected IPTV and diagnostic sections.
+    for y in (179,244):
+        add_rect(root,58,y,323,58,"#245781","1")
+    add_rect(root,58,403,324,373,"#1B2C3C")
+    # SAT service and the IPTV that is actually active are separate cards.
+    add_rect(root,425,116,1195,210,"#182633")
+    add_rect(root,425,116,1195,4,"#2388D1","1")
+    add_rect(root,425,335,1195,183,"#182633")
+    add_rect(root,425,335,1195,4,"#2388D1","1")
+    add_rect(root,1218,151,382,105,"#213549")
+    add_rect(root,1220,343,179,43,"#29445B")
+    add_rect(root,1402,343,197,43,"#1D503F")
+    # Six metrics; keep clear padding for text at TV viewing distance.
+    for y in (536,653):
+        for x in (425,816,1207):
+            add_rect(root,x,y,382,110,"#1B2D3D")
+            add_rect(root,x,y,382,4,"#356E9E","1")
+    # Real remote key color strip.
+    add_rect(root,40,798,1580,79,"#111D28")
     for x,w,c in ((40,377,"#8A343E"),(426,377,"#257955"),
                   (812,377,"#A78129"),(1198,421,"#286B9A")):
-        add_rect(root,x,809,w,59,c,"1")
+        add_rect(root,x,808,w,61,c,"1")
     for name,(x,y,w,h,size,color) in HOME_WIDGETS.items():
         attrs={"name":name,"position":f"{x},{y}","size":f"{w},{h}","zPosition":"3"}
         if name=="home_snr_bar":
-            attrs.update({"foregroundColor":"#1786CE","backgroundColor":"#314354"})
+            attrs.update({"foregroundColor":"#2388D1","backgroundColor":"#32495D"})
         else:
-            attrs.update({"font":f"Regular;{size}","foregroundColor":color,"transparent":"1"})
-        if name in ("home_status","home_lock_badge","key_red","key_green","key_yellow","key_blue"):
+            attrs.update({"font":f"Regular;{size}","foregroundColor":color,
+                          "transparent":"1"})
+        if name in ("home_status","home_lock_badge",
+                    "r72_mapping_status","r72_play_status",
+                    "key_red","key_green","key_yellow","key_blue"):
             attrs["halign"]="center"
         ET.SubElement(root,"widget",attrs)
     return ET.tostring(root,encoding="unicode")
@@ -346,6 +356,13 @@ R76_METRIX_HD = """{home_hd}"""
         self["r76_catalog_label"].setText(self._r76_extras["catalog"])
 '''
     src=replace_once(src,anchor,anchor+diag)
+    # Replace outdated R72 on-screen product labels only (not actual signal data).
+    src=replace_once(src,
+        'self["subtitle"] = Label("R72  •  SATELLITE → IPTV  •  LIVE MONITOR")',
+        'self["subtitle"] = Label("METRIX OPENATV  •  SAT / IPTV  •  LIVE STATUS")')
+    src=replace_once(src,
+        'self["version"] = Label("R72.3  •  CLASSIC / MONITOR")',
+        'self["version"] = Label("R76.2  •  METRIX PROFESSIONAL")')
     # Reuse all displayed R72 monitor fields: no fake values, no new polling.
     # Enigma2 requires every widget name to be initialized in screen.__init__.
     tree=ast.parse(src)
