@@ -52,7 +52,7 @@ jobs:
           payload=base64.b64decode(pathlib.Path("payload/r76-metrix-preview.b64").read_bytes())
           assert hashlib.sha256(payload).hexdigest()==manifest["sha256"]
           assert manifest["production_published"] is False and manifest["receiver_tested"] is False
-          assert manifest["version"]=="1.0.46-r76.0-metrix-preview-b-beta"
+          assert manifest["version"]=="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
           print("R76_DEPLOYMENT_PIN_VALID")
           PY
           git add payload/r76-metrix-preview.b64 staging/r76-metrix-preview.update.json
