@@ -113,13 +113,12 @@ class R76Acceptance(unittest.TestCase):
         for xml in (hi,low):
             root=ET.fromstring(xml)
             names={x.attrib["name"] for x in root if x.tag=="widget"}
-            self.assertEqual(names,layout.PREVIEW_CLASSIC_NAMES|{"r76_video"})
-            videos=[e for e in root if e.tag=="widget" and e.attrib["name"]=="r76_video"]
-            self.assertEqual(len(videos),1)
+            self.assertEqual(names,layout.PREVIEW_CLASSIC_NAMES)
+            self.assertNotIn("r76_video",names)
             self.assertEqual(root.attrib["backgroundColor"],"#090F18")
-        self.assertIn('VideoWindow(decoder=0, fb_width=1280, fb_height=720)',self.plugin)
-        self.assertIn('self["r76_video"].show()',self.plugin)
-        self.assertIn('self.onLayoutFinish.append(self["r76_video"].hide)',self.plugin)
+        self.assertNotIn("VideoWindow(decoder=",self.plugin)
+        self.assertNotIn('self["r76_video"]',self.plugin)
+        self.assertIn('NEO DARK CLASSIC',self.plugin)
 
     def test_preview_video_not_autoplay_on_navigation(self):
         before=ast.parse(self.old_plugin)
@@ -140,33 +139,17 @@ class R76Acceptance(unittest.TestCase):
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
         self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","_r723_select_home_layout","_r723_set_home_layout"})
-        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_r7413_keep_preview_visible"})
+        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
 
-    def test_openatv_screen_callback_uses_bound_method_not_lambda(self):
-        """OpenATV Screen.applySkin: non-bound callbacks are fed to exec().
-
-        Regression for real Vu+ OSD crash:
-        'exec() arg 1 must be a string, bytes or code object'.
-        OpenATV's Screen uses isinstance(method,type(self.close)) onLayoutFinish.
-        """
-        self.assertIn('self.onLayoutFinish.append(self["r76_video"].hide)',self.plugin)
+    def test_openatv_has_no_inline_video_window_or_callback(self):
+        """Never introduce an onLayoutFinish lambda or second video window."""
         self.assertNotIn('self.onLayoutFinish.append(lambda',self.plugin)
-        class MockScreen:
-            def close(self): pass
-        class MockVideo:
-            def hide(self): return "hidden"
-        screen=MockScreen()
-        cb=MockVideo().hide
-        self.assertIsInstance(cb,type(screen.close))
-        self.assertEqual(cb(),"hidden")
-        invalid=lambda:None
-        self.assertNotIsInstance(invalid,type(screen.close))
-        with self.assertRaises(TypeError):
-            exec(invalid,globals(),locals())
+        self.assertNotIn('self.onLayoutFinish.append(self["r76_video"]',self.plugin)
+        self.assertNotIn('self["r76_video"]',self.plugin)
 
-    def test_no_overlap_video_candidate_or_buttons(self):
+    def test_preview_list_fills_both_panels_safely(self):
         hi=ET.fromstring(literal(ast.parse(self.theme),"PREVIEW_R74_FHD"))
         wd={x.attrib["name"]:x for x in hi if x.tag=="widget"}
         def rect(n):
@@ -176,11 +159,30 @@ class R76Acceptance(unittest.TestCase):
         def separate(a,b):
             x,y,r,d=rect(a);u,v,s,t=rect(b)
             return r<=u or s<=x or d<=v or t<=y
-        self.assertTrue(separate("r76_video","source_list"))
-        self.assertTrue(separate("r76_video","sat_list"))
+        self.assertTrue(separate("sat_list","source_list"))
         self.assertTrue(separate("source_list","key_green"))
         self.assertTrue(separate("verify","key_red"))
-        self.assertLess(rect("sat_list")[2],rect("source_list")[0])
+        self.assertEqual(rect("sat_list")[1],rect("source_list")[1])
+        self.assertEqual(rect("sat_list")[3],rect("source_list")[3])
+        self.assertGreater(rect("source_list")[3]-rect("source_list")[1],420)
+
+    def test_metrix_home_real_tv_spacing_and_brand(self):
+        hi=ET.fromstring(literal(ast.parse(self.plugin),"R76_METRIX_FHD"))
+        w={el.get("name"):el for el in hi if el.tag=="widget"}
+        def rect(name):
+            x,y=map(int,w[name].get("position").split(","))
+            dx,dy=map(int,w[name].get("size").split(","))
+            return (x,y,x+dx,y+dy)
+        sat=rect("r72_sat_name")
+        iptv=rect("r72_iptv_name")
+        tiles=[rect(x) for x in ("r72_res_val","r72_speed_val","r72_audio_lang_val")]
+        self.assertLess(sat[3],iptv[1])
+        self.assertLess(iptv[3],tiles[0][1])
+        self.assertGreaterEqual(sat[0],420)
+        self.assertGreaterEqual(rect("key_red")[1],800)
+        self.assertIn("R76.2  •  METRIX PROFESSIONAL",self.plugin)
+        self.assertIn("METRIX OPENATV  •  SAT / IPTV  •  LIVE STATUS",self.plugin)
+        self.assertNotIn('self["subtitle"] = Label("R72  •  SATELLITE',self.plugin)
 
     def test_remote_actions_and_mapping_logic_unchanged(self):
         # Compare all AST class methods; this also protects color action maps,
