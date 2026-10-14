@@ -24,7 +24,8 @@ base=load("r75_builder","build-r75-smart-index.py")
 layout=load("r76_layout","r76_metrix_preview_layout.py")
 r763=load("r763_preview","r763_preview_fast_medal_patch.py")
 r764=load("r764_multi","r764_multi_seed_patch.py")
-VERSION="1.0.46-r76.4-all-indexed-firstpaint-beta"
+r765=load("r765_postings","r765_token_postings_patch.py")
+VERSION="1.0.46-r76.5-postings-fast-preview-beta"
 OLD=base.VERSION
 P=base.P
 PLUGIN=base.PLUGIN
@@ -43,7 +44,8 @@ def build(destination=None):
         original=pack.members_from(archive["data.tar.gz"])
         controls=pack.members_from(archive["control.tar.gz"])
 
-        plugin=r764.patch_plugin(r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode()))))
+        plugin=r765.patch_plugin(r764.patch_plugin(r763.patch_plugin(layout.patch_preview_plugin(layout.patch_plugin(original[PLUGIN].decode())))))
+        new_core=r765.patch_core(original[base.CORE].decode())
         original_version='PLUGIN_VERSION = "'+OLD+'"'
         assert plugin.count(original_version)==1
         plugin=plugin.replace(original_version,'PLUGIN_VERSION = "'+VERSION+'"',1)
@@ -62,8 +64,8 @@ def build(destination=None):
 
         rebuilt_theme=layout.theme_module()
         changes={PLUGIN:plugin.encode("utf-8"),UPDATER:updater.encode("utf-8"),
-                 THEME:rebuilt_theme}
-        assert set(changes)=={PLUGIN,UPDATER,THEME}
+                 THEME:rebuilt_theme,base.CORE:new_core.encode("utf-8")}
+        assert set(changes)=={PLUGIN,UPDATER,THEME,base.CORE}
         for name,data in changes.items():
             assert name in original
             if name.endswith(".py"):compile(data,name,"exec")
@@ -71,7 +73,7 @@ def build(destination=None):
         assert control.count("Version: "+OLD)==1
         changed_control=control.replace("Version: "+OLD,"Version: "+VERSION,1)
         desc=(
-          "R76.4 beta: initial incomplete cached single-source augmented with all plausible indexed candidate variations across provider roles, correct OSNtv alias, medal for measured best overall, compact M/C source labels; professional Metrix Home 1660x900 "
+          "R76.5 beta: prebuilt token postings first paint, 192 nominee cap for ordinary 24-result Preview, YELLOW deep unchanged, bounded 96-result rank cache. No stream reads for IDX-only candidates; Metrix Home 1660x900 "
           "and 1245x675 layouts with safe margins, existing live R72 monitor fields; "
           "Neo Dark Classic 2-panel browser with full-height IPTV candidates, "
           "removed inline VideoWindow while stock OK video test remains intact. "
@@ -93,7 +95,7 @@ def build(destination=None):
             assert resulting[name]==changes.get(name,data),name
         assert resulting.get(P+"player.py")==original.get(P+"player.py")
         assert resulting.get(P+"metadata_shadow.py")==original.get(P+"metadata_shadow.py")
-        assert resulting[base.CORE]==original[base.CORE]
+        assert resulting[base.CORE]==new_core.encode("utf-8")
         assert resulting[base.MONITOR]==original[base.MONITOR]
         assert not any(("mapping" in n.lower() or "override" in n.lower())
                        for n in changes)
