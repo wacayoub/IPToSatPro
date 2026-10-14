@@ -21,7 +21,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .bridge import PairingServer, collect_report
 
-V2_VERSION = "2.0.0-beta1"
+V2_VERSION = "2.0.1-beta2"
 BACKUP_ROOT = Path("/home/root/vulink-pro-backups")
 CONF_ROOT = Path("/etc/enigma2/SatIPTVBridge")
 PLUGIN_ROOT = Path("/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge")
@@ -334,8 +334,12 @@ class ProPairingServer(PairingServer):
                 self.send_header("Content-Security-Policy",
                                  "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'")
                 if cookie:
+                    # Chrome/Android QR opens an external-app top-level navigation.
+                    # SameSite=Strict can drop this session on the 303 to /app.
+                    # Lax permits a top-level GET; /action remains CSRF-protected
+                    # and also requires physical Vu+ approval.
                     self.send_header("Set-Cookie", "vulink_v2=" + cookie +
-                                     "; HttpOnly; SameSite=Strict; Path=/")
+                                     "; HttpOnly; SameSite=Lax; Path=/")
                 if file:
                     self.send_header("Content-Disposition", 'attachment; filename="' + file + '"')
                 if redirect:
@@ -361,6 +365,8 @@ class ProPairingServer(PairingServer):
                         return self.send_data(403, _page("Code invalide", "<p>Acces refuse</p>"))
                     return self.send_data(303, b"", cookie=token, redirect="/app")
                 if path == "/":
+                    if self.auth():
+                        return self.send_data(303, b"", redirect="/app")
                     return self.send_data(200, _page("VuLink Pro V2",
                         '<p>Appairage prive sur ton reseau local. Code affiche sur la TV.</p>'
                         '<form action="/pair" method="post">'
@@ -368,8 +374,19 @@ class ProPairingServer(PairingServer):
                         '<button type="submit">Connecter</button></form>'))
                 auth = self.auth()
                 if not auth:
+                    # Android QR readers can arrive on /app without carrying a
+                    # previously set cookie (external-app navigation or tab change).
+                    # Offer recovery here, not an unusable dead-end page.
                     return self.send_data(401, _page("Connexion requise",
-                                             '<p>Scanne le QR affiche sur le Vu+.</p>'))
+                        '<p>Le lien QR a ete ouvert, mais le navigateur ne retrouve '
+                        'pas la session locale. Entre le code actuel affiche sur '
+                        'ton Vu+ pour continuer.</p>'
+                        '<form action="/pair" method="post">'
+                        '<input name="code" autocomplete="off" maxlength="20" required '
+                        'placeholder="Code VuLink sur la TV">'
+                        '<button type="submit">Se connecter</button></form>'
+                        '<p><small>Si le code a expire, ferme puis rouvre VuLink '
+                        'sur la television.</small></p>'))
                 if path == "/api/report":
                     return self.send_data(200, json.dumps(extended_report(),
                                           ensure_ascii=False, indent=2),
