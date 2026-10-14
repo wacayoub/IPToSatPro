@@ -40,3 +40,9 @@ print("R7611_POSTINST_SCAN",json.dumps({
     "hardcoded_r62": "1.0.46-r62" in postinst,
     "commands":cmds,
 },ensure_ascii=True))
+
+print("R7611_POSTINST_REVIEW",json.dumps([
+    {"line":i,"text":re.sub(r"https?://\\S+","[URL]",raw_line.strip())[:260]}
+    for i,raw_line in enumerate(postinst.splitlines(),1)
+    if i in range(1,35) or i in range(35,65) or i in range(72,95)
+],ensure_ascii=True))
