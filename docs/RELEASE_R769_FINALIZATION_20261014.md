@@ -36,9 +36,10 @@ Paquet candidat (ancien chemin conservé pour éviter tout redéploiement):
 - Artefact bêta de préproduction reconstruit de manière déterministe.
 
 ## Bloquants pour appeler la version « Final »
-1. **Aucune preuve de lecture matérielle**: VuLink V3 a accepté la publication de
-   commandes dans GitHub mais les deux précédentes demandes de diagnostic du
-   14 octobre sont restées sans réponse confirmée. Auth GitHub != agent Vu+ actif.
+1. **Aucune preuve de lecture matérielle**: les tests logiciels sur GitHub ne
+   remplacent pas les vérifications réelles sur Vu+ Zero 4K. Aucun relais ou
+   connexion distante n'est nécessaire : valider depuis l'interface TV ou
+   par diagnostic local, sans installer automatiquement de mise à jour.
 2. **Performance réelle non prouvée**: cible utilisateur de 1–2 s au changement
    de chaîne; logs antérieurs de ranking 0.9–3.8 s et chaînes sans signal parfois
    7 s. Aucune mesure récente ne permet de déclarer ces incidents clos.
@@ -69,8 +70,16 @@ La **réussite des seuls tests Python/CI ne remplace pas ces preuves**.
 Le script `download-r76-beta.sh` se lance sans argument en **mode check**:
 il vérifie le manifest et l'IPK sans installer; `--install` est une
 action distincte avec backup, `--rollback` restaure le code sauvegardé.
-À ne pas lancer automatiquement via GitHub/VuLink. Le fallback R70
-stable reste accessible depuis main.
+À ne pas lancer automatiquement depuis GitHub. Aucune dépendance à VuLink.
+Le fallback R70 stable reste accessible depuis main.
+
+## Méthode sans VuLink
+- GitHub : compilation, tests de régression, hash SHA256 et préparation du paquet.
+- Vu+ : vérification locale en lecture seule et essais audio/vidéo directement
+  depuis l'interface Enigma2; pas de relais distant ni de liaison GitHub→TV.
+- Aucune installation, aucune réinitialisation et aucune modification de mapping
+  ne sont déclenchées automatiquement.
+- Les preuves matérielles ne peuvent pas être inférées des logs CI.
 
 ## Publication stable — préconditions
 - Tous les tests CI logiciels sont verts, y compris release_r769_gate.py.
