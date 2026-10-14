@@ -95,6 +95,26 @@ class VuLinkTests(unittest.TestCase):
         finally:
             server.stop()
 
+    def test_offline_qr_png_without_dependencies(self):
+        spec = importlib.util.spec_from_file_location("vulink_qrpng", ROOT / "qrpng.py")
+        qr = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qr)
+        import random
+        import struct
+        randomizer = random.Random(123)
+        known = set()
+        for _ in range(100):
+            code = "".join(randomizer.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=12))
+            url = "http://192.168.1.12:43000/p/" + code
+            data = qr.qr_png(url)
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack("!II", data[16:24]), (246, 246))
+            self.assertGreater(len(data), 800)
+            known.add(data)
+        self.assertEqual(len(known), 100)
+        with self.assertRaises(ValueError):
+            qr.qr_png("https://example.com/" + "x" * 100)
+
     def test_enigma2_gui_syntax_and_scope(self):
         text = (ROOT / "plugin.py").read_text(encoding="utf-8")
         compile(text, "vulink/plugin.py", "exec")
