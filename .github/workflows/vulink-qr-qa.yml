@@ -1,0 +1,35 @@
+name: VuLink QR Pair Security QA
+on:
+  push:
+    branches:
+      - feature/vulink-qr-pair-v1
+    paths:
+      - "vulink/**"
+      - ".github/workflows/vulink-qr-qa.yml"
+  workflow_dispatch:
+jobs:
+  offline-vulink:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify syntax and installer
+        run: |
+          python3 -m py_compile vulink/bridge.py vulink/plugin.py vulink/__init__.py
+          sh -n vulink/install.sh
+      - name: Test ephemeral LAN token, HTML pairing, expiry and privacy
+        run: python3 -m unittest discover -s vulink/tests -p 'test_*.py' -v
+      - name: Assert no release or remote execution integration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          bridge=Path("vulink/bridge.py").read_text()
+          assert 'ThreadingHTTPServer' in bridge
+          assert 'secrets.choice' in bridge and 'TTL_SECONDS = 600' in bridge
+          assert 'shutil.which("qrencode")' in bridge
+          assert 'shell=True' not in bridge
+          assert 'os.system(' not in bridge
+          assert 'exec(' not in bridge
+          assert 'FTP' not in bridge
+          print('READ_ONLY_LOCAL_PAIRING_CHECK_PASS')
+          PY
