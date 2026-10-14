@@ -1,7 +1,7 @@
 name: R76 Metrix Home + Neo Preview B Acceptance
 on:
   push:
-    branches: [feature/r76-metrix-home-preview-b, feature/r768-mena-region-priority]
+    branches: [feature/r76-metrix-home-preview-b, feature/r768-mena-region-priority, feature/r769-preview-manual-parity]
   workflow_dispatch:
 permissions:
   contents: write
@@ -36,6 +36,8 @@ jobs:
         run: python scripts/audit_r768_mena_context.py
       - name: R76.8 exact packaged-core regional safety matrix
         run: python -m unittest discover -s scripts -p test_r768_region.py -v
+      - name: R76.9 read-only comparison of Preview and Manual Mapping
+        run: python scripts/audit_r769_preview_manual.py
       - name: R76.4 real one-source-cache regression (24 providers / 13k keys)
         run: python -m unittest discover -s scripts -p test_r764_multi_seed.py -v
       - name: Probe actual catalog index and cache hot paths
