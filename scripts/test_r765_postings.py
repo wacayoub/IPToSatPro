@@ -37,7 +37,7 @@ class FastPostingR765(unittest.TestCase):
     def test_exactly_four_changed_files_and_runtime_safety(self):
         differences={name for name in self.old if self.old[name]!=self.new[name]}
         self.assertEqual(differences,{builder.PLUGIN,builder.UPDATER,builder.THEME,builder.base.CORE})
-        self.assertEqual(set(self.new)-set(self.old),{builder.NOTE})
+        self.assertEqual(set(self.new)-set(self.old),{builder.NOTE,builder.HOME_THEMES})
         for name in self.old:
             if name in differences:continue
             self.assertEqual(self.new[name],self.old[name])
