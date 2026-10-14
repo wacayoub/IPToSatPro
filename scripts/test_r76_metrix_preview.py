@@ -92,11 +92,17 @@ class R76Acceptance(unittest.TestCase):
                   "r72_iptv_provider","r72_mapping_status","r72_play_status",
                   "r72_res_val","r72_speed_val","r72_audio_lang_val",
                   "r72_audio_codec_val","r72_video_codec_val","r72_source_val",
-                  "home_selected_info","home_iptv_detail","home_status"):
+                  "home_selected_info","home_iptv_detail","home_status",
+                  "r76_system_label","r76_mapping_label","r76_epg_label","r76_catalog_label"):
             self.assertIn(n,names)
         self.assertIn('self["r72_video_codec_val"].setText("Not available")',self.plugin)
         self.assertIn('snap.get("sat_snr")',self.plugin)
         self.assertIn('snap.get("first_image_locked")',self.plugin)
+        self.assertIn('with open("/proc/stat","r")',self.plugin)
+        self.assertIn('with open("/proc/meminfo","r")',self.plugin)
+        self.assertIn('_r76_event.getEventName()',self.plugin)
+        self.assertIn('and not _r76_map.get("user_unmapped")',self.plugin)
+        self.assertIn('_r76_now - self._r76_extras_last >= 12.0',self.plugin)
 
     def test_neodark_preview_b_hd_fhd_and_legacy_keys(self):
         tree=ast.parse(self.theme)
@@ -133,7 +139,7 @@ class R76Acceptance(unittest.TestCase):
             self.assertEqual(set(x),set(y))
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
-        self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_r723_select_home_layout","_r723_set_home_layout"})
+        self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","_r723_select_home_layout","_r723_set_home_layout"})
         self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_r7413_keep_preview_visible"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
