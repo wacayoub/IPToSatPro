@@ -74,7 +74,7 @@ PREVIEW_WIDGETS={
  "sat_current":(207,98,1359,36,24,"#F9D981"),
  "context_info":(207,140,1342,27,18,"#B0C4D4"),
  "epg":(207,170,1338,25,17,"#D5E9F5"),
- "status":(50,217,1457,27,18,"#55D9BA"),
+ "status":(50,217,1120,27,18,"#55D9BA"),
  "subtitles":(1200,217,389,25,17,"#9DC9E6"),
  "left_head":(51,255,548,30,20,"#69E1C3"),
  "right_head":(655,255,928,30,20,"#89CFFF"),
@@ -87,7 +87,7 @@ PREVIEW_WIDGETS={
  "key_yellow":(653,830,301,48,19,"#FFFFFF"),
  "key_blue":(966,830,301,48,19,"#FFFFFF"),
  "key_menu":(1279,830,351,48,19,"#FFFFFF"),
- "r76_video":(814,292,650,365,0,""),
+ "r76_video":(840,293,600,338,0,""),
 }
 PREVIEW_CLASSIC_NAMES=set(PREVIEW_WIDGETS)-{"r76_video"}
 
