@@ -118,6 +118,7 @@ class VuLinkV2Tests(unittest.TestCase):
             return opener.open(request, timeout=4)
         try:
             service.start()
+            base_url = service.base_url
             with self.assertRaises(urllib.error.HTTPError) as e:
                 get("api/report")
             self.assertEqual(e.exception.code, 401)
@@ -148,7 +149,7 @@ class VuLinkV2Tests(unittest.TestCase):
             service.stop()
             with self.assertRaises((urllib.error.HTTPError, urllib.error.URLError,
                                     ConnectionResetError)):
-                get("api/report")
+                browser.open(base_url + "api/report", timeout=4)
         finally:
             service.stop()
 
