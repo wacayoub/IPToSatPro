@@ -77,10 +77,10 @@ class LocalReceiverAuditTests(unittest.TestCase):
         sensitive = "http://secret-provider.invalid/user/password"
         raw = [
             "2026-10-14 20:01:01 | PREVIEW_RANK_BG | "
-            "candidate_count=8 elapsed=110ms url=" + sensitive + " SAT=DISCOVERY",
+            "candidate_count=8 elapsed=110ms index=25ms scoring=80ms url=" + sensitive + " SAT=DISCOVERY",
             "2026-10-14 20:01:02 | PREVIEW_RANK_BG | "
-            "candidate_count=16 elapsed=800ms Name=PRIVATE_BOUQUET",
-            "2026-10-14 20:01:03 | MATCH_BG_DONE | elapsed=34ms channel=PERSONAL",
+            "candidate_count=16 elapsed=800ms index=370ms scoring=410ms Name=PRIVATE_BOUQUET",
+            "2026-10-14 20:01:03 | MATCH_BG_DONE | cost=34ms channel=PERSONAL",
             "2026-10-14 20:01:04 | IPTV_OK | url=" + sensitive,
             "2026-10-14 20:01:05 | IPTV_FAIL | url=" + sensitive,
         ]
@@ -93,6 +93,10 @@ class LocalReceiverAuditTests(unittest.TestCase):
             self.assertEqual(result["log"]["latency_ms"]["PREVIEW_RANK_BG"]["p95"], 800)
             self.assertEqual(result["log"]["latency_ms"]["PREVIEW_RANK_BG"]["p50"], 110)
             self.assertEqual(result["log"]["preview_candidate_count_max"], 16)
+            self.assertEqual(result["log"]["latency_ms"]["MATCH_BG_DONE"]["p50"], 34)
+            self.assertEqual(result["log"]["preview_breakdown_ms"]["index_max"], 370)
+            self.assertEqual(result["log"]["preview_breakdown_ms"]["scoring_max"], 410)
+            self.assertEqual(result["log"]["preview_breakdown_ms"]["breakdown_samples"], 2)
             for secret in (sensitive, "PRIVATE_BOUQUET", "PERSONAL", "DISCOVERY"):
                 self.assertNotIn(secret, summary)
             self.assertIsNone(result["hardware_av_pass"])
