@@ -140,7 +140,7 @@ class R76Acceptance(unittest.TestCase):
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
         self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","open_settings","_r711_tools_choice","_r723_select_home_layout","_r723_set_home_layout"})
-        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_render_source_list","_load_selected_sat_candidates","_expand_selected_sat_candidates"})
+        self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_render_source_list","_load_selected_sat_candidates","_expand_selected_sat_candidates","_sort_candidates_with_cached_evidence"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
 
