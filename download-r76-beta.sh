@@ -5,7 +5,7 @@
 # --rollback restores previous plugin CODE (mapping files remain untouched).
 set -eu
 umask 077
-VERSION="1.0.46-r76.0-metrix-preview-b-beta"
+VERSION="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
 BASE="https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b"
 PLUGIN="/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
 CONFIG="/etc/enigma2/SatIPTVBridge"
@@ -63,7 +63,7 @@ python3 - "$WORK/manifest.json" "$WORK/payload.b64" "$WORK/result.ipk" <<'PY'
 import base64,hashlib,json,sys
 with open(sys.argv[1],encoding="utf-8") as f:m=json.load(f)
 with open(sys.argv[2],"rb") as f:encoded=f.read()
-ver="1.0.46-r76.0-metrix-preview-b-beta"
+ver="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
 url=("https://raw.githubusercontent.com/wacayoub/IPToSatPro/"
      "feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64")
 if m.get("version")!=ver or m.get("beta") is not True:
@@ -85,6 +85,13 @@ if [ "$MODE" = "--check" ]; then
   echo "NO_SETTINGS_OR_MAPPINGS_CHANGED"
   echo "Install explicitly with: sh /tmp/download-r76-beta.sh --install"
   exit 0
+fi
+# Avoid overwriting the only known-good R75 backup with broken R76.0 code.
+# The user must first restore the verified R75 snapshot using --rollback.
+if grep -q 'PLUGIN_VERSION = "1.0.46-r76.0-metrix-preview-b-beta"' "$PLUGIN/plugin.py"; then
+  echo "OLD_R76_CRASH_VERSION: run sh /tmp/download-r76-beta.sh --rollback before --install"
+  echo "Your saved R75 backup remains available. No installation attempted."
+  exit 6
 fi
 # Create persistent code and mapping snapshot before package replacement.
 mkdir -p "$BACKUPROOT"
