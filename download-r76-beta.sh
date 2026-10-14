@@ -5,8 +5,8 @@
 # --rollback restores previous plugin CODE (mapping files remain untouched).
 set -eu
 umask 077
-VERSION="1.0.46-r76.7.1-prefix-display-beta"
-BASE="https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r76-metrix-home-preview-b"
+VERSION="1.0.46-r76.8-region-priority-beta"
+BASE="https://raw.githubusercontent.com/wacayoub/IPToSatPro/feature/r768-mena-region-priority"
 PLUGIN="/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge"
 CONFIG="/etc/enigma2/SatIPTVBridge"
 BACKUPROOT="/home/root/iptosatpro-r76-backups"
@@ -63,9 +63,9 @@ python3 - "$WORK/manifest.json" "$WORK/payload.b64" "$WORK/result.ipk" <<'PY'
 import base64,hashlib,json,sys
 with open(sys.argv[1],encoding="utf-8") as f:m=json.load(f)
 with open(sys.argv[2],"rb") as f:encoded=f.read()
-ver="1.0.46-r76.7.1-prefix-display-beta"
+ver="1.0.46-r76.8-region-priority-beta"
 url=("https://raw.githubusercontent.com/wacayoub/IPToSatPro/"
-     "feature/r76-metrix-home-preview-b/payload/r76-metrix-preview.b64")
+     "feature/r768-mena-region-priority/payload/r76-metrix-preview.b64")
 if m.get("version")!=ver or m.get("beta") is not True:
     raise SystemExit("Wrong R76 beta manifest or version")
 if m.get("parts")!=[url]:
