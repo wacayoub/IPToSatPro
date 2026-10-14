@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import secrets
 import sys
+import urllib.error
 
 def main():
     if os.geteuid() != 0:
@@ -34,9 +35,39 @@ def main():
     try:
         api = GithubAPI(repo, token)
         api.assert_private_repo()
-    except Exception as exc:
-        # Never log token, request, response or token-bearing headers.
-        print("La verification du depot GitHub prive a echoue : " + type(exc).__name__)
+        # Verify the Issues READ permission too. POST write is exercised
+        # later by the receiver relay when it registers its device issue.
+        api.call("GET", "/issues", params={"state": "open", "per_page": 1})
+    except urllib.error.HTTPError as exc:
+        # Do NOT include exc, its URL, body or headers: only the HTTP code.
+        code = exc.code
+        print("VULINK_GITHUB_HTTP_STATUS:", code)
+        if code == 401:
+            print("Jeton invalide, expire ou colle incorrectement. Cree un nouveau fine-grained token.")
+        elif code == 403:
+            print("Acces refuse: permissions, politique du compte ou restrictions GitHub.")
+            print("Selectionne uniquement ce depot, avec Issues: Read and write.")
+        elif code == 404:
+            print("Depot introuvable pour CE jeton (meme si le depot existe).")
+            print("Verifie owner/repo, Repository access: Only select repositories,")
+            print("et choisis exactement ce depot prive dans la liste.")
+        elif code == 429:
+            print("Trop de requetes GitHub. Reessaie plus tard.")
+        else:
+            print("Erreur API GitHub HTTP %d. Verifie le token et les droits du depot." % code)
+        print("Aucun jeton enregistre. Ne partage jamais le jeton dans ChatGPT.")
+        return 3
+    except PermissionError:
+        print("Le depot n'est pas PRIVATE, ou Issues n'est pas active.")
+        print("Le depot GitHub de relais doit rester strictement prive.")
+        return 3
+    except urllib.error.URLError:
+        print("Probleme de connexion HTTPS vers api.github.com, DNS ou certificats.")
+        print("Verifie reseau, horloge et certificats du Vu+.")
+        return 3
+    except (ValueError, OSError, KeyError) as exc:
+        print("Verification GitHub echouee : " + type(exc).__name__)
+        print("Aucun jeton enregistre.")
         return 3
     try:
         old = read_config(CONFIG_PATH)
