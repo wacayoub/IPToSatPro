@@ -32,7 +32,7 @@ for index,line in enumerate(postinst.splitlines(),1):
     if t.startswith("#") or not t or not verbs.search(t):
         continue
     t=re.sub(r"https?://\S+","[URL]",t)
-    t=re.sub(r"(?:token|password|secret|pass)=\S+",r"\1=[REDACTED]",t,flags=re.I)
+    t=re.sub(r"(token|password|secret|pass)=\S+",r"\1=[REDACTED]",t,flags=re.I)
     cmds.append({"line":index,"cmd":t[:240]})
 print("R7611_POSTINST_SCAN",json.dumps({
     "postinst_sha256": hashlib.sha256(postinst.encode()).hexdigest(),
