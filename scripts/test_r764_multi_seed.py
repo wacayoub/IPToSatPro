@@ -142,7 +142,7 @@ class FirstPaintTest(unittest.TestCase):
         self.assertIn("PREVIEW_RANK_BG",self.src)
         self.assertIn("candidate_budget = 192 if self._r71_worker_deep else 24",self.src)
         self.assertIn("self.candidate_expand_timer.start(20, True)",self.src)
-        self.assertEqual(self.build_info["changes"],sorted([builder.PLUGIN,builder.THEME,builder.UPDATER]))
+        self.assertEqual(self.build_info["changes"],sorted([builder.PLUGIN,builder.THEME,builder.UPDATER,builder.base.CORE]))
         self.assertFalse(self.build_info["receiver_tested"])
 
 
