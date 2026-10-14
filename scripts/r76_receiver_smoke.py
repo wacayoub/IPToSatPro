@@ -18,7 +18,7 @@ from pathlib import Path
 PLUG=Path("/usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge")
 CONF=Path("/etc/enigma2/SatIPTVBridge")
 BACKUPROOT=Path("/home/root/iptosatpro-r76-backups")
-EXPECTED="1.0.46-r76.1-metrix-preview-b-hotfix-beta"
+EXPECTED="1.0.46-r76.2-metrix-professional-no-video-beta"
 
 
 def check(condition,label):
@@ -88,9 +88,9 @@ def run():
                                  "Preview B FHD safe coordinates"))
             results.append(check(skin(literal(pt,"PREVIEW_R76_HD"),(1245,675)),
                                  "Preview B HD safe coordinates"))
-            results.append(check('self["r76_video"].show()' in contents and
-                                 'VideoWindow(decoder=0' in contents,
-                                 "OK-only video window code present"))
+            results.append(check('self["r76_video"]' not in contents and
+                                 'VideoWindow(decoder=0' not in contents,
+                                 "no inline video component; full candidate list"))
             results.append(check("R7413_PREVIEW_INLINE_NO_HIDE" in contents,
                                  "existing Preview OK logic retained"))
             results.append(check('("Metrix OpenATV R76 (default)", "metrix")' in contents,
@@ -122,7 +122,7 @@ def run():
         print("INFO: GUI Enigma2 running:",live)
     except Exception:
         print("INFO: GUI status unavailable")
-    print("NOT TESTED: real video window, remote OK/GREEN/BLUE, zapping times.")
+    print("NOT TESTED: TV visual spacing, remote OK/GREEN/BLUE, zapping times.")
     print("R76_RECEIVER_SMOKE_"+("PASS" if all(results) else "FAIL"))
     return 0 if all(results) else 1
 
