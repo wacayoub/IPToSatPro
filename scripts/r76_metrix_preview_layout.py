@@ -356,6 +356,10 @@ R76_METRIX_HD = """{home_hd}"""
         self["r76_catalog_label"].setText(self._r76_extras["catalog"])
 '''
     src=replace_once(src,anchor,anchor+diag)
+    # Correct legacy sidebar heading: its first section contains actions, not current SAT.
+    src=replace_once(src,
+        'self["home_channel_caption"] = Label("CURRENT CHANNEL")',
+        'self["home_channel_caption"] = Label("QUICK ACTIONS")')
     # Replace outdated R72 on-screen product labels only (not actual signal data).
     src=replace_once(src,
         'self["subtitle"] = Label("R72  •  SATELLITE → IPTV  •  LIVE MONITOR")',
