@@ -64,7 +64,7 @@ class R76Acceptance(unittest.TestCase):
     def test_all_package_files_protected(self):
         changed={p for p in self.old if self.old[p]!=self.new[p]}
         self.assertEqual(changed,{builder.PLUGIN,builder.UPDATER,builder.THEME,builder.base.CORE})
-        self.assertEqual(set(self.new)-set(self.old),{builder.NOTE})
+        self.assertEqual(set(self.new)-set(self.old),{builder.NOTE,builder.HOME_THEMES})
         self.assertEqual(self.new[builder.base.MONITOR],self.old[builder.base.MONITOR])
         self.assertNotEqual(self.new[builder.base.CORE],self.old[builder.base.CORE])
         for suffix in ("player.py","metadata_shadow.py"):
@@ -135,10 +135,11 @@ class R76Acceptance(unittest.TestCase):
                if isinstance(n,ast.FunctionDef)}
             y={n.name:ast.dump(n,include_attributes=False) for n in updated[name].body
                if isinstance(n,ast.FunctionDef)}
-            self.assertEqual(set(x),set(y))
+            self.assertEqual(set(y)-set(x), {"_r767_open_group"} if name=="SatIPTVBridgeDashboard" else set())
+            self.assertEqual(set(x)-set(y),set())
             diff={fn for fn in x if x[fn]!=y[fn]}
             if diff:changes[name]=diff
-        self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","_r723_select_home_layout","_r723_set_home_layout"})
+        self.assertEqual(changes.get("SatIPTVBridgeDashboard"),{"__init__","_refresh_monitor","open_settings","_r711_tools_choice","_r723_select_home_layout","_r723_set_home_layout"})
         self.assertEqual(changes.get("SatIPTVBridgePreview"),{"__init__","_render_source_list","_load_selected_sat_candidates"})
         self.assertEqual(set(changes),{"SatIPTVBridgeDashboard","SatIPTVBridgePreview"})
         self.assertIn("R7413_PREVIEW_INLINE_NO_HIDE",self.plugin)
