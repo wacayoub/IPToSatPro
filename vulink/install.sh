@@ -1,7 +1,7 @@
 #!/bin/sh
-# VuLink Pro V2 beta: safe, isolated plugin deployment on OpenATV/Enigma2.
+# VuLink Pro V3 beta: safe, isolated plugin deployment on OpenATV/Enigma2.
 set -eu
-BRANCH="feature/vulink-pro-v2"
+BRANCH="feature/vulink-v3-github-relay"
 RAW="https://raw.githubusercontent.com/wacayoub/IPToSatPro/$BRANCH/vulink"
 TARGET="/usr/lib/enigma2/python/Plugins/Extensions/VuLink"
 BACKUPS="/home/root/vulink-backups"
@@ -39,7 +39,7 @@ command -v python3 >/dev/null || { echo "PYTHON3_MISSING"; exit 3; }
 
 WORK="$(mktemp -d /tmp/vulink-install.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
-for filename in bridge.py plugin.py v2.py qrpng.py __init__.py; do
+for filename in bridge.py plugin.py v2.py v3.py v3_setup.py qrpng.py __init__.py; do
   wget -q -O "$WORK/$filename" "$RAW/$filename" || {
     echo "DOWNLOAD_FAILED: $filename"; exit 3; }
 done
@@ -49,8 +49,10 @@ import pathlib, sys, hashlib
 base=pathlib.Path(sys.argv[1])
 expected={
  "bridge.py":"8346dffe7f98b9187241829388b92d34c71700b6",
- "plugin.py":"389b5e1c33a7ec47e0cf480f1cd765e1742f2dee",
+ "plugin.py":"749b51fb8ee813b91864cf5e5752dbd7129e460b",
  "v2.py":"9699cf9ccddce5867f298aeab411420b61db2825",
+ "v3.py":"05105075ea2c927b0400b4c66573557448b64a36",
+ "v3_setup.py":"53863789fdbb846f2150515c5452c9430eb4912f",
  "qrpng.py":"1c59db4cd9ae80ca6e4ef26a3f7fd106cccf7119",
  "__init__.py":"37aa9c748e07ee20a2fad065d72973e7da656835"
 }
@@ -59,14 +61,15 @@ for name,wanted in expected.items():
     git_sha=hashlib.sha1(b"blob "+str(len(data)).encode("ascii")+bytes([0])+data).hexdigest()
     if git_sha != wanted:
         raise SystemExit("INTEGRITY_FAILED: "+name)
-print("VULINK_V2_CONTENT_PIN_VERIFIED")
-for name in ("bridge.py","plugin.py","v2.py","qrpng.py","__init__.py"):
+print("VULINK_V3_CONTENT_PIN_VERIFIED")
+for name in ("bridge.py","plugin.py","v2.py","v3.py","v3_setup.py","qrpng.py","__init__.py"):
     text=(base/name).read_text(encoding="utf-8")
     compile(text,str(base/name),"exec")
     print("VALID_PYTHON",name,len(text))
 body=(base/"bridge.py").read_text(encoding="utf-8")
 assert 'VERSION = "0.1.0"' in body
 assert 'class ProPairingServer(PairingServer)' in (base/"v2.py").read_text(encoding="utf-8")
+assert 'class RelayAgent:' in (base/"v3.py").read_text(encoding="utf-8")
 assert 'class PairingServer:' in body
 print("VULINK_PACKAGE_CHECK_PASS")
 PY
@@ -88,15 +91,16 @@ else
 fi
 
 mkdir -p "$TARGET"
-for filename in bridge.py plugin.py v2.py qrpng.py __init__.py; do
+for filename in bridge.py plugin.py v2.py v3.py v3_setup.py qrpng.py __init__.py; do
   cp "$WORK/$filename" "$TARGET/$filename"
   chmod 644 "$TARGET/$filename"
 done
 printf '%s\n' "$SAVED" > "$BACKUPS/last-path"
 chmod 600 "$BACKUPS/last-path"
-echo "INSTALLED VuLink Pro V2 2.0.1-beta2"
+echo "INSTALLED VuLink Pro V3 3.0.0-rc1 (GitHub private relay)"
 echo "No IPTV mappings, credentials or player code modified."
 echo "Phone actions require GREEN approval on Vu+ screen; YELLOW denies."
 echo "QR generated offline (built in), or address+code as fallback."
-echo "Restart Enigma2 GUI; open Plugins > VuLink Pro V2 - QR Maintenance."
+echo "SETUP_ONCE: python3 /usr/lib/enigma2/python/Plugins/Extensions/VuLink/v3_setup.py"
+echo "Restart Enigma2 GUI; open Plugins > VuLink Pro V3 - ChatGPT Connect."
 echo "Rollback: sh /tmp/install-vulink-v2.sh --rollback"
