@@ -35,3 +35,17 @@ with tempfile.TemporaryDirectory() as td:
         for method in target.body:
           if isinstance(method,ast.FunctionDef) and method.name in wanted:
             print("R769_DISPLAY_SOURCE",cname,method.name,(ast.get_source_segment(src,method) or "")[:24000])
+
+      # Inspect widget API before replacing Preview's source_list implementation.
+      for cname, wanted in (
+          ("SmartMatchAlternativesList", ("ALL",)),
+          ("PreviewBrowserList", ("ALL",)),
+          ("SatIPTVBridgePreview", ("__init__","_source_index_now","_source_selection_changed","_set_focus","_selected_channel","_render_source_list","_close")),
+          ("SatIPTVBridgeAlternatives", ("__init__","_index","_selection_changed","_render","_display_sort_key"))):
+        target=next((n for n in tree.body if isinstance(n,ast.ClassDef) and n.name==cname),None)
+        if not target:continue
+        for method in target.body:
+          if isinstance(method,ast.FunctionDef) and ("ALL" in wanted or method.name in wanted):
+            body=ast.get_source_segment(src,method) or ""
+            print("R769_WIDGET_SOURCE",cname,method.name,body[:18000])
+      print("R769_SKIN_MANUAL",next((n.value.value[:5000] for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="ALTERNATIVES_FHD" for t in n.targets) and isinstance(n.value,ast.Constant)),"-"))
