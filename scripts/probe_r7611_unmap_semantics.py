@@ -25,3 +25,8 @@ with tempfile.TemporaryDirectory() as tmp:
             print("UNMAP_CONTEXT",token,"LINE",i+1)
             for j in range(max(0,i-10),min(len(lines),i+12)):
                 print("UNMAP_SRC",j+1,lines[j][:200])
+
+    for start,end in ((8400,8520),(8965,9030)):
+        print("UNMAP_FULL_REGION",start,end)
+        for line_n in range(start-1,min(end,len(lines))):
+            print("UNMAP_FULL_SRC",line_n+1,lines[line_n][:200])
