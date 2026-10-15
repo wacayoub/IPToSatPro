@@ -1,0 +1,24 @@
+name: R80 Preview Index-Only Candidate QA
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/r80_index_focus_patch.py
+      - scripts/test_r80_index_focus.py
+      - .github/workflows/r80-index-only-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install Pillow
+      - name: Exact R76.15 candidate/parity and unneeded work elimination
+        run: |
+          python -m py_compile scripts/r80_index_focus_patch.py scripts/test_r80_index_focus.py
+          python -m unittest discover -s scripts -p test_r80_index_focus.py -v
