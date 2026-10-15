@@ -21,6 +21,9 @@ def span(src,cls,method):
   pool=klass.body
  else:pool=ast.walk(t)
  funcs=[n for n in pool if isinstance(n,ast.FunctionDef) and n.name==method]
+ if cls is None and method=="match_score_details":
+  # Real core has a later short policy wrapper; patch the 373-line scorer.
+  funcs=[n for n in funcs if n.end_lineno-n.lineno>=100]
  assert len(funcs)==1,(cls,method,[(n.lineno,n.end_lineno) for n in funcs])
  return funcs[0].lineno,funcs[0].end_lineno
 
