@@ -86,7 +86,7 @@ class GuiRuntimeTests(unittest.TestCase):
         self.assertEqual(self.audit()["finding"],"INSTALL_BASELINE_UNKNOWN")
 
     def test_proc_stat_starttime_field_22(self):
-        mock="123 (enigma2 engine) S "+" ".join(["0"]*19+["12345"]+["0"]*20)
+        mock="123 (enigma2 engine) S "+" ".join(["0"]*18+["12345"]+["0"]*20)
         self.assertEqual(m.proc_start(mock,1000,100),1123.45)
         self.assertIsNone(m.proc_start("garbled",1000,100))
 
