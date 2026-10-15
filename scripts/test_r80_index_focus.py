@@ -7,7 +7,8 @@ import test_r7615_preview_index as prior
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location("r80_focus_patch",ROOT/"scripts/r80_index_focus_patch.py")
 patch=importlib.util.module_from_spec(spec);spec.loader.exec_module(patch)
-base=prior.base
+sp=importlib.util.spec_from_file_location("r80_base7615",ROOT/"scripts/build-r7615-preview-index.py")
+base=importlib.util.module_from_spec(sp);sp.loader.exec_module(base)
 
 class R80IndexGuardParity(unittest.TestCase):
  @classmethod
