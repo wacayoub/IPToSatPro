@@ -13,6 +13,18 @@ The first two R76.15 samples after installation were:
 Prior R76.14 had nomination outliers up to 35,472 ms. These two newer
 observations **do not prove** the long-tail problem is fixed.
 
+### Additional real R76.15 observations (15 October 2026)
+User-provided PREVIEW_STAGE and PREVIEW_RANK_BG log samples, 21:59–22:09:
+- 8 uncached samples: wall elapsed average **4,018 ms**, worst **6,325 ms**
+- normal nomination **49–71 ms**, one outlier **546 ms**
+- scoring **1,215–4,304 ms**, rescue up to **1,815 ms**
+- sorting up to **692 ms**
+- 2 cache hits: wall elapsed **87 ms** each, core profile total **1 ms**
+
+These are only 8 cold samples and may repeat SAT channels, so they are
+insufficient for the formal >=10 distinct-channel acceptance protocol;
+nevertheless cold scoring and rescue clearly exceed the R80 target.
+
 ## Final go / no-go
 
 Run the read-only R80 audit after a proper Enigma2 GUI restart with
@@ -21,7 +33,10 @@ Canal+, Nat Geo, and ordinary numbered/generic names. The primary numeric
 gate is:
 
 - PREVIEW_STAGE numeric entries after the installation baseline: >= 10
+- at least 10 **uncached** samples, sampled manually on >=10 different SAT channels
 - nomination P95 <= 3,000 ms, worst <= 5,000 ms
+- **cold scoring P95 <= 500 ms, rescue P95 <= 200 ms, sort P95 <= 200 ms**
+- **cold total P95 <= 1,000 ms**; these are engineering targets pending hardware validation
 - no logged PREVIEW_RANK_BG errors
 - no disappearing valid IPTV candidates compared with R76.15
 - no long-loading GUI freeze, and no repeat-catalog-index rebuild on entering Preview
@@ -49,9 +64,16 @@ Independent receiver tests must confirm:
 
 ## Remaining work before final R80
 
-If the 10-channel index gate fails, keep R80 as a release candidate. Optimize
-`Catalog._preview_nomination_pool` **only**, taking care not to change any
-candidate identity, score, or position. Runtime phase measurements already
-split nomination from scoring; additional instrumentation should identify
-provider-family/number/fuzzy-prefix bucket outliers without printing channel
-credentials or service URLs. Do not push an unmeasured optimization to stable.
+If any 10-channel cold-path gate fails, keep R80 as a release candidate.
+The new log evidence prioritizes `Catalog.fast_rank_matches_all_servers`
+scoring and rescue phases, not only `Catalog._preview_nomination_pool`.
+First locate repeated pure calculations in the exact packaged R76.15 code;
+then implement only semantics-preserving changes, with reference-versus-patched
+candidate identity, score, order and manual-lock parity tests.
+Do not cap away valid candidates, bypass MENA/provider-country protections,
+weaken deep YELLOW search, or alter on-device player, settings or mappings.
+Never push an unmeasured optimization to production.
+
+The read-only audit checks numeric phases but does NOT prove the samples
+came from distinct SAT channels; that must be confirmed manually without
+recording or publishing private channel/server details.
