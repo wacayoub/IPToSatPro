@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.15-preview-index-fast-beta",
+  "size": 460202,
+  "sha256": "c3991af773c6700c1aac0652f5027b27b4e1a91ff0820bf25e801e8d8488c468",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r7615-preview-index.b64"
+  ],
+  "notes": "R76.15 nominal Preview index rescue only. Avoid huge token posting sets; prefilter provider-family candidate scan against an already built prefix index when safe; fail open otherwise. R76.14 matching/scoring/AV/UI unchanged. Receiver not tested.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
