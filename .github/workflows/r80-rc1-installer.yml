@@ -1,0 +1,23 @@
+name: R80 RC1 Pinned Installer Safety (no receiver changes)
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - download-r80-rc1.sh
+      - scripts/test_r80_rc1_installer.py
+      - .github/workflows/r80-rc1-installer.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Safe SHA256 pinned upgrade, no-op repeat and code-only rollback
+        run: |
+          sh -n download-r80-rc1.sh
+          python -m unittest discover -s scripts -p test_r80_rc1_installer.py -v
