@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.14-preview-parsecache-beta",
+  "size": 459734,
+  "sha256": "0445acb6790adc81b51f4d2605fc80bdc15942b2ec7204389bebb8c3fd23c0d2",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r7614-preview-cache.b64"
+  ],
+  "notes": "Preview-only pure name parsing memoization with bounded in-memory LRU. Preserve all R76.13 rank and scoring bodies, complete catalogs, mappings and player. Beta not tested on Vu+ hardware.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
