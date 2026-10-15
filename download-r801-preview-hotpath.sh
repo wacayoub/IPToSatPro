@@ -119,15 +119,33 @@ if grep -q 'PLUGIN_VERSION = "1.0.46-r76.0-metrix-preview-b-beta"' "$PLUGIN/plug
   echo "Existing backups remain available. No installation attempted."
   exit 6
 fi
-# R80.1 has the same R76.15 base but only Preview scoring and sorting are adjusted.
-if ! grep -Fq 'PLUGIN_VERSION = "1.0.46-r76.15-preview-index-fast-beta"' "$PLUGIN/plugin.py" ||
-   ! grep -Fq 'R7615_NOMINATION_INDEX_ONLY' "$PLUGIN/core.py" ||
-   ! grep -Fq 'R7614_PREVIEW_PARSE_CACHE_IMMUTABLE' "$PLUGIN/core.py" ||
-   ! grep -Fq 'R7612_NORMAL_PREVIEW_PHASE_TIMINGS' "$PLUGIN/core.py"; then
-  echo "BASE_VERSION_MISMATCH: installed R76.15 required for R80.1 beta"
+# R80.1 is derived from R80 RC1, whose matcher core is byte-identical
+# to R76.15. Accept only either *coherent* starting version; never force an
+# install over a partially migrated or unknown receiver installation.
+# R801_COHERENT_BASE_GATE
+BASE_FOUND=""
+if [ -f "$PLUGIN/updater.py" ] && [ -f "$PLUGIN/core.py" ]; then
+  if grep -Fq 'PLUGIN_VERSION = "1.0.46-r76.15-preview-index-fast-beta"' "$PLUGIN/plugin.py" &&
+     grep -Fq 'CURRENT_VERSION = "1.0.46-r76.15-preview-index-fast-beta"' "$PLUGIN/updater.py"; then
+    BASE_FOUND="R76.15"
+  elif grep -Fq 'PLUGIN_VERSION = "1.0.46-r80-final-rc1"' "$PLUGIN/plugin.py" &&
+       grep -Fq 'CURRENT_VERSION = "1.0.46-r80-final-rc1"' "$PLUGIN/updater.py"; then
+    BASE_FOUND="R80 RC1"
+  fi
+fi
+if [ -z "$BASE_FOUND" ]; then
+  echo "BASE_VERSION_MISMATCH: coherent R76.15 or R80 RC1 required for R80.1 beta"
   echo "Receiver unchanged."
   exit 6
 fi
+for MARKER in R7615_NOMINATION_INDEX_ONLY R7614_PREVIEW_PARSE_CACHE_IMMUTABLE R7612_NORMAL_PREVIEW_PHASE_TIMINGS; do
+  if ! grep -Fq "$MARKER" "$PLUGIN/core.py"; then
+    echo "BASE_MARKER_MISSING: $MARKER ($BASE_FOUND)"
+    echo "Receiver unchanged."
+    exit 6
+  fi
+done
+echo "BASE_COMPATIBLE: $BASE_FOUND"
 # Create persistent code and mapping snapshot before package replacement.
 mkdir -p "$BACKUPROOT"
 chmod 700 "$BACKUPROOT"
