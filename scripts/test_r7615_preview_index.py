@@ -94,6 +94,8 @@ class NominationOnly(unittest.TestCase):
    assert baseline["version"]=="1.0.46-r76.14-preview-parsecache-beta"
    files=base.pack.members_from(base.pack.unpack_ar(ipk.read_bytes())["data.tar.gz"])
    cls.old=files[base.CORE].decode("utf8")
+  at=cls.old.find('if _r7613_preview_postings:')
+  print('R7615_FAST_ANCHOR_ACTUAL',repr(cls.old[max(0,at-18):at+1250]),flush=True)
   cls.new=patch.patch_core(cls.old)
  def test_only_nomination_and_fast_pool_changed(self):
   def fns(src):
