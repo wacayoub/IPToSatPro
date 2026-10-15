@@ -62,34 +62,32 @@ def patch_core(src):
     src=patch_method(src,"_fast_candidate_pool",[(old_fast,new_fast)])
     # A strict prefix-superset check; do NOT silently exclude 2-letter/numeric
     # services or generic aliases, which have no guaranteed lexical posting.
-    old_provider='''            for ch in provider_index.get(sat_family, ()):
-                if len(out) >= cap: return out
-                cname = ch.get("name", "")'''
-    new_provider='''            # R7615_NOMINATION_INDEX_ONLY: indexed superset for
-            # provider rescues, only with complete coverage/provider indexes.
-            # Original provider order and per-server limits are unchanged.
-            _r7615_provider_rows = provider_index.get(sat_family, ())
-            _r7615_allowed_ids = None
-            if (len(_r7615_provider_rows) > 256
-                    and getattr(self, "_preview_coverage_ready", False)
-                    and getattr(self, "_preview_provider_ready", False)
-                    and sat_provider_tokens and sat_provider_prefixes
-                    and all(len(t) >= 4 and t not in _GENERIC_IDENTITY_TOKENS
-                            for t in sat_provider_tokens)):
-                _r7615_allowed_ids = set()
-                for _r7615_prefix in sat_provider_prefixes:
-                    for _r7615_row in prefix_index.get(_r7615_prefix, ()):
-                        _r7615_allowed_ids.add(id(_r7615_row))
-                if not _r7615_allowed_ids:
-                    # Frozen index might be missing/old: fail open, never
-                    # turn a missing prefix bucket into zero candidates.
-                    _r7615_allowed_ids = None
-            for ch in _r7615_provider_rows:
-                if len(out) >= cap: return out
-                if (_r7615_allowed_ids is not None
-                        and id(ch) not in _r7615_allowed_ids):
-                    continue
-                cname = ch.get("name", "")'''
+    old_provider='''                for ch in provider_index.get(sat_family, ()):
+                    if len(out) >= cap: return out
+                    cname = ch.get("name", "")'''
+    new_provider='''                # R7615_NOMINATION_INDEX_ONLY: safe prefilter using
+                # the ALREADY BUILT lexical prefix index; no new scan/index.
+                _r7615_provider_rows = provider_index.get(sat_family, ())
+                _r7615_allowed_ids = None
+                if (len(_r7615_provider_rows) > 256
+                        and getattr(self, "_preview_coverage_ready", False)
+                        and getattr(self, "_preview_provider_ready", False)
+                        and sat_provider_tokens and sat_provider_prefixes
+                        and all(len(t) >= 4 and t not in _GENERIC_IDENTITY_TOKENS
+                                for t in sat_provider_tokens)):
+                    _r7615_allowed_ids = set()
+                    for _r7615_prefix in sat_provider_prefixes:
+                        for _r7615_row in prefix_index.get(_r7615_prefix, ()):
+                            _r7615_allowed_ids.add(id(_r7615_row))
+                    if not _r7615_allowed_ids:
+                        # Missing/legacy prefix coverage: fail open.
+                        _r7615_allowed_ids = None
+                for ch in _r7615_provider_rows:
+                    if len(out) >= cap: return out
+                    if (_r7615_allowed_ids is not None
+                            and id(ch) not in _r7615_allowed_ids):
+                        continue
+                    cname = ch.get("name", "")'''
     src=patch_method(src,"_preview_nomination_pool",[(old_provider,new_provider)])
     compile(src,"core.py","exec")
     return src
