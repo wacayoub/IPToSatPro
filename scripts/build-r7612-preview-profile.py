@@ -35,8 +35,7 @@ MANIFEST="https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-fin
 NOTE=P+"CHANGELOG-R7612-PHASE-PROFILER.txt"
 
 SAFE_POSTINST="""#!/bin/sh
-# R7612 passive opkg hook. Previous R62 scripts mutated import_spec,
-# caches and historic backups. None of that runs during this beta upgrade.
+# R7612 passive opkg hook: no user files, catalogs or historic backups touched.
 printf '%s\n' 'IPToSatPro R76.12 profiling beta installed; GUI restart manually via OpenATV.'
 exit 0
 """.encode("utf8")
