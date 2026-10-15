@@ -1,0 +1,74 @@
+name: R80.1 Preview hot-path beta - test and stage ONLY
+on:
+  push:
+    branches: [feature/r80-preview-hotpath-20261015]
+    paths:
+      - scripts/r80_preview_hotpath_patch.py
+      - scripts/test_r80_preview_hotpath_patch.py
+      - scripts/build-r801-preview-hotpath.py
+      - scripts/test_r801_packaging.py
+      - scripts/stage-r801-preview-hotpath.py
+      - .github/workflows/r801-build-stage.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r801-nonproduction-payload
+  cancel-in-progress: true
+jobs:
+  verify-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact baseline packaging prerequisites
+        run: python -m pip install Pillow
+      - name: Syntax-check experimental patch, build, stage and tests
+        run: |
+          python -m py_compile scripts/r80_preview_hotpath_patch.py scripts/build-r801-preview-hotpath.py scripts/stage-r801-preview-hotpath.py scripts/test_r801_packaging.py scripts/test_r80_preview_hotpath_patch.py
+      - name: Preserve candidate, score and ordering parity
+        run: |
+          python -m unittest discover -s scripts -p test_r80_preview_hotpath_patch.py -v
+          python -m unittest discover -s scripts -p test_r7615_preview_index.py -v
+      - name: Check byte-identical media/player/mapping and no destructive postinstall
+        run: python -m unittest discover -s scripts -p test_r801_packaging.py -v
+      - name: Production online channel must still be R70
+        run: |
+          python - <<'PY'
+          import json
+          assert json.load(open('update.json'))['version'] == '1.0.46-r70-final'
+          print('PRODUCTION_UNCHANGED')
+          PY
+      - name: Create non-production staged, SHA256-pinned payload
+        run: python scripts/stage-r801-preview-hotpath.py
+      - name: Reopen payload and independently verify staged metadata
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json
+          m=json.load(open('staging/r801-preview-hotpath.update.json'))
+          raw=base64.b64decode(open('payload/r801-preview-hotpath.b64','rb').read(),validate=False)
+          assert len(raw) == m['size']
+          assert hashlib.sha256(raw).hexdigest() == m['sha256']
+          assert m['version']=='1.0.46-r80.1-preview-hotpath-beta'
+          assert m['beta'] and not m['receiver_tested'] and not m['production_published'] and not m['cold_target_met']
+          assert m['installation_requires_explicit_flag'] is True
+          assert m['source_receiver_version']=='1.0.46-r76.15-preview-index-fast-beta'
+          print('R801_SHA256_VERIFIED',m['size'],m['sha256'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r801-preview-hotpath-nonproduction
+          path: |
+            staging/r801-preview-hotpath.update.json
+            payload/r801-preview-hotpath.b64
+          retention-days: 14
+      - name: Save staged data ONLY on experimental branch
+        run: |
+          git add staging/r801-preview-hotpath.update.json payload/r801-preview-hotpath.b64
+          if ! git diff --cached --quiet; then
+            git -c user.name='IPToSatPro CI' -c user.email='actions@users.noreply.github.com' commit -m 'stage(r801): reproducible nonproduction hotpath beta [skip ci]'
+            git push origin HEAD:feature/r80-preview-hotpath-20261015
+          fi
