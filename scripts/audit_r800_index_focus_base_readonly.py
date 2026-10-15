@@ -83,7 +83,7 @@ def main():
             "R7612_NORMAL_PREVIEW_PHASE_TIMINGS"))
         with urlopen(BASE_URL, timeout=25) as r:
             payload = r.read(1024 * 1024)
-        ipk = base64.b64decode(payload, validate=True)
+        ipk = base64.b64decode(b"".join(payload.split()), validate=True)
         if len(ipk) != BASE_SIZE or sha(ipk) != BASE_SHA256:
             raise ValueError("PINNED_BASELINE_HASH_MISMATCH")
         ref = reference_code(ipk)
