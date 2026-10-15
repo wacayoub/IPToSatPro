@@ -1,0 +1,21 @@
+name: R76.11 Actual Catalog Ranking Profile Audit
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/probe_r7611_normal_rank_profile.py
+      - .github/workflows/r7611-rank-profile-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install Pillow
+      - name: Audit normal ranking method, per-item loops, actual profile writer
+        run: python scripts/probe_r7611_normal_rank_profile.py
