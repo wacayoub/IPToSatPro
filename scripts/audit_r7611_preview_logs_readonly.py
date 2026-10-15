@@ -62,7 +62,7 @@ def inspect_lines(lines,since=None,truncated=False):
         ts=STAMP.match(line)
         name=EVENT.search(line)
         if ts:
-            last_any=ts.group(1)
+            last_any=max(last_any or ts.group(1),ts.group(1))
         if not name:
             continue
         event=name.group(1)
@@ -115,7 +115,7 @@ def inspect_lines(lines,since=None,truncated=False):
         "last_timestamp_in_log":last_any,
         "last_preview_timestamp":last_preview,
         "log_tail_truncated":bool(truncated),
-        "events_in_recent_log_tail":total,
+        "lines_in_recent_log_tail":total,
         "recognized_events_in_sample":{k:v for k,v in counts.items() if v},
         "recognized_events_after_install":{k:v for k,v in recent.items() if v},
         "preview_total_in_tail":all_preview,
