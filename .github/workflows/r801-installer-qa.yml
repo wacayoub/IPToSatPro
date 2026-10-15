@@ -1,0 +1,24 @@
+name: R80.1 pinned receiver downloader - offline safety tests
+on:
+  push:
+    branches: [feature/r80-preview-hotpath-20261015]
+    paths:
+      - download-r801-preview-hotpath.sh
+      - scripts/test_r801_installer.py
+      - .github/workflows/r801-installer-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installer-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check shell is syntactically safe
+        run: sh -n download-r801-preview-hotpath.sh
+      - name: Test version guards, rollback markers and pinned payload offline
+        run: python -m unittest discover -s scripts -p test_r801_installer.py -v
