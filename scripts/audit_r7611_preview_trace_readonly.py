@@ -31,8 +31,8 @@ def since_install(marker=MARK):
         folder=Path(marker.read_text(encoding="utf8").strip())
         if not SAFE_MARK.fullmatch(folder.name):
             return None
-        if folder.parent != Path("/home/root/iptosatpro-r76-backups"):
-            # Tests may pass a different root explicitly via function below.
+        if folder.parent != marker.parent:
+            # The selected backup must be a direct child of the marker directory.
             return None
         d=folder.name
         return f"{d[:4]}-{d[4:6]}-{d[6:8]} {d[9:11]}:{d[11:13]}:{d[13:15]}"
