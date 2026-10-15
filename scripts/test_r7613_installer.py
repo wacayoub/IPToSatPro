@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R76.12 installer safety gate: synthetic no-op only, never install."""
+"""R76.13 installer safety gate: synthetic no-op only, never install."""
 import base64
 import hashlib
 import json
@@ -26,9 +26,9 @@ class R7613InstallerSafety(unittest.TestCase):
  def configure(self,version=VERS,complete=True):
   (self.plugin/"plugin.py").write_text(
     'PLUGIN_VERSION = "'+version+'"\n'+
-    ("# R7613_PREVIEW_SCORING_POSTINGS\n" if complete else ""))
+    ("# R7612_PREVIEW_STAGE_NUMERIC_ONLY\n" if complete else ""))
   (self.plugin/"core.py").write_text("# R7612_NORMAL_PREVIEW_PHASE_TIMINGS\n"+
-    ("# R7612_NORMAL_PREVIEW_PHASE_TIMINGS\n" if complete else ""))
+    ("# R7613_PREVIEW_SCORING_POSTINGS\n" if complete else ""))
   (self.plugin/"updater.py").write_text('CURRENT_VERSION = "'+version+'"\n')
  def guard(self):
   s=self.source()
