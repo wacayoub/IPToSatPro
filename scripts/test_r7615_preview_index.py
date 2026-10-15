@@ -94,9 +94,6 @@ class NominationOnly(unittest.TestCase):
    assert baseline["version"]=="1.0.46-r76.14-preview-parsecache-beta"
    files=base.pack.members_from(base.pack.unpack_ar(ipk.read_bytes())["data.tar.gz"])
    cls.old=files[base.CORE].decode("utf8")
-  at=cls.old.find('if _r7613_preview_postings:')
-  at=cls.old.find('for ch in provider_index.get(')
-  print('R7615_PROVIDER_ANCHOR_ACTUAL',repr(cls.old[max(0,at-160):at+260]),flush=True)
   cls.new=patch.patch_core(cls.old)
  def test_only_nomination_and_fast_pool_changed(self):
   def fns(src):
@@ -134,6 +131,32 @@ class NominationOnly(unittest.TestCase):
   b=FakeCatalog(channels)
   a=before(b,"CINEMA",context={"provider_family":"OSN"},per_server=16,cap=84)
   self.assertGreater(len(a),10)
+ def test_provider_prefilter_actually_avoids_expensive_unrelated_parsing(self):
+  candidates=[]
+  for i in range(1000):
+   name="OSN CINEMA" if i%47==0 else "OSN DOCUMENTARY "+str(i)
+   candidates.append({"name":name,"norm":" ".join(lex(name)),
+     "server_role":("P","B1","B2")[i%3],"provider_family":"OSN",
+     "group":"OSN","_preview_numbers":nums(name)})
+  measurements=[]
+  for src in (self.old,self.new):
+   count=[0]
+   def stripped(name,family):
+    count[0]+=1
+    return " ".join(x for x in lex(name) if x != family.lower())
+   scope=dict(GLOBALS)
+   scope["_preview_provider_stripped_norm"]=stripped
+   rank=method(src,"_preview_nomination_pool",scope)
+   rows=rank(FakeCatalog(candidates),"CINEMA",
+     context={"provider_family":"OSN"},per_server=16,cap=84)
+   measurements.append(([(x["name"],x["server_role"]) for x in rows],
+                        count[0]))
+  self.assertEqual(measurements[0][0],measurements[1][0])
+  # Old code normalizes all 1,000 provider rows; new safe prefilter
+  # requires normalization of only the ~22 lexical matches.
+  self.assertGreater(measurements[0][1],900)
+  self.assertLess(measurements[1][1],100)
+
  def test_sparse_and_dense_anchor_preserve_valid_channels(self):
   oldfn=method(self.old,"_fast_candidate_pool",GLOBALS)
   newfn=method(self.new,"_fast_candidate_pool",GLOBALS)
