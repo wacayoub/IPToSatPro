@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r80.0-rc1-index-focus",
+  "size": 460442,
+  "sha256": "ca1b00ec0f1e93f523c244281451efcc78257c328a59786e6b60b0cdac1695da",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r80-rc1-index-focus.b64"
+  ],
+  "notes": "R80 RC1 Preview index finalization: lazy number, prefix and provider checks during candidate nomination. Based on R76.15 identical candidates, scoring and AV/UI. Receiver not tested.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
