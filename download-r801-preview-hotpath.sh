@@ -138,7 +138,7 @@ if [ -f "$PLUGIN/updater.py" ] && [ -f "$PLUGIN/core.py" ]; then
     # to frozen R80 RC1 after known version/manifest substitutions.
     # R801_R800_STRICT_PARITY_GATE
     AUDITOR="$WORK/audit-r800-strict-readonly.py"
-    AUDITOR_URL="https://raw.githubusercontent.com/wacayoub/IPToSatPro/7a4c696f6cfbbdd5c662b76aa874e63ed46eb94c/scripts/audit_r800_index_focus_base_readonly.py"
+    AUDITOR_URL="https://raw.githubusercontent.com/wacayoub/IPToSatPro/a7445f3938201fb039e9936dd939aee9ec667987/scripts/audit_r800_index_focus_base_readonly.py"
     if ! wget -qO "$AUDITOR" "$AUDITOR_URL"; then
       echo "R800_AUDIT_UNAVAILABLE: installation refused"
       exit 6
