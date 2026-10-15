@@ -4,6 +4,7 @@ on:
     branches: [release/r769-finalization-20261014]
     paths:
       - scripts/probe_r7611_preview_log_wiring.py
+      - scripts/probe_r7611_preview_trigger.py
       - .github/workflows/r7611-preview-log-wiring.yml
   workflow_dispatch:
 permissions:
