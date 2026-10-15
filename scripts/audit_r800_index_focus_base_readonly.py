@@ -60,13 +60,53 @@ def reference_code(ipk):
             if not path.startswith(PACKAGE_ROOT):
                 continue
             suffix = path[len(PACKAGE_ROOT):]
-            if suffix in FIELDS:
+            if suffix.endswith('.py'):
                 f = tf.extractfile(member)
                 if f is not None:
                     found[suffix] = f.read()
-    if set(found) != set(FIELDS):
+    if not set(FIELDS).issubset(found):
         raise ValueError("Baseline package missing required Python modules")
     return found
+
+def compatible_runtime(root, reference, installed_version):
+    """Fail closed unless all Python runtime code matches frozen R80 RC1.
+    Only the known version string and one updater manifest URL may differ.
+    Refuse local extra/altered modules rather than silently overwrite them.
+    """
+    old = b'1.0.46-r80-final-rc1'
+    expected_version = b'1.0.46-r80.0-rc1-index-focus'
+    if installed_version != expected_version.decode("ascii"):
+        return False, "UNSUPPORTED_VERSION", 0
+    pyref = {p: data for p, data in reference.items() if p.endswith(".py")}
+    local_names = {p.relative_to(root).as_posix() for p in root.rglob("*.py")}
+    if local_names != set(pyref):
+        return False, "PYTHON_FILE_SET_DIFFERS", len(local_names.symmetric_difference(pyref))
+    same = 0
+    for name, ref_data in sorted(pyref.items()):
+        candidate = (root / name).read_bytes()
+        if name == "plugin.py":
+            if ref_data.count(b'PLUGIN_VERSION = "' + old + b'"') != 1:
+                return False, "REF_PLUGIN_VERSION_MISSING", same
+            ref_data = ref_data.replace(
+                b'PLUGIN_VERSION = "' + old + b'"',
+                b'PLUGIN_VERSION = "' + expected_version + b'"', 1)
+        elif name == "updater.py":
+            if ref_data.count(b'CURRENT_VERSION = "' + old + b'"') != 1:
+                return False, "REF_UPDATER_VERSION_MISSING", same
+            ref_data = ref_data.replace(
+                b'CURRENT_VERSION = "' + old + b'"',
+                b'CURRENT_VERSION = "' + expected_version + b'"', 1)
+            pattern = rb'https://raw[.]githubusercontent[.]com/[^"' + b"'" + rb'\s]+/staging/[^"' + b"'" + rb'\s]+[.]json'
+            a = re.findall(pattern, ref_data)
+            b = re.findall(pattern, candidate)
+            if len(a) != 1 or len(b) != 1:
+                return False, "UPDATER_MANIFEST_UNRECOGNIZED", same
+            ref_data = ref_data.replace(a[0], b[0], 1)
+        if candidate != ref_data:
+            return False, "PYTHON_CONTENT_DIFFERS:" + name, same
+        same += 1
+    return True, "STRICT_CODE_PARITY", same
+
 
 def main():
     report = {"audit": "R80_INDEX_FOCUS_BASE_AUDIT_V1", "receiver_modified": False,
@@ -95,12 +135,17 @@ def main():
             local["updater.py"] == ref["updater.py"])
         report["plugin_byte_identical_to_reference"] = (
             local["plugin.py"] == ref["plugin.py"])
+        compatible, code_reason, module_count = compatible_runtime(
+            ROOT, ref, report["plugin_version"])
+        report["runtime_parity"] = compatible
+        report["runtime_parity_reason"] = code_reason
+        report["runtime_modules_checked"] = module_count
         if not report["versions_agree"] or not report["r7615_markers_present"]:
             report["next"] = "STOP_INCONSISTENT_RECEIVER"
-        elif report["core_byte_identical_to_frozen_r7615_rc1"]:
-            report["next"] = "CORE_COMPATIBLE_BUT_INSTALLER_STILL_BLOCKED"
+        elif compatible:
+            report["next"] = "COMPATIBLE_R800_EXACT_RUNTIME_BASE"
         else:
-            report["next"] = "CORE_DIFFERS_REQUIRES_SOURCE_PARITY_AUDIT_NO_INSTALL"
+            report["next"] = "R800_DIFFERS_NO_INSTALL"
     except Exception as exc:
         report["next"] = "AUDIT_INCOMPLETE_NO_INSTALL"
         report["error"] = type(exc).__name__ + ": " + str(exc)
