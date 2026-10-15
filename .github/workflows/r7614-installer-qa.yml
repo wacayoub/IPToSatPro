@@ -1,0 +1,23 @@
+name: R76.14 SHA-pinned Installer Safety
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - download-r7614-cache-beta.sh
+      - scripts/test_r7614_installer.py
+      - .github/workflows/r7614-installer-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test pinned download, repeat no-op, R7613 baseline and rollback
+        run: |
+          sh -n download-r7614-cache-beta.sh
+          python -m unittest discover -s scripts -p test_r7614_installer.py -v
