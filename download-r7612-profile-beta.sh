@@ -13,7 +13,7 @@ BACKUPROOT="/home/root/iptosatpro-r76-backups"
 PACKAGE="/tmp/iptosatpro-r7612-phase-profile-beta.ipk"
 if [ "$#" -eq 0 ]; then MODE="--check"; else MODE="$1"; fi
 case "$MODE" in --check|--install|--rollback) ;; *)
-  echo "Usage: sh download-r7612-beta.sh [--check|--install|--rollback]"
+  echo "Usage: sh download-r7612-profile-beta.sh [--check|--install|--rollback]"
   exit 2 ;;
 esac
 if [ "$(id -u)" != "0" ]; then
@@ -89,7 +89,7 @@ mv "$WORK/result.ipk" "$PACKAGE"
 if [ "$MODE" = "--check" ]; then
   echo "DOWNLOAD_ONLY: verified at $PACKAGE"
   echo "NO_SETTINGS_OR_MAPPINGS_CHANGED"
-  echo "Install explicitly with: sh /tmp/download-r7612-beta.sh --install"
+  echo "Install explicitly with: sh /tmp/download-r7612-profile-beta.sh --install"
   exit 0
 fi
 # Idempotent reinstall guard: code and version markers must all agree.
@@ -175,4 +175,4 @@ if ! opkg install --force-reinstall "$PACKAGE"; then
 fi
 echo "R7612_BETA_INSTALL_OK: $VERSION"
 echo "Restart ONLY Enigma2 GUI using the OpenATV menu."
-echo "Rollback code only: sh /tmp/download-r7612-beta.sh --rollback"
+echo "Rollback code only: sh /tmp/download-r7612-profile-beta.sh --rollback"
