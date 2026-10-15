@@ -37,6 +37,8 @@ def fp(ch):
 
 GLOBALS={
  "normalize_name":lambda name:" ".join(lex(name)),
+ "clean_display_name":lambda x:x,
+ "_strip_accents":lambda x:x,
  "_preview_identity_norm":lambda name:" ".join(lex(name)),
  "extract_numbers":nums,
  "quality_info":lambda x:("AUTO",0),
