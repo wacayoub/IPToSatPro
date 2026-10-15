@@ -5,6 +5,8 @@ on:
     paths:
       - download-r801-preview-hotpath.sh
       - scripts/test_r801_installer.py
+      - scripts/audit_r800_index_focus_base_readonly.py
+      - scripts/test_r800_index_focus_base_readonly.py
       - .github/workflows/r801-installer-qa.yml
   workflow_dispatch:
 permissions:
@@ -22,3 +24,7 @@ jobs:
         run: sh -n download-r801-preview-hotpath.sh
       - name: Test version guards, rollback markers and pinned payload offline
         run: python -m unittest discover -s scripts -p test_r801_installer.py -v
+      - name: Prove strict R80.0 Index Focus base audit rejects divergent engines
+        run: |
+          python -m py_compile scripts/audit_r800_index_focus_base_readonly.py scripts/test_r800_index_focus_base_readonly.py
+          python -m unittest discover -s scripts -p test_r800_index_focus_base_readonly.py -v
