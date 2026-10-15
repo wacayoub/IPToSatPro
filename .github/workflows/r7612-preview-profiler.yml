@@ -7,6 +7,8 @@ on:
       - scripts/build-r7612-preview-profile.py
       - scripts/test_r7612_preview_stage_profile.py
       - scripts/stage-r7612-preview-profile.py
+      - download-r7612-profile-beta.sh
+      - scripts/test_r7612_installer.py
       - .github/workflows/r7612-preview-profiler.yml
   workflow_dispatch:
 permissions:
@@ -28,6 +30,10 @@ jobs:
         run: |
           python -m py_compile scripts/r7612_preview_stage_profile_patch.py scripts/build-r7612-preview-profile.py scripts/test_r7612_preview_stage_profile.py
           python -m unittest discover -s scripts -p test_r7612_preview_stage_profile.py -v
+      - name: Verify SHA-pinned R76.12 installer is no-op on repeated execution
+        run: |
+          sh -n download-r7612-profile-beta.sh
+          python -m unittest discover -s scripts -p test_r7612_installer.py -v
       - name: Preserve R76.11 normal Preview behavior
         run: |
           python -m unittest discover -s scripts -p test_r7611_preview_cold.py -v
