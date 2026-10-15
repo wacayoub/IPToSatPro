@@ -1,0 +1,25 @@
+name: R76.13 Preview CPU Optimization QA (no install)
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/r7613_preview_cpu_patch.py
+      - scripts/test_r7613_preview_cpu.py
+      - .github/workflows/r7613-preview-cpu-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install Pillow
+      - name: Validate preview-only candidate set/order, live safety, fuzzy math
+        run: |
+          python -m py_compile scripts/r7613_preview_cpu_patch.py scripts/test_r7613_preview_cpu.py
+          python -m unittest discover -s scripts -p test_r7613_preview_cpu.py -v
