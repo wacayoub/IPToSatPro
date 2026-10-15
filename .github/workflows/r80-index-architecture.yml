@@ -1,0 +1,22 @@
+name: R80 Catalog Fast-Index Architecture Audit
+on:
+  push:
+    branches: [release/r80-final-candidate-20261015]
+    paths:
+      - scripts/probe_r80_nomination_architecture.py
+      - .github/workflows/r80-index-architecture.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install Pillow
+      - name: Inspect exact candidate nomination and immutable indexes from staged IPK
+        run: python scripts/probe_r80_nomination_architecture.py
