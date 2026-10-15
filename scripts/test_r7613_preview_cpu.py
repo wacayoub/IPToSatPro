@@ -40,8 +40,8 @@ class FastCPUPreview(unittest.TestCase):
    c=next(x for x in t.body if isinstance(x,ast.ClassDef) and x.name=="Catalog")
    d={"Catalog."+f.name:ast.dump(f,include_attributes=False)
       for f in c.body if isinstance(f,ast.FunctionDef)}
-   for f in t.body:
-    if isinstance(f,ast.FunctionDef): d[f.name]=ast.dump(f,include_attributes=False)
+   for f in ast.walk(t):
+    if isinstance(f,ast.FunctionDef) and f.name=="match_score_details": d[f.name]=ast.dump(f,include_attributes=False)
    return d
   a=nodes(self.old);b=nodes(self.new)
   self.assertEqual(a.keys(),b.keys())
@@ -96,7 +96,7 @@ class FastCPUPreview(unittest.TestCase):
 
  def test_fuzzy_ratio_reused_not_changed(self):
   import difflib
-  src=ast.get_source_segment(self.new,next(n for n in ast.parse(self.new).body if isinstance(n,ast.FunctionDef) and n.name=="match_score_details"))
+  src=ast.get_source_segment(self.new,next(n for n in ast.walk(ast.parse(self.new)) if isinstance(n,ast.FunctionDef) and n.name=="match_score_details"))
   self.assertIn("_r7613_ratio = SequenceMatcher(None, sat_norm, ip_norm).ratio()",src)
   self.assertIn("ratio = _r7613_ratio if _r7613_ratio is not None",src)
   for sat,iptv in [("bbc earth","bbc earth hd"),("beIN SPORTS 1","AR BEIN SPORTS 1"),
