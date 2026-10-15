@@ -60,7 +60,7 @@ def reference_code(ipk):
             if not path.startswith(PACKAGE_ROOT):
                 continue
             suffix = path[len(PACKAGE_ROOT):]
-            if suffix.endswith('.py'):
+            if suffix:
                 f = tf.extractfile(member)
                 if f is not None:
                     found[suffix] = f.read()
@@ -105,7 +105,19 @@ def compatible_runtime(root, reference, installed_version):
         if candidate != ref_data:
             return False, "PYTHON_CONTENT_DIFFERS:" + name, same
         same += 1
-    return True, "STRICT_CODE_PARITY", same
+    # All other packaged resources must also be unchanged, including Preview
+    # skins, icons, language resources and non-Python player assets.
+    # R80 RC1's passive changelog note may be absent on the earlier R80.0.
+    for name, data in sorted(reference.items()):
+        if name.endswith(".py") or name == "R80-RELEASE-CANDIDATE.md":
+            continue
+        actual = root / name
+        if not actual.is_file() or actual.is_symlink():
+            return False, "PACKAGED_ASSET_MISSING:" + name, same
+        if actual.read_bytes() != data:
+            return False, "PACKAGED_ASSET_DIFFERS:" + name, same
+        same += 1
+    return True, "STRICT_CODE_AND_ASSET_PARITY", same
 
 
 def main():
@@ -139,7 +151,7 @@ def main():
             ROOT, ref, report["plugin_version"])
         report["runtime_parity"] = compatible
         report["runtime_parity_reason"] = code_reason
-        report["runtime_modules_checked"] = module_count
+        report["packaged_files_checked"] = module_count
         if not report["versions_agree"] or not report["r7615_markers_present"]:
             report["next"] = "STOP_INCONSISTENT_RECEIVER"
         elif compatible:
