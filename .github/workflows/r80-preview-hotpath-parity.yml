@@ -1,0 +1,28 @@
+name: R80 Experimental Preview Hot-Path Parity (no install)
+on:
+  push:
+    branches: [feature/r80-preview-hotpath-20261015]
+    paths:
+      - scripts/r80_preview_hotpath_patch.py
+      - scripts/test_r80_preview_hotpath_patch.py
+      - .github/workflows/r80-preview-hotpath-parity.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact R76.15 frozen source and Pillow build prerequisites
+        run: python -m pip install Pillow
+      - name: Compile experimental patch and test
+        run: python -m py_compile scripts/r80_preview_hotpath_patch.py scripts/test_r80_preview_hotpath_patch.py
+      - name: Assert baseline-vs-patched score, sort and cache parity
+        run: python -m unittest discover -s scripts -p test_r80_preview_hotpath_patch.py -v
+      - name: Keep R76.15 Preview nomination results unchanged
+        run: python -m unittest discover -s scripts -p test_r7615_preview_index.py -v
