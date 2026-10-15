@@ -1,0 +1,21 @@
+name: R76.11 Preview Logger Wiring Audit
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/probe_r7611_preview_log_wiring.py
+      - .github/workflows/r7611-preview-log-wiring.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install Pillow
+      - name: Inspect packaged Preview screen wiring (static only)
+        run: python scripts/probe_r7611_preview_log_wiring.py
