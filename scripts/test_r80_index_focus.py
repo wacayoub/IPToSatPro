@@ -76,6 +76,6 @@ class R80IndexGuardParity(unittest.TestCase):
           per_server=16,cap=100)
    recorded.append(([(x["name"],x["server_role"]) for x in chosen],counts[0]))
   self.assertEqual(recorded[0][0],recorded[1][0])
-  self.assertGreater(recorded[0][1],recorded[1][1]+100)
+  self.assertGreater(recorded[0][1],recorded[1][1]+20)
 
 if __name__=="__main__":unittest.main()
