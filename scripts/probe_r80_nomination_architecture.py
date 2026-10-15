@@ -27,3 +27,23 @@ with tempfile.TemporaryDirectory() as d:
             print("R80_METHOD",n.name,n.lineno,n.end_lineno)
             for lineno in range(n.lineno,n.end_lineno+1):
                 print("R80_CODE",n.name,lineno,lines[lineno-1][:220])
+
+    # Numeric-only/static source analysis of Preview ranking hot path. This
+    # examines staged repository code, never a live receiver or private feeds.
+    ranked=next((x for x in cls.body if isinstance(x,ast.FunctionDef)
+                 and x.name=="fast_rank_matches_all_servers"),None)
+    assert ranked is not None
+    print("R80_RANK_METHOD",ranked.name,ranked.lineno,ranked.end_lineno)
+    for lineno in range(ranked.lineno,ranked.end_lineno+1):
+        print("R80_RANK_CODE",lineno,lines[lineno-1][:260])
+    # Show score implementation call sites plus expensive loops without
+    # emitting any runtime service names or URLs.
+    for node in ast.walk(t):
+        if isinstance(node,ast.FunctionDef) and node.name=="match_score_details":
+            print("R80_SCORE_METHOD",node.lineno,node.end_lineno)
+            for lineno in range(node.lineno,node.end_lineno+1):
+                line=lines[lineno-1]
+                if any(token in line for token in
+                       ("SequenceMatcher","_preview_", "for ", "while ",
+                        "country_relation","reordered","normalize","ratio(")):
+                    print("R80_SCORE_HOT_CODE",lineno,line[:260])
