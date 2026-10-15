@@ -131,6 +131,49 @@ if [ -f "$PLUGIN/updater.py" ] && [ -f "$PLUGIN/core.py" ]; then
   elif grep -Fq 'PLUGIN_VERSION = "1.0.46-r80-final-rc1"' "$PLUGIN/plugin.py" &&
        grep -Fq 'CURRENT_VERSION = "1.0.46-r80-final-rc1"' "$PLUGIN/updater.py"; then
     BASE_FOUND="R80 RC1"
+  elif grep -Fq 'PLUGIN_VERSION = "1.0.46-r80.0-rc1-index-focus"' "$PLUGIN/plugin.py" &&
+       grep -Fq 'CURRENT_VERSION = "1.0.46-r80.0-rc1-index-focus"' "$PLUGIN/updater.py"; then
+    # R80.0 Index Focus is an independent receiver variant.
+    # Never overwrite it unless its entire Python runtime is byte-identical
+    # to frozen R80 RC1 after known version/manifest substitutions.
+    # R801_R800_STRICT_PARITY_GATE
+    AUDITOR="$WORK/audit-r800-strict-readonly.py"
+    AUDITOR_URL="https://raw.githubusercontent.com/wacayoub/IPToSatPro/7a4c696f6cfbbdd5c662b76aa874e63ed46eb94c/scripts/audit_r800_index_focus_base_readonly.py"
+    if ! wget -qO "$AUDITOR" "$AUDITOR_URL"; then
+      echo "R800_AUDIT_UNAVAILABLE: installation refused"
+      exit 6
+    fi
+    if ! python3 "$AUDITOR" > "$WORK/r800-audit.json"; then
+      echo "R800_AUDIT_ERROR: installation refused"
+      exit 6
+    fi
+    if python3 - "$WORK/r800-audit.json" <<'PY_AUDIT'
+import json,sys
+try:
+    with open(sys.argv[1],encoding="utf8") as f:
+        a=json.load(f)
+    required=(a.get("audit")=="R80_INDEX_FOCUS_BASE_AUDIT_V1" and
+       a.get("plugin_version")=="1.0.46-r80.0-rc1-index-focus" and
+       a.get("updater_version")=="1.0.46-r80.0-rc1-index-focus" and
+       a.get("baseline_verified") is True and
+       a.get("versions_agree") is True and
+       a.get("runtime_parity") is True and
+       a.get("r7615_markers_present") is True and
+       a.get("next")=="COMPATIBLE_R800_EXACT_RUNTIME_BASE")
+    print("R800_STRICT_RUNTIME_PARITY", "PASS" if required else "BLOCKED",
+          "reason="+str(a.get("runtime_parity_reason",a.get("next","UNKNOWN"))))
+except (ValueError, OSError, TypeError, KeyError) as exc:
+    print("R800_AUDIT_INVALID",type(exc).__name__)
+    required=False
+sys.exit(0 if required else 6)
+PY_AUDIT
+    then
+      BASE_FOUND="R80.0 Index Focus (verified runtime parity)"
+    else
+      echo "R800_CODE_DIFFERS: do not overwrite Index Focus code."
+      echo "Receiver unchanged."
+      exit 6
+    fi
   fi
 fi
 if [ -z "$BASE_FOUND" ]; then
