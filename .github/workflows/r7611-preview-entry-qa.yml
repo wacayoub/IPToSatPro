@@ -4,6 +4,7 @@ on:
     branches: [release/r769-finalization-20261014]
     paths:
       - scripts/probe_r7611_ui_entrypoints.py
+      - scripts/probe_r7611_unmap_semantics.py
       - .github/workflows/r7611-preview-entry-qa.yml
   workflow_dispatch:
 permissions:
@@ -18,4 +19,6 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install Pillow
       - name: Find SAT cost marker, Preview entry and timers in exact staged IPK
-        run: python scripts/probe_r7611_ui_entrypoints.py
+        run: |
+          python scripts/probe_r7611_ui_entrypoints.py
+          python scripts/probe_r7611_unmap_semantics.py
