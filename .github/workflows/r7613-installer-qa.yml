@@ -1,0 +1,23 @@
+name: R76.13 Pinned Receiver Installer Guard QA
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - download-r7613-cpu-beta.sh
+      - scripts/test_r7613_installer.py
+      - .github/workflows/r7613-installer-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: No-op repeat, strict installed baseline, pinned IPK and backup safety
+        run: |
+          sh -n download-r7613-cpu-beta.sh
+          python -m unittest discover -s scripts -p test_r7613_installer.py -v
