@@ -31,40 +31,24 @@ def patch_core(src):
     s="".join(ls[start-1:end])
     # Only replace NUMERIC GUARD computations in preview nomination, not
     # other matching, scoring, or live-zap code.
-    old_bein='''                cnums = tuple(ch.get("_preview_numbers") or _preview_numbers(cname))
-                if sat_pnums and cnums and tuple(sat_pnums) != tuple(cnums):
-                    continue'''
-    new_bein='''                # R80_INDEX_LAZY_GUARDS: avoid parsing candidate service
-                # numbers when SAT service itself has no number.
-                if sat_pnums:
-                    cnums = tuple(ch.get("_preview_numbers") or _preview_numbers(cname))
-                    if cnums and tuple(sat_pnums) != tuple(cnums):
-                        continue'''
-    if s.count(old_bein)!=1:
-        raise AssertionError("beIN numeric guard drift "+str(s.count(old_bein)))
-    s=s.replace(old_bein,new_bein,1)
-    old_provider='''                    cnums = tuple(ch.get("_preview_numbers") or _preview_numbers(cname))
-                    if sat_pnums and cnums and tuple(sat_pnums) != tuple(cnums):
-                        continue'''
-    new_provider='''                    # R80_INDEX_LAZY_GUARDS: no unnecessary
-                    # number normalization for unnumbered SAT services.
-                    if sat_pnums:
-                        cnums = tuple(ch.get("_preview_numbers") or _preview_numbers(cname))
-                        if cnums and tuple(sat_pnums) != tuple(cnums):
-                            continue'''
-    if s.count(old_provider)!=1:
-        raise AssertionError("provider numeric guard drift "+str(s.count(old_provider)))
-    s=s.replace(old_provider,new_provider,1)
-    old_prefix='''                    cnums = tuple(ch.get("_preview_numbers") or _preview_numbers(ch.get("name", "")))
-                    if sat_pnums and cnums and tuple(sat_pnums) != tuple(cnums):
-                        continue'''
-    new_prefix='''                    if sat_pnums:
-                        cnums = tuple(ch.get("_preview_numbers") or _preview_numbers(ch.get("name", "")))
-                        if cnums and tuple(sat_pnums) != tuple(cnums):
-                            continue'''
-    if s.count(old_prefix)!=1:
-        raise AssertionError("prefix numeric guard drift "+str(s.count(old_prefix)))
-    s=s.replace(old_prefix,new_prefix,1)
+    # Match EXACT numeric-guard syntax, preserving whatever indentation
+    # appears in the compiled Enigma2 packet. This intentionally changes
+    # only the three Preview nomination guards, not the scorer.
+    numeric = re.compile(
+        r'(?m)^(?P<pad> +)cnums = (?P<expr>tuple\(ch\.get\("_preview_numbers"\) or _preview_numbers\([^\n]+\)\))\n'
+        r'(?P=pad)if sat_pnums and cnums and tuple\(sat_pnums\) != tuple\(cnums\):\n'
+        r'(?P=pad)    continue')
+    def lazy_nums(match):
+        pad=match.group("pad")
+        return (pad+"# R80_INDEX_LAZY_GUARDS: don't parse IPTV service numbers\n"
+                +pad+"# when the SAT service has none.\n"
+                +pad+"if sat_pnums:\n"
+                +pad+"    cnums = "+match.group("expr")+"\n"
+                +pad+"    if cnums and tuple(sat_pnums) != tuple(cnums):\n"
+                +pad+"        continue")
+    s,n=re.subn(numeric,lazy_nums,s)
+    if n!=3:
+        raise AssertionError("numeric lazy guard count expected 3, got "+str(n))
     old_number='''                    cprefs = _preview_prefixes(cname)
                     cfam = str(ch.get("provider_family") or _iptv_provider_family("%s %s" % (cname, ch.get("group", ""))) or "").upper()
                     shared = bool(sat_ptokens.intersection(ctokens)) or bool(sat_prefixes.intersection(cprefs))
