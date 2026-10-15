@@ -1,0 +1,30 @@
+name: R80 RC1 — Installer and Receiver Audit Tests
+on:
+  push:
+    branches: [release/r80-final-candidate-20261015]
+    paths:
+      - download-r80-final-rc1.sh
+      - scripts/test_r80_installer.py
+      - scripts/audit_r80_receiver_readonly.py
+      - scripts/test_r80_receiver_readonly.py
+      - .github/workflows/r80-install-acceptance.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  install-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reject old/incomplete builds and verify package SHA
+        run: |
+          sh -n download-r80-final-rc1.sh
+          python -m unittest discover -s scripts -p test_r80_installer.py -v
+      - name: Read-only index timing acceptance and privacy
+        run: |
+          python -m py_compile scripts/audit_r80_receiver_readonly.py scripts/test_r80_receiver_readonly.py
+          python -m unittest discover -s scripts -p test_r80_receiver_readonly.py -v
