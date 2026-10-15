@@ -4,6 +4,7 @@ on:
     branches: [release/r769-finalization-20261014]
     paths:
       - scripts/r7612_preview_stage_profile_patch.py
+      - scripts/probe_r7612_hotpaths.py
       - scripts/build-r7612-preview-profile.py
       - scripts/test_r7612_preview_stage_profile.py
       - scripts/stage-r7612-preview-profile.py
@@ -34,6 +35,8 @@ jobs:
         run: |
           sh -n download-r7612-profile-beta.sh
           python -m unittest discover -s scripts -p test_r7612_installer.py -v
+      - name: Print actual R76.12 hot paths for profiling audit
+        run: python scripts/probe_r7612_hotpaths.py
       - name: Preserve R76.11 normal Preview behavior
         run: |
           python -m unittest discover -s scripts -p test_r7611_preview_cold.py -v
