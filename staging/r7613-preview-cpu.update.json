@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.13-preview-cpu-fast-beta",
+  "size": 459376,
+  "sha256": "817f797b1a60f5b146071366e2dc06a1de6f4c711fc2fbfd5937360e88989c76",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r7613-preview-cpu.b64"
+  ],
+  "notes": "Preview CPU-only optimization: indexed postings prefilter and reused fuzzy ratio. R76.12 phase profiler and passive package hook retained. Live player and manual maps untouched by code. Receiver not yet tested.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
