@@ -89,6 +89,10 @@ def patch_core(src):
                 for _r7615_prefix in sat_provider_prefixes:
                     for _r7615_row in prefix_index.get(_r7615_prefix, ()):
                         _r7615_allowed_ids.add(id(_r7615_row))
+                if not _r7615_allowed_ids:
+                    # Frozen index might be missing/old: fail open, never
+                    # turn a missing prefix bucket into zero candidates.
+                    _r7615_allowed_ids = None
             for ch in _r7615_provider_rows:
                 if len(out) >= cap: return out
                 if (_r7615_allowed_ids is not None
