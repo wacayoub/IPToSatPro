@@ -26,6 +26,44 @@ class PinnedR80Installer(unittest.TestCase):
         return subprocess.run(["sh","-c","set -eu\n"+script[a:b]+"\necho CONTINUE\n"],
             env={**os.environ,"PLUGIN":str(self.dir),"VERSION":VERSION},
             capture_output=True,text=True,timeout=5)
+    def coherent_base_guard(self):
+        script=SCRIPT.read_text()
+        a=script.index("# R801_COHERENT_BASE_GATE")
+        b=script.index("# Create persistent code and mapping snapshot",a)
+        return subprocess.run(["sh","-c","set -eu\n"+script[a:b]+"\necho CONTINUE\n"],
+            env={**os.environ,"PLUGIN":str(self.dir)},
+            capture_output=True,text=True,timeout=5)
+
+    def test_both_coherent_receiver_bases_accepted(self):
+        for version,label in (
+            ("1.0.46-r76.15-preview-index-fast-beta","R76.15"),
+            ("1.0.46-r80-final-rc1","R80 RC1"),
+        ):
+            self.emulate(version)
+            r=self.coherent_base_guard()
+            self.assertEqual(r.returncode,0,(version,r.stdout,r.stderr))
+            self.assertIn("BASE_COMPATIBLE: "+label,r.stdout)
+            self.assertIn("CONTINUE",r.stdout)
+
+    def test_unknown_receiver_base_rejected(self):
+        self.emulate("1.0.46-r76.14-preview-parsecache-beta")
+        r=self.coherent_base_guard()
+        self.assertEqual(r.returncode,6)
+        self.assertIn("BASE_VERSION_MISMATCH",r.stdout)
+
+    def test_missing_core_marker_rejected(self):
+        self.emulate("1.0.46-r80-final-rc1",complete=False)
+        r=self.coherent_base_guard()
+        self.assertEqual(r.returncode,6)
+        self.assertIn("BASE_MARKER_MISSING",r.stdout)
+
+    def test_updater_version_mismatch_rejected(self):
+        self.emulate("1.0.46-r76.15-preview-index-fast-beta")
+        (self.dir/"updater.py").write_text('CURRENT_VERSION = "1.0.46-r80-final-rc1"\n')
+        r=self.coherent_base_guard()
+        self.assertEqual(r.returncode,6)
+        self.assertIn("BASE_VERSION_MISMATCH",r.stdout)
+
     def test_repeat_is_no_op(self):
         self.emulate()
         r=self.early_guard()
@@ -47,7 +85,8 @@ class PinnedR80Installer(unittest.TestCase):
         subprocess.run(["sh","-n",str(SCRIPT)],check=True)
         for marker in (
             'expected_sha="'+SHA+'"',"expected_size=461044",
-            "BASE_VERSION_MISMATCH: installed R76.15 required",
+            "BASE_VERSION_MISMATCH: coherent R76.15 or R80 RC1 required",
+            "BASE_MARKER_MISSING",
             "MAPPING_BACKUP_FAILED","BACKUP_MAPPINGS",
             'if [ "$#" -eq 0 ]; then MODE="--check"',
             "sh /tmp/download-r801-preview-hotpath.sh --rollback",
