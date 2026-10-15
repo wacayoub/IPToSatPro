@@ -46,3 +46,10 @@ with tempfile.TemporaryDirectory() as td:
                     "sat_change" in method.name.lower()):
                     print("PREVIEW_CLASS_METHOD",node.name,method.name,
                           method.lineno,method.end_lineno)
+
+    for start,end in [(3828,3865),(4080,4170),(4925,4940),(6008,6035),
+                      (6110,6175),(6180,6245),(7700,7715),
+                      (7908,7951),(10180,10242)]:
+        print("PREVIEW_SCOPED_REGION",start,end)
+        for j in range(start-1,min(len(lines),end)):
+            print("PREVIEW_SCOPED_SOURCE",j+1,lines[j][:180])
