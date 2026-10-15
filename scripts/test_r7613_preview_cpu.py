@@ -40,13 +40,13 @@ class FastCPUPreview(unittest.TestCase):
    c=next(x for x in t.body if isinstance(x,ast.ClassDef) and x.name=="Catalog")
    d={"Catalog."+f.name:ast.dump(f,include_attributes=False)
       for f in c.body if isinstance(f,ast.FunctionDef)}
-   for f in ast.walk(t):
-    if isinstance(f,ast.FunctionDef) and f.name=="match_score_details": d[f.name]=ast.dump(f,include_attributes=False)
+   for i,f in enumerate(sorted((x for x in ast.walk(t) if isinstance(x,ast.FunctionDef) and x.name=="match_score_details"),key=lambda x:x.lineno)):
+    d["match_score_details_"+str(i)]=ast.dump(f,include_attributes=False)
    return d
   a=nodes(self.old);b=nodes(self.new)
   self.assertEqual(a.keys(),b.keys())
   self.assertEqual({x for x in a if a[x]!=b[x]},
-    {"Catalog._fast_candidate_pool","Catalog._preview_nomination_pool","match_score_details"})
+    {"Catalog._fast_candidate_pool","Catalog._preview_nomination_pool","match_score_details_0"})
   self.assertEqual(fix.patch_core(self.new),self.new)
 
  def test_live_path_keeps_original_normalization_gate(self):
