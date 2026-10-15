@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """R76.15: speed up ONLY existing Preview candidate nomination, not scoring/GUI.
 
-1) Adaptive fast-anchor filtering: skip building huge extra token-id postings
-   when direct name-token verification is cheaper. Reverts to the original
-   name-token gate on huge posting buckets, so no genuine candidates vanish.
+1) Fast-anchor filtering: skip building huge extra token-id postings,
+   verify directly against original name tokens. Same rule as pre-R76.13,
+   no candidate loss through stale token indexes.
 2) Provider-family rescue: if *every* SAT providerless token has an indexed
    lexical prefix and coverage/provider indexes are ready, the already-built
    prefix index is a safe superset filter. Scan provider rows in original
@@ -44,20 +44,12 @@ def patch_core(src):
         return src
     old_fast='''            if _r7613_preview_postings:
                 # R7613_PREVIEW_SCORING_POSTINGS: Preview only, no live changes.
-                other = [t for t in anchors[:3] if t != anchors[0]]
-                postings = [set(id(x) for x in self._token_index.get(t, ())) for t in other]
-                probable = [ch for ch in base if all(id(ch) in ids for ids in postings)]
-                tighter = [ch for ch in probable
+                tighter = [ch for ch in base
                            if wanted.issubset(set((ch.get("norm") or "").split()))]
-                if not tighter:
-                    tighter = [ch for ch in base
-                               if wanted.issubset(set((ch.get("norm") or "").split()))]
             else:'''
     new_fast='''            if _r7613_preview_postings:
-                # R7615_NOMINATION_INDEX_ONLY: don't build massive posting
-                # sets for dense public words (SPORT, MOVIES, NEWS, etc.).
-                # The direct gate is exactly the pre-R76.13 rule; safer for
-                # incomplete frozen postings and often faster on Vu+ CPU.
+                # R7615_NOMINATION_INDEX_ONLY: no posting set materialization.
+                # Exact pre-R76.13 norm-token gate; keep ALL valid candidates.
                 other = [t for t in anchors[:3] if t != anchors[0]]
                 posting_lengths = [len(self._token_index.get(t, ())) for t in other]
                 if (len(base) <= 512 or not other or
