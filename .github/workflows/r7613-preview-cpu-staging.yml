@@ -1,0 +1,66 @@
+name: R76.13 CPU Optimizer Beta — Verify and Stage (no install)
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/r7613_preview_cpu_patch.py
+      - scripts/test_r7613_preview_cpu.py
+      - scripts/test_r7613_packaging.py
+      - scripts/build-r7613-preview-cpu.py
+      - scripts/stage-r7613-preview-cpu.py
+      - .github/workflows/r7613-preview-cpu-staging.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r7613-preview-cpu-staging
+  cancel-in-progress: true
+jobs:
+  validate-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install Pillow
+      - name: Preview candidate parity and live-path isolation
+        run: |
+          python -m py_compile scripts/build-r7613-preview-cpu.py scripts/stage-r7613-preview-cpu.py scripts/test_r7613_packaging.py
+          python -m unittest discover -s scripts -p test_r7613_preview_cpu.py -v
+      - name: Verify safe package and unchanged mapping/player modules
+        run: python -m unittest discover -s scripts -p test_r7613_packaging.py -v
+      - name: Verify stable production release remains R70
+        run: |
+          python - <<'PY'
+          import json
+          assert json.load(open("update.json"))["version"]=="1.0.46-r70-final"
+          print("PRODUCTION_R70_UNCHANGED")
+          PY
+      - name: Stage R76.13 beta with pinned identity
+        run: |
+          python scripts/stage-r7613-preview-cpu.py
+          python - <<'PY'
+          import base64,hashlib,json
+          m=json.load(open("staging/r7613-preview-cpu.update.json"))
+          raw=base64.b64decode(open("payload/r7613-preview-cpu.b64","rb").read())
+          assert hashlib.sha256(raw).hexdigest()==m["sha256"]
+          assert len(raw)==m["size"]
+          assert m["beta"] and not m["receiver_tested"] and not m["production_published"]
+          print("R7613_SHA",m["sha256"],"BYTES",m["size"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r7613-preview-cpu-beta-staged
+          path: |
+            staging/r7613-preview-cpu.update.json
+            payload/r7613-preview-cpu.b64
+          retention-days: 14
+      - name: Commit to testing branch only
+        run: |
+          git add staging/r7613-preview-cpu.update.json payload/r7613-preview-cpu.b64
+          if ! git diff --cached --quiet; then
+            git -c user.name="IPToSatPro CI" -c user.email="actions@users.noreply.github.com" commit -m "stage(r7613): preview cpu beta [skip ci]"
+            git push origin HEAD:release/r769-finalization-20261014
+          fi
