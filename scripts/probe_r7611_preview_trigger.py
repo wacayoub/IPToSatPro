@@ -62,7 +62,7 @@ with tempfile.TemporaryDirectory() as d:
                         "_r7413_keep_preview_visible"):
             length=f.end_lineno-f.lineno
             print("TRIGGER_METHOD",f.name,"lines",length)
-            for lineno in range(f.lineno,min(f.end_lineno+1,f.lineno+125)):
+            for lineno in range(f.lineno,f.end_lineno+1):
                 print("TRIGGER_SOURCE",f.name,lineno,lines[lineno-1].strip()[:230])
     # The exact top-level cache methods and Preview entry points.
     for node in tree.body:
