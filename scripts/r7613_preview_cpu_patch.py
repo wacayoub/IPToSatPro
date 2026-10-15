@@ -46,19 +46,27 @@ def patch_core(src):
  # Efficient posting intersection on actual same-object identity, with norm
  # verification to preserve the original name-token acceptance gate.
  src=method_replace(src,"Catalog","_fast_candidate_pool",[
+  ('''    def _fast_candidate_pool(self, sat_name, per_server=80, total_cap=None):''',
+   '''    def _fast_candidate_pool(self, sat_name, per_server=80, total_cap=None, _r7613_preview_postings=False):'''),
   ('''            tighter = [ch for ch in base if wanted.intersection(set((ch.get("norm") or "").split())) == wanted]''',
-   '''            # R7613_PREVIEW_SCORING_POSTINGS: intersect the indexed channel IDs
-            # before splitting individual channel norms; retain the norm gate.
-            # A stale/incomplete posting is handled conservatively via the old
-            # norm path so good candidates are never silently dropped.
-            other = [t for t in anchors[:3] if t != anchors[0]]
-            postings = [set(id(x) for x in self._token_index.get(t, ())) for t in other]
-            probable = [ch for ch in base if all(id(ch) in ids for ids in postings)]
-            tighter = [ch for ch in probable
-                       if wanted.issubset(set((ch.get("norm") or "").split()))]
-            if not tighter:
+   '''            if _r7613_preview_postings:
+                # R7613_PREVIEW_SCORING_POSTINGS: Preview only, no live changes.
+                other = [t for t in anchors[:3] if t != anchors[0]]
+                postings = [set(id(x) for x in self._token_index.get(t, ())) for t in other]
+                probable = [ch for ch in base if all(id(ch) in ids for ids in postings)]
+                tighter = [ch for ch in probable
+                           if wanted.issubset(set((ch.get("norm") or "").split()))]
+                if not tighter:
+                    tighter = [ch for ch in base
+                               if wanted.issubset(set((ch.get("norm") or "").split()))]
+            else:
                 tighter = [ch for ch in base
-                           if wanted.issubset(set((ch.get("norm") or "").split()))]''')
+                           if wanted.intersection(set((ch.get("norm") or "").split())) == wanted]''')
+ ])
+ # Activate postings only for Preview calls; live zap remains untouched.
+ src=method_replace(src,"Catalog","_preview_nomination_pool",[
+  ('''for ch in self._fast_candidate_pool(sat_name, per_server=max(36, per_server)):''',
+   '''for ch in self._fast_candidate_pool(sat_name, per_server=max(36, per_server), _r7613_preview_postings=True):''')
  ])
  # Same double SequenceMatcher ratio in the preview-only exact score path.
  src=method_replace(src,None,"match_score_details",[
