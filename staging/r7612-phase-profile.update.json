@@ -1,0 +1,13 @@
+{
+  "version": "1.0.46-r76.12-preview-phase-profile-beta",
+  "size": 458848,
+  "sha256": "773bbbba6c32be3b1f61a21c773593f6ff5d04382beeffc341e38961d5b3a911",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-finalization-20261014/payload/r7612-phase-profile.b64"
+  ],
+  "notes": "R76.12 profiling beta: no matching/locking change; numeric timings for nomination, score, rescue and sorting in Preview. Passive opkg postinst no longer deletes import_spec or rebuilds caches. Receiver and AV not validated.",
+  "beta": true,
+  "receiver_tested": false,
+  "production_published": false,
+  "installation_requires_explicit_flag": true
+}
