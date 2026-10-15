@@ -60,6 +60,13 @@ def summarize(lines,since):
     nominate=sorted(x["nominate"] for x in values)
     scoring=sorted(x["score"] for x in values)
     total=sorted(x["total"] for x in values)
+    # A cache hit is useful but cannot demonstrate first-open speed.
+    cold=[x for x in values if x.get("cache",0)==0]
+    cold_nominate=sorted(x["nominate"] for x in cold)
+    cold_score=sorted(x["score"] for x in cold)
+    cold_rescue=sorted(x.get("rescue",0) for x in cold)
+    cold_sort=sorted(x.get("sort",0) for x in cold)
+    cold_total=sorted(x["total"] for x in cold)
     n=len(nominate)
     def p95(v):
         return v[max(0,int((len(v)*95+99)//100)-1)] if v else None
@@ -71,6 +78,14 @@ def summarize(lines,since):
         "scoring_ms_median":statistics.median(scoring) if n else None,
         "total_ms_median":statistics.median(total) if n else None,
         "cache_hits":sum(x.get("cache",0) for x in values),
+        "cold_samples":len(cold),
+        "cold_nomination_ms_p95":p95(cold_nominate),
+        "cold_score_ms_p95":p95(cold_score),
+        "cold_score_ms_max":max(cold_score) if cold else None,
+        "cold_rescue_ms_p95":p95(cold_rescue),
+        "cold_sort_ms_p95":p95(cold_sort),
+        "cold_total_ms_p95":p95(cold_total),
+        "cold_total_ms_max":max(cold_total) if cold else None,
         "ranking_completed":ranks,
         "ranking_errors":errors,
     }
@@ -80,10 +95,20 @@ def summarize(lines,since):
         state="INSUFFICIENT_SAMPLES"
     elif errors:
         state="RUNTIME_ERRORS"
-    elif measured["nominated_ms_p95"]<=3000 and measured["nominated_ms_max"]<=5000:
-        state="NOMINATION_SPEED_GATE_PASS"
-    else:
+    elif len(cold)<10:
+        state="INSUFFICIENT_COLD_SAMPLES"
+    elif measured["cold_nomination_ms_p95"]>3000 or max(cold_nominate)>5000:
         state="NOMINATION_SPEED_GATE_FAIL"
+    elif measured["cold_score_ms_p95"]>500:
+        state="SCORING_SPEED_GATE_FAIL"
+    elif measured["cold_rescue_ms_p95"]>200:
+        state="RESCUE_SPEED_GATE_FAIL"
+    elif measured["cold_sort_ms_p95"]>200:
+        state="SORT_SPEED_GATE_FAIL"
+    elif measured["cold_total_ms_p95"]>1000:
+        state="COLD_TOTAL_SPEED_GATE_FAIL"
+    else:
+        state="PREVIEW_SPEED_GATE_PASS"
     return measured,state
 
 
@@ -117,7 +142,7 @@ def report(log=LOG,root=ROOT,plugin=PLUGIN,core=PREFIX):
         "release_final_authorized":False,
         "mapping_files_read":False,
         "receiver_modified":False,
-        "note":"Measure >=10 DIFFERENT SAT channels after GUI restart. User TV/audio, manual mapping and identity acceptance remain separate requirements. A pass is NOT automatic final release approval.",
+        "note":"Collect >=10 COLD samples across >=10 DIFFERENT SAT channels after GUI restart; logs cannot prove unique channels. Cold P95 limits: score<=500ms, rescue<=200ms, sort<=200ms, total<=1000ms. User AV/mapping validation required; no automatic final approval.",
     }
 
 
