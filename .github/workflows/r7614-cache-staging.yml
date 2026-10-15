@@ -1,0 +1,67 @@
+name: R76.14 Preview Parse Cache — Build and Safety Gate
+on:
+  push:
+    branches: [release/r769-finalization-20261014]
+    paths:
+      - scripts/r7614_preview_cache_patch.py
+      - scripts/build-r7614-preview-cache.py
+      - scripts/test_r7614_preview_cache.py
+      - scripts/test_r7614_packaging.py
+      - scripts/stage-r7614-preview-cache.py
+      - .github/workflows/r7614-cache-staging.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r7614-preview-cache-staging
+  cancel-in-progress: true
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install Pillow
+      - name: Test memoization outputs, bounded memory, scoring and safety
+        run: |
+          python -m py_compile scripts/build-r7614-preview-cache.py scripts/stage-r7614-preview-cache.py
+          python -m unittest discover -s scripts -p test_r7614_preview_cache.py -v
+          python -m unittest discover -s scripts -p test_r7614_packaging.py -v
+      - name: Validate previous R76.13 rankings unchanged
+        run: |
+          python -m unittest discover -s scripts -p test_r7613_preview_cpu.py -v
+      - name: Production stable unchanged
+        run: |
+          python - <<'PY'
+          import json
+          assert json.load(open('update.json'))['version']=='1.0.46-r70-final'
+          PY
+      - name: Stage only on testing branch
+        run: |
+          python scripts/stage-r7614-preview-cache.py
+          python - <<'PY'
+          import base64,hashlib,json
+          m=json.load(open('staging/r7614-preview-cache.update.json'))
+          b=base64.b64decode(open('payload/r7614-preview-cache.b64','rb').read())
+          assert m['size']==len(b)
+          assert m['sha256']==hashlib.sha256(b).hexdigest()
+          assert m['beta'] and not m['receiver_tested'] and not m['production_published']
+          print('R7614_STAGE_VERIFIED',m['size'],m['sha256'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r7614-preview-cache-staged
+          path: |
+            staging/r7614-preview-cache.update.json
+            payload/r7614-preview-cache.b64
+          retention-days: 14
+      - name: Commit only staged testing payload
+        run: |
+          git add staging/r7614-preview-cache.update.json payload/r7614-preview-cache.b64
+          if ! git diff --cached --quiet; then
+            git -c user.name='IPToSatPro CI' -c user.email='actions@users.noreply.github.com' commit -m 'stage(r7614): cache beta [skip ci]'
+            git push origin HEAD:release/r769-finalization-20261014
+          fi
