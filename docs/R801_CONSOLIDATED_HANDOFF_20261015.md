@@ -1,5 +1,28 @@
 # IPToSatPro R80.1 — consolidated release handoff (15 October 2026)
 
+## Receiver audit follow-up: decisive incompatibility (15 October 2026)
+
+**Final result: R80.0 Index Focus is NOT the byte-exact frozen R76.15/R80 RC1 runtime.**
+The receiver independently reported:
+- Installed `PLUGIN_VERSION` and `CURRENT_VERSION`: `1.0.46-r80.0-rc1-index-focus`.
+- Local `core.py` size: 247187 bytes.
+- Local `core.py` SHA256: `795b3bb206ec9ca4a285db7a85f497af1037248837d5a299442cea10e608ee1b`.
+- Verified frozen R80 RC1 baseline `core.py` SHA256:
+  `3666acc9bec02bfc917aa156897d3d321ec189ad6f8146211eac1a6375afdd09`.
+- Non-invasive audit: `core_byte_identical_to_frozen_r7615_rc1=false`,
+  `CORE_DIFFERS_REQUIRES_SOURCE_PARITY_AUDIT_NO_INSTALL`.
+- Strict parity installer: `R800_STRICT_RUNTIME_PARITY BLOCKED reason=PYTHON_CONTENT_DIFFERS:core.py`,
+  then `R800_CODE_DIFFERS` and `Receiver unchanged`.
+- Backup: `BACKUP_VALID: /home/root/iptosatpro-r76-backups/20261015T215515`.
+
+**Actionable decision: NO-GO for R80.1 on this receiver.**
+Do not retry R80.1 `--install`, bypass checks, rebrand Index Focus as R80
+RC1, or downgrade to R76.15. A separate, source-preserving candidate must
+be based on the EXACT installed Index Focus `core.py` or its original .ipk,
+which is not available in this GitHub release tree. Until that code is available
+for full parity review, the only safe action is to retain installed R80.0.
+The existing R80.1 IPK is NOT the compatible final release for this receiver.
+
 ## Verified receiver state supplied by owner
 - Receiver: Vu+ Zero 4K, OpenATV 8.
 - Installed plugin and opkg metadata: `1.0.46-r80.0-rc1-index-focus`.
@@ -34,21 +57,12 @@
   R80.0 compatibility checks (10 offline test cases).
   See https://github.com/wacayoub/IPToSatPro/actions/runs/38822312006
 
-## Single bounded receiver action (optional, experimental)
-```sh
-wget -qO /tmp/download-r801-preview-hotpath.sh https://raw.githubusercontent.com/wacayoub/IPToSatPro/e11d85483b2dedbcb5baadb3fdc4d24f0e42bc9d/download-r801-preview-hotpath.sh && sh /tmp/download-r801-preview-hotpath.sh --install
-```
+## Receiver installation status
 
-- If it prints `R800_CODE_DIFFERS` or an audit failure, STOP. Retain R80.0.
-  That is not a repairable version-string mismatch, and using opkg force to
-  bypass it risks losing actual Index Focus optimizations or UI resources.
-- If it prints `R801_BETA_INSTALL_OK`, reboot only Enigma2 GUI through
-  OpenATV menu and evaluate cold Preview behavior on at least 10 different
-  satellite channels. Confirm audio/video, auto-lock/manual mapping,
-  preserved themes and fallback/timeshift.
-- If reverting, the installed script supports `--rollback` (plugin CODE
-  only; opkg metadata may still report R80.1). The backup is a code snapshot
-  and **does not demonstrate a genuine opkg package transaction rollback**.
+The previously drafted single-command installation path was tested and
+correctly refused because the Index Focus core is different. **Do not rerun it.**
+The only remaining input for a real compatible build is the original installed
+R80.0 Index Focus core/package. Until then, retain R80.0.
 
 ## Release decision
 **NO-GO for production final.** Passing offline GitHub CI cannot demonstrate
