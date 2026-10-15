@@ -28,6 +28,7 @@ class StrictParityTests(unittest.TestCase):
             "updater.py": ('CURRENT_VERSION = "' + RC1 + '"\nurl="' +
                            REF_MANIFEST + '"\nupdater_runtime=1\n').encode(),
             "util/helper.py": b"helper=True\n",
+            "res/theme/preview.xml": b"neo-dark-theme",
         }
         for name,data in self.reference.items():
             path=self.root/name
@@ -47,7 +48,7 @@ class StrictParityTests(unittest.TestCase):
     def test_safe_version_and_manifest_only_parity(self):
         ok,reason,count=self.check()
         self.assertTrue(ok,(reason,count))
-        self.assertEqual(reason,"STRICT_CODE_PARITY")
+        self.assertEqual(reason,"STRICT_CODE_AND_ASSET_PARITY")
         self.assertEqual(count,len(self.reference))
 
     def test_core_optimization_or_accidental_edit_blocks(self):
@@ -72,6 +73,16 @@ class StrictParityTests(unittest.TestCase):
         with (self.root/"updater.py").open("ab") as f:
             f.write(b"\nextra=1\n")
         self.assertEqual(self.check()[1],"PYTHON_CONTENT_DIFFERS:updater.py")
+
+    def test_changed_theme_or_other_resource_blocks(self):
+        (self.root/"res/theme/preview.xml").write_bytes(b"modified-theme")
+        self.assertEqual(self.check()[1],
+                         "PACKAGED_ASSET_DIFFERS:res/theme/preview.xml")
+
+    def test_missing_packaged_resource_blocks(self):
+        (self.root/"res/theme/preview.xml").unlink()
+        self.assertEqual(self.check()[1],
+                         "PACKAGED_ASSET_MISSING:res/theme/preview.xml")
 
     def test_unknown_version_blocks(self):
         self.assertEqual(audit.compatible_runtime(self.root,self.reference,"R75")[1],
