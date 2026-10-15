@@ -31,7 +31,7 @@
 - SHA256-pinned R80.1 package payload is unchanged.
 - CI on commit `e11d85483b2dedbcb5baadb3fdc4d24f0e42bc9d` passed
   shell syntax, 9 receiver-installer regression tests and the strict
-  R80.0 compatibility checks (11 offline test cases).
+  R80.0 compatibility checks (10 offline test cases).
   See https://github.com/wacayoub/IPToSatPro/actions/runs/38822312006
 
 ## Single bounded receiver action (optional, experimental)
