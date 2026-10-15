@@ -35,8 +35,8 @@ MANIFEST="https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r769-fin
 NOTE=P+"CHANGELOG-R7612-PHASE-PROFILER.txt"
 
 SAFE_POSTINST="""#!/bin/sh
-# R7612 passive opkg hook: no user files, catalogs or historic backups touched.
-printf '%s\n' 'IPToSatPro R76.12 profiling beta installed; GUI restart manually via OpenATV.'
+# R7612 passive install hook: no user files or backups touched.
+printf '%s\\n' 'IPToSatPro R76.12 profiling beta installed; GUI restart manually via OpenATV.'
 exit 0
 """.encode("utf8")
 
