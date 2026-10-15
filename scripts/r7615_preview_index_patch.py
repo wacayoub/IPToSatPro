@@ -44,29 +44,20 @@ def patch_core(src):
         return src
     old_fast='''            if _r7613_preview_postings:
                 # R7613_PREVIEW_SCORING_POSTINGS: Preview only, no live changes.
-                tighter = [ch for ch in base
-                           if wanted.issubset(set((ch.get("norm") or "").split()))]
-            else:'''
-    new_fast='''            if _r7613_preview_postings:
-                # R7615_NOMINATION_INDEX_ONLY: no posting set materialization.
-                # Exact pre-R76.13 norm-token gate; keep ALL valid candidates.
                 other = [t for t in anchors[:3] if t != anchors[0]]
-                posting_lengths = [len(self._token_index.get(t, ())) for t in other]
-                if (len(base) <= 512 or not other or
-                        sum(posting_lengths) > max(1024, len(base) * 2)):
+                postings = [set(id(x) for x in self._token_index.get(t, ())) for t in other]
+                probable = [ch for ch in base if all(id(ch) in ids for ids in postings)]
+                tighter = [ch for ch in probable
+                           if wanted.issubset(set((ch.get("norm") or "").split()))]
+                if not tighter:
                     tighter = [ch for ch in base
                                if wanted.issubset(set((ch.get("norm") or "").split()))]
-                else:
-                    postings = [set(id(x) for x in self._token_index.get(t, ())) for t in other]
-                    probable = [ch for ch in base if all(id(ch) in ids for ids in postings)]
-                    # Retain the complete gate: account for stale indexes and
-                    # preserve the exact original ordering in base.
-                    if len(probable) != len(base):
-                        tighter = [ch for ch in base
-                                   if wanted.issubset(set((ch.get("norm") or "").split()))]
-                    else:
-                        tighter = [ch for ch in probable
-                                   if wanted.issubset(set((ch.get("norm") or "").split()))]
+            else:'''
+    new_fast='''            if _r7613_preview_postings:
+                # R7615_NOMINATION_INDEX_ONLY: no giant posting-id sets.
+                # Exact original norm-token gate; don't hide valid matches.
+                tighter = [ch for ch in base
+                           if wanted.issubset(set((ch.get("norm") or "").split()))]
             else:'''
     src=patch_method(src,"_fast_candidate_pool",[(old_fast,new_fast)])
     # A strict prefix-superset check; do NOT silently exclude 2-letter/numeric
