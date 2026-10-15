@@ -21,7 +21,7 @@ def span(src,cls,method):
   pool=klass.body
  else:pool=ast.walk(t)
  funcs=[n for n in pool if isinstance(n,ast.FunctionDef) and n.name==method]
- assert len(funcs)==1,(cls,method)
+ assert len(funcs)==1,(cls,method,[(n.lineno,n.end_lineno) for n in funcs])
  return funcs[0].lineno,funcs[0].end_lineno
 
 
