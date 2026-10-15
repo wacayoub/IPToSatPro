@@ -1,0 +1,16 @@
+{
+  "beta": true,
+  "index_target_met": false,
+  "installation_requires_explicit_flag": true,
+  "notes": "R80 RC1: freeze exact R76.15 nominee/scorer/player; no changes to algorithms. Safe passive postinst. Requires physical receiver performance, candidate mapping and AV acceptance before promotion.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r80-final-candidate-20261015/payload/r80-final-rc1.b64"
+  ],
+  "production_published": false,
+  "receiver_tested": false,
+  "sha256": "ca4077a83869d7b7b52510bb4816b2c57c5320cc84d249fc004c5b47c9f055ce",
+  "size": 460514,
+  "source_sha256": "c3991af773c6700c1aac0652f5027b27b4e1a91ff0820bf25e801e8d8488c468",
+  "source_version": "1.0.46-r76.15-preview-index-fast-beta",
+  "version": "1.0.46-r80-final-rc1"
+}
