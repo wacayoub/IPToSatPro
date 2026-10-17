@@ -1,0 +1,17 @@
+{
+  "beta": false,
+  "cold_preview_speed_certified": false,
+  "final_binary_receiver_tested": false,
+  "installation_requires_explicit_flag": true,
+  "notes": "R80 FINAL / Index Focus. Hardware-tested R80.1 core and operational files preserved byte-for-byte; final metadata corrected. Preview cold P95 not measured. Final repack not yet receiver-tested. Manual install with verified backup required.",
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/release/r80-indexfocus-final-20261017/payload/r80-final.b64"
+  ],
+  "production_published": false,
+  "sha256": "5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a",
+  "size": 461198,
+  "source_hardware_functionally_validated": true,
+  "source_sha256": "b6b1fe72ffbcbfaa398bd261c000f9361159a9e08f606a0af9d6da3d5ef04e5e",
+  "source_version": "1.0.46-r80.1-indexfocus-hotpath-rc1",
+  "version": "1.0.46-r80.2-final"
+}
