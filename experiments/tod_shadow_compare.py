@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""Offline TOD SHADOW comparator: never routes, zaps, writes a mapping or installs.
+
+A reference session MUST be human-labelled from the actual on-air logo.
+Given 3 BMPs from that session and 3 BMPs from a subsequent session, say only
+whether the new logo looks CONSISTENT WITH the reference image.
+
+A match is NOT a verified beIN identification: at 480px the broadcaster number
+is only ~5x5 pixels; this tool cannot distinguish all beIN 1-10 variants.
+A 7-only reference MUST NEVER become an automatic TOD -> beIN assignment.
+This compares two EXPLICIT local directories; never scans other TV channels.
+"""
+import argparse
+import hashlib
+import json
+import os
+import struct
+
+BANNER = (404, 19, 456, 30)    # 480x270 observed beIN logo, upper-right only
+DIGIT = (449, 21, 454, 26)     # inner numeral, 5x5px; NOT sufficient for routing
+FRAMES = tuple("frame-%02d.bmp" % i for i in (1, 2, 3))
+MAX_BMP = 8000000
+
+
+def read_rgb_bmp(filename):
+    with open(filename, "rb") as f:
+        data = f.read(MAX_BMP + 1)
+    if not 54 <= len(data) <= MAX_BMP or data[:2] != b"BM":
+        raise ValueError("not a supported small BMP")
+    dib = struct.unpack_from("<I", data, 14)[0]
+    off = struct.unpack_from("<I", data, 10)[0]
+    if dib < 40 or off < dib + 14 or len(data) < dib + 14:
+        raise ValueError("unsupported BMP header")
+    width, height, planes, bpp, compress = struct.unpack_from("<iiHHI", data, 18)
+    if (width != 480 or abs(height) != 270 or planes != 1 or
+            bpp not in (24, 32) or compress != 0):
+        raise ValueError("shadow reference requires exactly 480x270 BMP")
+    stride = ((width * (bpp // 8)) + 3) & ~3
+    if off + stride * abs(height) > len(data):
+        raise ValueError("truncated BMP")
+    step = bpp // 8
+
+    def pixels(rect):
+        x0, y0, x1, y1 = rect
+        for y in range(y0, y1):
+            src = y if height < 0 else 269 - y
+            for x in range(x0, x1):
+                p = off + src * stride + x * step
+                yield (data[p + 2], data[p + 1], data[p])
+    whites = tuple(min(rgb) >= 218 and max(rgb) - min(rgb) <= 30
+                   for rgb in pixels(BANNER))
+    digit = tuple(sum(rgb) / 3.0 < 155 for rgb in pixels(DIGIT))
+    return dict(whites=whites, digit=digit,
+                hash=hashlib.sha256(data).hexdigest(),
+                white_count=sum(whites), digit_count=sum(digit))
+
+
+def dice(a, b):
+    if len(a) != len(b):
+        return 0.0
+    count_a, count_b = sum(a), sum(b)
+    if min(count_a, count_b) < 12:
+        return 0.0
+    return 2.0 * sum(x and y for x, y in zip(a, b)) / float(count_a + count_b)
+
+
+def read_session(folder):
+    """Read ONLY three fixed names; never expose paths or stream identifiers."""
+    if not os.path.isdir(folder):
+        raise ValueError("session directory not accessible")
+    images = []
+    for name in FRAMES:
+        f = os.path.join(folder, name)
+        if not os.path.isfile(f):
+            raise ValueError("missing expected screenshot " + name)
+        images.append(read_rgb_bmp(f))
+    if len(set(i["hash"] for i in images)) != 3:
+        raise ValueError("3 independent full-frame captures required")
+    return images
+
+
+def session_diagnostics(images):
+    """Read-only image-quality metrics, not a broadcaster classification.
+
+    Reveals which of the 3 images diverged in the 5x5 pixel numeral area.
+    A tiny mask change may be compression/background or another channel.
+    """
+    first = images[0]
+    masks = [image["digit"] for image in images]
+    white_masks = [image["whites"] for image in images]
+    return {
+        "digit_dark_pixels": [sum(m) for m in masks],
+        "digit_flipped_pixels_from_first": [
+            sum(a != b for a, b in zip(masks[0], mask)) for mask in masks
+        ],
+        "digit_max_pairwise_flips": max(
+            sum(a != b for a, b in zip(left, right))
+            for left in masks for right in masks
+        ),
+        "banner_similarity_from_first": [
+            round(dice(white_masks[0], white), 4) for white in white_masks
+        ],
+        "banner_white_pixels": [image["white_count"] for image in images],
+        "numeral_mask_stable": all(mask == masks[0] for mask in masks),
+    }
+
+
+def cross_session_diagnostics(references, samples):
+    """Compare all 3x3 frame pairs without making a classification.
+
+    Majority masks suppress a single flickering pixel for ANALYSIS ONLY.
+    No routing logic may consume consensus results from this shadow tool.
+    """
+    ref_masks = [item["digit"] for item in references]
+    new_masks = [item["digit"] for item in samples]
+
+    def majority(masks):
+        return tuple(sum(pixel) >= 2 for pixel in zip(*masks))
+
+    ref_majority, new_majority = majority(ref_masks), majority(new_masks)
+    distances = [[sum(a != b for a, b in zip(ref, new))
+                  for new in new_masks] for ref in ref_masks]
+    banners = [[round(dice(ref["whites"], new["whites"]), 4)
+                for new in samples] for ref in references]
+    return {
+        "digit_pairwise_differences_3x3": distances,
+        "digit_min_pixel_difference": min(min(row) for row in distances),
+        "digit_max_pixel_difference": max(max(row) for row in distances),
+        "digit_majority_pixel_difference": sum(
+            a != b for a, b in zip(ref_majority, new_majority)),
+        "digit_majority_dark_pixels": [sum(ref_majority), sum(new_majority)],
+        "digit_reference_uncertain_pixels": sum(
+            len(set(bits)) > 1 for bits in zip(*ref_masks)),
+        "banner_similarity_3x3": banners,
+        "diagnostic_only": True,
+    }
+
+
+def compare_sessions(reference, sample, *, slot=3, reference_logo=7):
+    """Return an offline conservative RESULT; never a routing Assignment."""
+    if type(slot) is not int or not 1 <= slot <= 14:
+        raise ValueError("TOD slot must be 1-14")
+    if type(reference_logo) is not int or not 1 <= reference_logo <= 10:
+        raise ValueError("human-labelled beIN number must be 1-10")
+    outcome = {
+        "mode": "SHADOW_ONLY",
+        "tod_slot_user_label": slot,
+        "reference_bein_logo_user_label": reference_logo,
+        "mapping_enabled": False,
+        "receiver_changes": False,
+        "reference_verified_from_frames": False,
+        "classification": "UNKNOWN",
+        "reason": "insufficient or incompatible image evidence",
+        "scores": [],
+        "reference_health": None,
+        "current_health": None,
+        "cross_session_health": None,
+    }
+    try:
+        references = read_session(reference)
+        samples = read_session(sample)
+    except (OSError, ValueError) as exc:
+        outcome["reason"] = str(exc)
+        return outcome
+
+    outcome["reference_health"] = session_diagnostics(references)
+    outcome["current_health"] = session_diagnostics(samples)
+    outcome["cross_session_health"] = cross_session_diagnostics(references, samples)
+
+    if set(item["hash"] for item in references) & set(item["hash"] for item in samples):
+        outcome["reason"] = "reference and current reuse identical full screenshots"
+        return outcome
+
+    # Reject poorly marked/ambiguous references rather than learning a wrong
+    # number from the label alone. 5x5 at 480px remains a fragile signal.
+    ref_digit = references[0]["digit"]
+    if not (5 <= sum(ref_digit) <= 17 and
+            all(other["digit"] == ref_digit for other in references)):
+        instability = outcome["reference_health"]["digit_max_pairwise_flips"]
+        outcome["reason"] = (
+            "reference numeral not independently stable; "
+            "%d/25 maximum changed pixels between reference frames; "
+            "UNKNOWN is protective and does not disprove the manually labelled beIN %d"
+            % (instability, reference_logo))
+        if outcome["current_health"]["numeral_mask_stable"]:
+            outcome["next_step"] = (
+                "The current set has a stable 5x5 numeral mask. If its "
+                "beIN logo was manually verified, it can be the reference "
+                "for a future shadow comparison; never assign a mapping.")
+
+        return outcome
+    if any(dice(references[0]["whites"], r["whites"]) < .88
+           for r in references[1:]):
+        outcome["reason"] = "reference broadcaster banner not stable"
+        return outcome
+    good = True
+    for snap in samples:
+        banner_score = dice(references[0]["whites"], snap["whites"])
+        digit_equal = snap["digit"] == ref_digit
+        outcome["scores"].append({
+            "banner_dice": round(banner_score, 4),
+            "numeral_mask_same": digit_equal,
+            "banner_pixels": snap["white_count"],
+            "numeral_dark_pixels": snap["digit_count"],
+        })
+        if banner_score < .88 or not digit_equal:
+            good = False
+    if good:
+        outcome["classification"] = "CONSISTENT_WITH_REFERENCE"
+        outcome["reason"] = (
+            "3 frames have matching tiny numeral masks and stable broadcaster "
+            "banner; this is NOT a cross-number beIN identification")
+    else:
+        outcome["reason"] = (
+            "logo/image changed or uncertain; no conclusion about new beIN number")
+    return outcome
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--reference", required=True, help="folder with 3 labelled captures")
+    p.add_argument("--current", required=True, help="folder with 3 new captures")
+    p.add_argument("--slot", type=int, default=3)
+    p.add_argument("--reference-logo", type=int, default=7)
+    args = p.parse_args(argv)
+    # No filesystem mutation; JSON contains no IPTV URLs, IDs or credentials.
+    result = compare_sessions(
+        args.reference, args.current,
+        slot=args.slot, reference_logo=args.reference_logo)
+    print(json.dumps(result, indent=2))
+    return 0 if result["classification"] == "CONSISTENT_WITH_REFERENCE" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
