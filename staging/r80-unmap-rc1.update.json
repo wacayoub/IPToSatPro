@@ -1,0 +1,15 @@
+{
+  "version": "1.0.46-r80.2.1-unmap-rc1",
+  "sha256": "08bcba2ad5982de9d55589bb5f0afe2c727e6e7a74cc2e90411cf7be2ca8a3e2",
+  "size": 462254,
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/fix/r80-unmap-stale-candidate-20261017/payload/r80-unmap-rc1.b64"
+  ],
+  "notes": "Isolated UNMAP tombstone + legacy alias cleanup + stale manual mapping cache guard. Based on frozen R80 FINAL; Preview matching scoring, player and UI theme unchanged. Experimental; not tested on Vu+ hardware.",
+  "beta": true,
+  "production_published": false,
+  "final_binary_receiver_tested": false,
+  "installation_requires_explicit_flag": true,
+  "source_version": "1.0.46-r80.2-final",
+  "source_sha256": "5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a"
+}
