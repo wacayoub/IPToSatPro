@@ -102,6 +102,24 @@ The exact receiver-generated metadata-promotion candidate was supplied in chat:
   `main/update.json` remains R70 final. The corrected R80 final IPK has not
   yet been installed or independently validated on receiver as a final binary.
 
+## Guarded final installation tool ready (not executed)
+
+A SHA-pinned optional receiver installer now exists:
+`scripts/install_r80_final_guarded.py`.
+It accepts **only** the corrected `461198`-byte
+`5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a`
+IPK at `/tmp/iptosatpro-r80-final.ipk`. It requires a coherent existing
+`r80.1-indexfocus-hotpath-rc1` runtime, verifies the identical functional core,
+creates a private receiver backup, and checks protected configuration/mapping
+hashes before/after `opkg`. No install without explicit `--install`, and no
+automatic GUI restart.
+
+**Do not install yet through the release updater** until the corrected release
+payload and corrected manifest are available on the selected GitHub branch.
+The R80.1 currently installed on the receiver remains the known functional
+reference. Only a basic GUI/menu confirmation is needed if the control-metadata
+upgrade is later chosen; no need to repeat the 3 comprehensive functional tests.
+
 ## Final sign-off scope
 
 Validated: installation, config preservation, Preview functionality,
