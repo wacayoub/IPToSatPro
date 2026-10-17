@@ -1,0 +1,15 @@
+{
+  "version": "1.0.46-r80.2.2-unmap-rc2",
+  "sha256": "61acad0521f98ad8ea12c1d42e53d36d595ccd479874ee706a9ff52e69e9af4b",
+  "size": 463008,
+  "parts": [
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/fix/r80-unmap-stale-candidate-20261017/payload/r80-unmap-rc2.b64"
+  ],
+  "notes": "R80.2.2 UNMAP RC2 beta: preserve corrected FHD manual GREEN pin precedence over old known-good HD variant; same-variant backup only; previous user UNMAP fixes kept. Streaming codec and core unchanged. Single beIN SAT hardware confirmation required.",
+  "beta": true,
+  "production_published": false,
+  "final_binary_receiver_tested": false,
+  "installation_requires_explicit_flag": true,
+  "source_version": "1.0.46-r80.2.1-unmap-rc1",
+  "source_sha256": "08bcba2ad5982de9d55589bb5f0afe2c727e6e7a74cc2e90411cf7be2ca8a3e2"
+}
