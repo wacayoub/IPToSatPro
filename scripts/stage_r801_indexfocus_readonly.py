@@ -278,11 +278,19 @@ def main():
     try:
         raw, report = prepare()
         if args.stage:
-            require(not DEST.exists(), "STAGING_FILE_EXISTS_REJECT_OVERWRITE")
-            with DEST.open("xb") as output:
-                output.write(raw)
-            require(sha(DEST.read_bytes()) == report["package_sha256"],
-                    "STAGED_FILE_SHA_MISMATCH")
+            require(not DEST.is_symlink(), "STAGING_PATH_SYMLINK_REFUSED")
+            if DEST.exists():
+                require(DEST.is_file(), "STAGING_PATH_NOT_A_FILE")
+                require(DEST.stat().st_size == len(raw) and
+                        sha(DEST.read_bytes()) == report["package_sha256"],
+                        "EXISTING_STAGE_DIFFERS_REFUSE_OVERWRITE")
+                report["stage_reused"] = True
+            else:
+                with DEST.open("xb") as output:
+                    output.write(raw)
+                require(sha(DEST.read_bytes()) == report["package_sha256"],
+                        "STAGED_FILE_SHA_MISMATCH")
+                report["stage_reused"] = False
             report["stage_path"] = str(DEST)
             report["result"] = "TEST_ONLY_PACKAGE_STAGED__NOT_INSTALLED"
         else:
