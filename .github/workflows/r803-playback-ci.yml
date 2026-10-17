@@ -36,3 +36,16 @@ jobs:
         run: |
           python scripts/build_r803_playback_rc1_offline.py \
             --source-b64 /tmp/r80-unmap-rc2.b64
+      - name: Build isolated beta IPK and assert deterministic checksum
+        if: matrix.python-version == '3.14'
+        run: |
+          python scripts/build_r803_playback_rc1_offline.py \
+            --source-b64 /tmp/r80-unmap-rc2.b64 \
+            --build --output /tmp/iptosatpro-r803-playback-rc1.ipk
+          echo 'd7227f985fb9babcbb9f25c8ee9ab07b969107ccf44275cf3bd1d90054ed31d7  /tmp/iptosatpro-r803-playback-rc1.ipk' | sha256sum --check -
+      - uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.14'
+        with:
+          name: r803-playback-rc1-UNTESTED-DO-NOT-INSTALL
+          path: /tmp/iptosatpro-r803-playback-rc1.ipk
+          retention-days: 14
