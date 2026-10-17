@@ -148,7 +148,7 @@ def downloaded_candidate():
     with urllib.request.urlopen(URL, timeout=35) as response:
         encoded = response.read(800_000)
     require(0 < len(encoded) < 800_000, "CANDIDATE_FETCH_SIZE")
-    data = base64.b64decode(encoded, validate=True)
+    data = base64.b64decode(b"".join(encoded.split()), validate=True)
     require(len(data) == 461044 and sha(data) == CANDIDATE_SHA, "CANDIDATE_PACKAGE_SHA")
     return data
 
