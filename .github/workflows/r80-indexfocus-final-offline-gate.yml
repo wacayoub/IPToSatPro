@@ -23,6 +23,10 @@ jobs:
           python -m py_compile scripts/stage_r801_indexfocus_readonly.py scripts/install_r801_indexfocus_guarded.py scripts/test_r801_indexfocus_stage.py scripts/r80_preview_hotpath_patch.py
       - name: Package safety regression tests, no receiver
         run: python -m unittest discover -s scripts -p test_r801_indexfocus_stage.py -v
+      - name: Compile final source-preserving packager and tests
+        run: python -m py_compile scripts/prepare_r80_final_offline.py scripts/test_r80_final_offline.py
+      - name: Test FINAL metadata-only build with synthetic packages
+        run: python -m unittest discover -s scripts -p test_r80_final_offline.py -v
       - name: Require production manifest unchanged
         run: |
           python - <<'PY'
