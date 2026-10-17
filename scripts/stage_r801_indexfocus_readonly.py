@@ -38,6 +38,9 @@ URL = ("https://raw.githubusercontent.com/wacayoub/IPToSatPro/"
 PFX = "usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/"
 ALLOWED_MISSING = {"R80-RELEASE-CANDIDATE.md", "R801-EXPERIMENTAL-HOTPATH.txt"}
 ALLOWED_CHANGED = {"core.py", "plugin.py", "updater.py"}
+# Frozen package may contain legitimate operational files outside the plugin.
+# Only allow an explicitly recognized, byte-exact, already installed service.
+ALLOWED_EXTERNAL = {"etc/init.d/iptosat-tsbridge"}
 POSTINST = ("#!/bin/sh\n"
             "printf '%s\\n' 'IPToSatPro Index Focus Preview hot-path RC staged; restart GUI manually.'\n"
             "exit 0\n").encode("utf-8")
@@ -167,16 +170,34 @@ def prepare():
     pieces, order = ar_unpack(downloaded_candidate())
     data_members, orig_data = tar_read(pieces["data.tar.gz"][1])
     control_members, orig_control = tar_read(pieces["control.tar.gz"][1])
-    # Fail closed if package would install any other files outside the plugin.
-    files = {}
+    # Never whitelist arbitrary system files; the old package must contain
+    # only our normal plugin assets and an already-installed identical service.
+    files, external = {}, {}
+    all_files = {}
     for m in data_members:
         name = normalized_name(m.name)
-        if m.isfile():
-            require(name.startswith(PFX), "PACKAGE_FILE_OUTSIDE_PLUGIN: " + name[:120])
+        if not m.isfile():
+            continue
+        require(name and not name.startswith("/") and
+                ".." not in Path(name).parts, "UNSAFE_PACKAGE_PATH")
+        require(name not in all_files, "DUPLICATE_PACKAGE_PATH")
+        all_files[name] = m.name
+        if name.startswith(PFX):
             rel = name[len(PFX):]
             require(rel and ".." not in Path(rel).parts, "UNSAFE_RELATIVE_PACKAGE_PATH")
             require(rel not in files, "DUPLICATE_PLUGIN_ENTRY")
             files[rel] = m.name
+        else:
+            external[name] = m.name
+    require(set(external) <= ALLOWED_EXTERNAL,
+            "UNEXPECTED_EXTERNAL_FILES: " + ",".join(sorted(set(external)-ALLOWED_EXTERNAL)))
+    require(set(external) == ALLOWED_EXTERNAL, "EXPECTED_SERVICE_FILE_ABSENT")
+    for path, key in external.items():
+        existing = Path("/") / path
+        require(existing.is_file() and not existing.is_symlink(),
+                "EXTERNAL_SERVICE_NOT_PRESENT_OR_UNSAFE: " + path)
+        require(existing.read_bytes() == orig_data[key],
+                "EXTERNAL_SERVICE_DIFFERS_FROM_PINNED_PACKAGE: " + path)
     require(len(files) == 87, "CANDIDATE_EXPECTED_87_ASSETS")
     require(ALLOWED_CHANGED <= set(files), "CANDIDATE_MISSING_CORE_CODE")
     changes, missing, identical = [], [], 0
@@ -228,10 +249,10 @@ def prepare():
     verified, _ = ar_unpack(raw)
     member_list, final_data = tar_read(verified["data.tar.gz"][1])
     actual = {normalized_name(m.name):final_data[m.name] for m in member_list if m.isfile()}
-    require(set(actual) == {PFX + x for x in files}, "FINAL_PACKAGE_FILE_SET_CHANGED")
-    for rel, key in files.items():
-        require(actual[PFX + rel] == replacements.get(key, orig_data[key]),
-                "FINAL_DATA_MISMATCH: " + rel)
+    require(set(actual) == set(all_files), "FINAL_PACKAGE_FILE_SET_CHANGED")
+    for full_name, key in all_files.items():
+        require(actual[full_name] == replacements.get(key, orig_data[key]),
+                "FINAL_DATA_MISMATCH: " + full_name)
     control_members2, control_data2 = tar_read(verified["control.tar.gz"][1])
     require(control_data2[ctr_names["postinst"]] == POSTINST, "POSTINST_NOT_PASSIVE")
     require(("Version: " + NEW).encode("utf-8") in control_data2[ctr_names["control"]],
@@ -240,7 +261,9 @@ def prepare():
                  "original_core_sha256": CORE_SHA, "patched_core_sha256": PATCHED_SHA,
                  "unchanged_assets": identical, "rebased_code_files": sorted(changes),
                  "candidate_only_notes": sorted(missing),
-                 "packaged_assets": len(files), "package_sha256": sha(raw),
+                 "packaged_assets": len(files), "protected_external_assets": sorted(external),
+                 "external_assets_checked_byte_identical": True,
+                 "package_sha256": sha(raw),
                  "package_bytes": len(raw), "installed_or_restarted": False,
                  "configuration_and_mappings_read": False,
                  "receiver_av_validated": False, "final_publication_authorized": False}
