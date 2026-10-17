@@ -74,6 +74,34 @@ the distributable, reproducible final IPK has been verified.
   integrity verification, then separately approve publication.
 - GitHub Actions execution and results are **not confirmed** here.
 
+## Final distributable IPK received and independently inspected (17 October)
+
+The exact receiver-generated metadata-promotion candidate was supplied in chat:
+- Received candidate: **461200 bytes**, SHA256
+  `8828d8271a3e192822c49d36fdf2c7a1a2635fbcc5083b9169bebcf29ee29a02`.
+- Validated that its Base64, manifest and SHA256SUMS matched exactly, and that its
+  operational core matched SHA256
+  `74cd89b8c6a41b4537fd758cedb3a07b2bc0f9a5c215063e4c45b99e5d92cd2a`.
+- Discovered legacy package-control branding that still described `r68 BETA`,
+  listed `OpenAI` as maintainer, and logged a release-candidate install message.
+  For release quality and correct attribution, corrected **only** those three
+  *control.tar.gz* text fields: description, maintainer `wacayoub`, and
+  passive postinst message. No maintainer hook operations beyond an informational
+  `printf` and `exit 0`.
+- Corrected final artifact: **461198 bytes**, SHA256
+  `5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a`.
+- Byte-for-byte **entire data.tar.gz identical** to received candidate.
+  All 87 plugin files, 2 tsbridge files, and 17 compiled Python module files
+  are unchanged; operational core SHA256 unchanged.
+- Corrected Base64, update manifest, SHA256SUMS and an independent JSON audit
+  were generated in the current chat session and are available as artifacts.
+- Version `1.0.46-r80.2-final` orders newer than the installed R80.1 RC1.
+- **Publication remains blocked** pending upload of the *corrected* Base64
+  payload and matching manifest to this GitHub release branch. Do NOT upload
+  the old 461200-byte manifest together with the corrected 461198-byte binary.
+  `main/update.json` remains R70 final. The corrected R80 final IPK has not
+  yet been installed or independently validated on receiver as a final binary.
+
 ## Final sign-off scope
 
 Validated: installation, config preservation, Preview functionality,
