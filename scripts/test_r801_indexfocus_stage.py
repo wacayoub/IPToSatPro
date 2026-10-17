@@ -59,9 +59,9 @@ class PackagingSafetyTests(unittest.TestCase):
         self.assertIn("postinst",controlfiles)
 
     def test_version_rewrite_changes_only_single_assignment(self):
-        before = ("PLUGIN_VERSION = "+repr(stage.OLD)+"\n").encode("utf8")
+        before = ('PLUGIN_VERSION = "'+stage.OLD+'"\n').encode("utf8")
         after = stage.new_version(before,"PLUGIN_VERSION")
-        self.assertEqual(after,("PLUGIN_VERSION = "+repr(stage.NEW)+"\n").encode("utf8"))
+        self.assertEqual(after,('PLUGIN_VERSION = "'+stage.NEW+'"\n').encode("utf8"))
         with self.assertRaises(ValueError):
             stage.new_version(before + before,"PLUGIN_VERSION")
 
