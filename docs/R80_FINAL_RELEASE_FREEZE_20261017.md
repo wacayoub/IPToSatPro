@@ -49,12 +49,30 @@ the distributable, reproducible final IPK has been verified.
   `release/r80-indexfocus-final-20261017/staging/r80-final.update.json`.
   `main/update.json` remains R70; never use it as the R80 final update
   target while production has not changed.
-- Eight offline synthetic package regression tests passed locally. GitHub
+- Ten offline synthetic tests (8 package, 2 distribution bundle) passed locally. GitHub
   Actions runs on Python 3.11 and 3.14 are configured; their outcomes must
   not be described as passing without actual logs.
 - Final binary is **NOT built or distributed**, pending the exact pinned IPK
   intake. No more receiver tests needed for the existing hardware-validated
   functional paths. No R80 stable update is live.
+
+## Offline release-bundle construction verified (17 October)
+
+- Source code: `scripts/prepare_r80_release_bundle_offline.py`.
+- A **real local Python 3.13.5 run** completed **10 of 10** offline tests,
+  including eight final-package safety tests and two release-bundle tests.
+  These are synthetic package fixtures; they are **not** a test of the missing
+  461250-byte receiver-generated candidate.
+- Bundle creation yields four matching deliverables:
+  `iptosatpro-r80-final.ipk`, `r80-final.b64`,
+  `r80-final.update.json`, and `SHA256SUMS.txt`.
+- Version monotonicity verified locally using `dpkg --compare-versions`:
+  `1.0.46-r80.2-final` sorts newer than `1.0.46-r80.1-indexfocus-hotpath-rc1`.
+- The package remains unpublished; `main/update.json` is unchanged.
+- Once the exact original RC1 package is supplied, no further fixture work
+  should be needed: perform the final pinned source and generated-bundle
+  integrity verification, then separately approve publication.
+- GitHub Actions execution and results are **not confirmed** here.
 
 ## Final sign-off scope
 
