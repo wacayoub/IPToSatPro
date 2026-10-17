@@ -1,0 +1,44 @@
+name: UNMAP RC2 — build and stage isolated beta payload
+on:
+  push:
+    branches: [fix/r80-unmap-stale-candidate-20261017]
+    paths:
+      - scripts/stage_unmap_rc2_offline.py
+      - .github/workflows/r80-unmap-rc2-publish.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  stage-exact-rc2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/r80-unmap-stale-candidate-20261017
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Build strictly byte-matched beta package from pinned RC1
+        run: python scripts/stage_unmap_rc2_offline.py
+      - name: Require R80 stable feed to stay unchanged
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('update.json'))
+          assert x['version']=='1.0.46-r80.2-final'
+          assert x['sha256']=='5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a'
+          r=json.load(open('staging/r80-unmap-rc2.update.json'))
+          assert r['version']=='1.0.46-r80.2.2-unmap-rc2'
+          assert r['sha256']=='61acad0521f98ad8ea12c1d42e53d36d595ccd479874ee706a9ff52e69e9af4b'
+          assert r['size']==463008 and r['beta'] is True
+          print('RC2_PINNED_BETA_READY; STABLE_UNCHANGED')
+          PY
+      - name: Commit only verified RC2 release artifacts on isolated test branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add payload/r80-unmap-rc2.b64 staging/r80-unmap-rc2.update.json staging/r80-unmap-rc2.sha256
+          git diff --cached --quiet && exit 0
+          git commit -m 'Publish isolated SHA-verified UNMAP RC2 beta payload, not stable'
+          git push origin HEAD:refs/heads/fix/r80-unmap-stale-candidate-20261017
