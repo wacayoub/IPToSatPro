@@ -5,6 +5,7 @@ Never installs/patches plugin files or reads settings, mappings, services,
 log contents, tokens or IPTV credentials. This is NOT a runtime AV benchmark.
 """
 import ast
+import copy
 import difflib
 import functools
 import hashlib
@@ -47,13 +48,9 @@ def non_function_map(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         if isinstance(node, ast.ClassDef):
-            original = ast.ClassDef(
-                name=node.name,
-                bases=node.bases,
-                keywords=node.keywords,
-                body=[n for n in node.body if not isinstance(n,(ast.FunctionDef, ast.AsyncFunctionDef))],
-                decorator_list=node.decorator_list)
-            result.append(ast.dump(original, include_attributes=False))
+            clone = copy.copy(node)
+            clone.body = [n for n in node.body if not isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+            result.append(ast.dump(clone, include_attributes=False))
         else:
             result.append(ast.dump(node, include_attributes=False))
     return result
