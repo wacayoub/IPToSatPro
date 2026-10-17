@@ -48,12 +48,12 @@ def normalize(s):
 
 
 def read_ar(data):
-    require(data.startswith(b"!<arch>\\n"), "INPUT_NOT_IPK")
+    require(data.startswith(b"!<arch>\n"), "INPUT_NOT_IPK")
     at, result, order = 8, {}, []
     while at < len(data):
         require(at + 60 <= len(data), "BAD_AR_HEADER")
         head = data[at:at+60]
-        require(head[58:60] == b"`\\n", "BAD_AR_MAGIC")
+        require(head[58:60] == b"`\n", "BAD_AR_MAGIC")
         name = head[:16].decode("ascii").strip().rstrip("/")
         count = int(head[48:58].strip())
         require(count >= 0 and at + 60 + count <= len(data), "BAD_AR_SIZE")
@@ -67,13 +67,13 @@ def read_ar(data):
 
 
 def repack_ar(entries, order):
-    out = bytearray(b"!<arch>\\n")
+    out = bytearray(b"!<arch>\n")
     for name in order:
         head, body = entries[name]
-        out += head[:48] + str(len(body)).encode("ascii").ljust(10) + b"`\\n"
+        out += head[:48] + str(len(body)).encode("ascii").ljust(10) + b"`\n"
         out += body
         if len(body) & 1:
-            out += b"\\n"
+            out += b"\n"
     return bytes(out)
 
 
