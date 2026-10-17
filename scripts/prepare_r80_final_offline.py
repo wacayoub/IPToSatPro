@@ -22,7 +22,8 @@ OLD = '1.0.46-r80.1-indexfocus-hotpath-rc1'
 FINAL = '1.0.46-r80-final'
 PREFIX = 'usr/lib/enigma2/python/Plugins/Extensions/SatIPTVBridge/'
 EXTERNAL = {'etc/init.d/iptosat-tsbridge', 'usr/bin/iptosat-tsbridge'}
-UPDATER_MAIN_URL = 'https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/update.json'
+RELEASE_MANIFEST_URL = ('https://raw.githubusercontent.com/wacayoub/IPToSatPro/'
+                        'release/r80-indexfocus-final-20261017/staging/r80-final.update.json')
 UPDATER_URL_RE = re.compile(r'https://raw\.githubusercontent\.com/wacayoub/IPToSatPro/[\w./-]+?\.json')
 
 
@@ -114,8 +115,11 @@ def transform_updater(blob):
     text = rewritten.decode('utf8')
     urls = UPDATER_URL_RE.findall(text)
     must(len(urls) == 1, 'UPDATER_SOURCE_URL_AMBIGUOUS')
-    if urls[0] != UPDATER_MAIN_URL:
-        text = text.replace(urls[0], UPDATER_MAIN_URL, 1)
+    must('/release/r80-indexfocus-final-20261017/staging/r80-final.update.json' in
+         RELEASE_MANIFEST_URL, 'RELEASE_MANIFEST_NOT_ISOLATED')
+    if urls[0] != RELEASE_MANIFEST_URL:
+        text = text.replace(urls[0], RELEASE_MANIFEST_URL, 1)
+    must('/main/update.json' not in text, 'UPDATER_MAIN_R70_REFERENCE_REMAINS')
     return text.encode('utf8')
 
 
@@ -175,7 +179,7 @@ def transform(blob, expected_size=TESTED_SIZE, expected_sha=TESTED_SHA,
         'final_bytes':len(result),
         'core_sha256_unchanged':digest(output_files[PREFIX+'core.py']),
         'changed_only':['control:Version','plugin.py:PLUGIN_VERSION',
-                        'updater.py:CURRENT_VERSION','updater.py:main/update.json'],
+                        'updater.py:CURRENT_VERSION','updater.py:isolated R80 final update manifest'],
         'unchanged_operational_payload':True,
         'published':False,
         'receiver_or_configuration_touched':False,
