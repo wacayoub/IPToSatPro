@@ -40,7 +40,7 @@ ALLOWED_MISSING = {"R80-RELEASE-CANDIDATE.md", "R801-EXPERIMENTAL-HOTPATH.txt"}
 ALLOWED_CHANGED = {"core.py", "plugin.py", "updater.py"}
 # Frozen package may contain legitimate operational files outside the plugin.
 # Only allow an explicitly recognized, byte-exact, already installed service.
-ALLOWED_EXTERNAL = {"etc/init.d/iptosat-tsbridge"}
+ALLOWED_EXTERNAL = {"etc/init.d/iptosat-tsbridge", "usr/bin/iptosat-tsbridge"}
 POSTINST = ("#!/bin/sh\n"
             "printf '%s\\n' 'IPToSatPro Index Focus Preview hot-path RC staged; restart GUI manually.'\n"
             "exit 0\n").encode("utf-8")
