@@ -62,7 +62,8 @@ class FinalOfflineTests(unittest.TestCase):
         _,files=unpack_tar(entry['data.tar.gz'][1])
         self.assertEqual(files[PREFIX+'core.py'],core)
         self.assertIn(FINAL.encode(),files[PREFIX+'plugin.py'])
-        self.assertIn(b'/main/update.json',files[PREFIX+'updater.py'])
+        self.assertIn(b'/release/r80-indexfocus-final-20261017/staging/r80-final.update.json',files[PREFIX+'updater.py'])
+        self.assertNotIn(b'/main/update.json',files[PREFIX+'updater.py'])
         self.assertNotIn(OLD.encode(),files[PREFIX+'updater.py'])
         for ext in EXTERNAL:
             self.assertEqual(files[ext],b'#!/bin/sh\nexit 0\n')
