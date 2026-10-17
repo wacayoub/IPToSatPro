@@ -1,0 +1,35 @@
+name: R80.1 Index Focus — read-only staging smoke tests
+on:
+  push:
+    branches: [fix/r800-core-evidence-readonly-20261017]
+    paths:
+      - scripts/stage_r801_indexfocus_readonly.py
+      - scripts/test_r801_indexfocus_stage.py
+      - .github/workflows/r801-indexfocus-staging-ci.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile read-only builder and tests
+        run: python -m py_compile scripts/stage_r801_indexfocus_readonly.py scripts/test_r801_indexfocus_stage.py
+      - name: Verify pinned package and roundtrip
+        run: python -m unittest discover -s scripts -p test_r801_indexfocus_stage.py -v
+      - name: Ensure no production update
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open('update.json'))
+          assert m['version']=='1.0.46-r70-final'
+          print('PRODUCTION_UNCHANGED')
+          PY
