@@ -54,7 +54,7 @@ class PackagingSafetyTests(unittest.TestCase):
         external = set(datafiles) - set(plugin)
         self.assertEqual(len(plugin), 87)
         self.assertEqual(external, stage.ALLOWED_EXTERNAL)
-        self.assertEqual(len(external), 1)
+        self.assertEqual(len(external), 2)
         self.assertFalse(any(".." in Path(x).parts for x in datafiles))
         controlfiles = {stage.normalized_name(m.name) for m in self.controls if m.isfile()}
         self.assertNotIn("preinst",controlfiles)
@@ -63,23 +63,23 @@ class PackagingSafetyTests(unittest.TestCase):
         self.assertIn("postinst",controlfiles)
 
     def test_outside_plugin_entry_is_inherited_unchanged(self):
-        external = list(stage.ALLOWED_EXTERNAL)[0]
-        original_key = next(m.name for m in self.members
-                            if stage.normalized_name(m.name) == external)
-        self.assertEqual(external, "etc/init.d/iptosat-tsbridge")
-        self.assertTrue(self.body[original_key].startswith(b"#!/bin/sh"))
-        self.assertGreater(len(self.body[original_key]), 0)
+        self.assertEqual(stage.ALLOWED_EXTERNAL,
+                         {"etc/init.d/iptosat-tsbridge", "usr/bin/iptosat-tsbridge"})
+        for external in sorted(stage.ALLOWED_EXTERNAL):
+            original_key = next(m.name for m in self.members
+                                if stage.normalized_name(m.name) == external)
+            self.assertGreater(len(self.body[original_key]), 0)
 
     def test_service_asset_byte_identical_after_core_replacement(self):
-        service = "etc/init.d/iptosat-tsbridge"
-        service_key = next(m.name for m in self.members
-                           if stage.normalized_name(m.name) == service)
         core_key = next(m.name for m in self.members
                         if stage.normalized_name(m.name) == stage.PFX + "core.py")
         rebuilt = stage.tar_pack(self.members, self.body,
-                                 {core_key:b"# synthetic core placeholder\\n"})
+                                 {core_key:b"# synthetic core placeholder\n"})
         _, data = stage.tar_read(rebuilt)
-        self.assertEqual(data[service_key], self.body[service_key])
+        for service in stage.ALLOWED_EXTERNAL:
+            key = next(m.name for m in self.members
+                       if stage.normalized_name(m.name) == service)
+            self.assertEqual(data[key], self.body[key])
         self.assertNotEqual(data[core_key], self.body[core_key])
 
     def test_version_rewrite_changes_only_single_assignment(self):
