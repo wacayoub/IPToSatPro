@@ -70,6 +70,18 @@ class PackagingSafetyTests(unittest.TestCase):
         self.assertTrue(self.body[original_key].startswith(b"#!/bin/sh"))
         self.assertGreater(len(self.body[original_key]), 0)
 
+    def test_service_asset_byte_identical_after_core_replacement(self):
+        service = "etc/init.d/iptosat-tsbridge"
+        service_key = next(m.name for m in self.members
+                           if stage.normalized_name(m.name) == service)
+        core_key = next(m.name for m in self.members
+                        if stage.normalized_name(m.name) == stage.PFX + "core.py")
+        rebuilt = stage.tar_pack(self.members, self.body,
+                                 {core_key:b"# synthetic core placeholder\\n"})
+        _, data = stage.tar_read(rebuilt)
+        self.assertEqual(data[service_key], self.body[service_key])
+        self.assertNotEqual(data[core_key], self.body[core_key])
+
     def test_version_rewrite_changes_only_single_assignment(self):
         before = ('PLUGIN_VERSION = "'+stage.OLD+'"\n').encode("utf8")
         after = stage.new_version(before,"PLUGIN_VERSION")
