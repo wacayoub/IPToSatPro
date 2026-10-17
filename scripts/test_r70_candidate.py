@@ -86,13 +86,19 @@ class R70CandidateTests(unittest.TestCase):
     def test_manifest_is_only_known_approved_r69_or_released_r70(self):
         manifest = json.loads((ROOT/"update.json").read_text())
         authorized = {
-            BASE_VERSION: "123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed",
-            NEW_VERSION: "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c"
+            BASE_VERSION: ("123e1118a7471075ad18dee3014b7367fa9a2cf02f8cdd52ad1e5e65034035ed", None),
+            NEW_VERSION: ("471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c", self.meta["size"]),
+            "1.0.46-r80.2-final": ("5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a", 461198)
         }
         self.assertIn(manifest["version"], authorized)
-        self.assertEqual(manifest["sha256"], authorized[manifest["version"]])
-        if manifest["version"] == NEW_VERSION:
-            self.assertEqual(manifest["size"], self.meta["size"])
+        approved_sha, approved_size = authorized[manifest["version"]]
+        self.assertEqual(manifest["sha256"], approved_sha)
+        if approved_size is not None:
+            self.assertEqual(manifest["size"], approved_size)
+        if manifest["version"] == "1.0.46-r80.2-final":
+            self.assertEqual(manifest["parts"], [
+                "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r80-final.b64"
+            ])
 
     def test_package_does_not_include_cache_or_channel_credentials(self):
         for key in self.files:
