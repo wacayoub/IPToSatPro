@@ -1,0 +1,44 @@
+name: R80 Final — offline package safety verification
+on:
+  push:
+    branches: [release/r80-indexfocus-final-20261017]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-safety:
+    name: Package and manifest smoke tests Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile candidate source and tests
+        run: |
+          python -m py_compile scripts/stage_r801_indexfocus_readonly.py scripts/install_r801_indexfocus_guarded.py scripts/test_r801_indexfocus_stage.py scripts/r80_preview_hotpath_patch.py
+      - name: Package safety regression tests, no receiver
+        run: python -m unittest discover -s scripts -p test_r801_indexfocus_stage.py -v
+      - name: Require production manifest unchanged
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          manifest = json.loads(pathlib.Path("update.json").read_text())
+          assert manifest["version"] == "1.0.46-r70-final", manifest["version"]
+          assert manifest["sha256"] == "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c"
+          print("MAIN_PRODUCTION_R70_MANIFEST_UNCHANGED")
+          PY
+      - name: Confirm release evidence is clearly non-production
+        run: |
+          python - <<'PY'
+          import pathlib
+          text = pathlib.Path("docs/R80_FINAL_RELEASE_FREEZE_20261017.md").read_text()
+          assert "NOT yet published" in text
+          assert "b6b1fe72ffbcbfaa398bd261c000f9361159a9e08f606a0af9d6da3d5ef04e5e" in text
+          print("R80_RELEASE_FREEZE_EVIDENCE_PRESENT")
+          PY
