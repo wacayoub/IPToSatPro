@@ -71,6 +71,14 @@ class FinalOfflineTests(unittest.TestCase):
         self.assertIn(('Version: '+FINAL).encode(),ctr['control'])
         self.assertIn(b'Index Focus Preview hot-path RC staged',ctr['postinst'])
 
+    def test_release_version_increases_rc1(self):
+        import re
+        previous = re.search(r"r80\.(\d+)", OLD)
+        current = re.search(r"r80\.(\d+)", FINAL)
+        self.assertIsNotNone(previous)
+        self.assertIsNotNone(current)
+        self.assertGreater(int(current.group(1)), int(previous.group(1)))
+
     def test_real_pinned_size_sha_required(self):
         raw,core=synthetic()
         with self.assertRaisesRegex(ValueError,'TESTED_INPUT_PACKAGE_MISSING_OR_SHA_MISMATCH'):
