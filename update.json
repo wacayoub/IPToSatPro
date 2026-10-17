@@ -1,9 +1,9 @@
 {
-  "version": "1.0.46-r70-final",
-  "size": 277002,
-  "sha256": "471039d712e81c03bacbcf0394325dd07b56d8bbf3f2002bf6a48f89f93b791c",
-  "notes": "R70 FINAL, verified stable packaging of existing r69 playback code. Fast MANUAL LOCK, Preview matcher, audio, timeshift, quality guard and TS relay unchanged. No TOD dynamic module. No receiver speed or UHD/audio improvement claimed without hardware validation. Rollback: download-r69-beta.sh.",
+  "version": "1.0.46-r80.2-final",
+  "size": 461198,
+  "sha256": "5c7e48ba51e5ed1689c5930df72309c7c495cc702f5cff6b91142ddc2985606a",
+  "notes": "IPToSatPro R80 FINAL / Index Focus (2026-10-17). Validated on Vu+ Zero 4K: Preview Browser, selected beIN/TOD/OSN/Moroccan A/V streams, and SAT-no-signal IPTV fallback. Same R80.1 functional core; final version and package metadata cleaned. Existing mappings/settings retained by guarded installation. Cold Preview P95, exhaustive UHD and long-term reliability not certified. Back up before manual updates.",
   "parts": [
-    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r70-final.b64"
+    "https://raw.githubusercontent.com/wacayoub/IPToSatPro/main/payload/r80-final.b64"
   ]
 }
