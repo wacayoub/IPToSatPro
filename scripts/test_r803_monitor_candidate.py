@@ -31,6 +31,9 @@ class MonitorR803CandidateTests(unittest.TestCase):
         cls.new_tree = ast.parse(cls.new_text, filename=str(CANDIDATE))
         cls.old_funcs = members(cls.old_tree)
         cls.new_funcs = members(cls.new_tree)
+        cls.new_source_methods = {node.name: ast.get_source_segment(cls.new_text, node)
+                                  for node in ast.walk(cls.new_tree)
+                                  if isinstance(node, ast.FunctionDef)}
 
     def test_syntax_compiles(self):
         compile(self.new_text, str(CANDIDATE), "exec")
@@ -65,7 +68,7 @@ class MonitorR803CandidateTests(unittest.TestCase):
                       self.new_text)
 
     def test_ts_only_not_final_video_success(self):
-        new_verify = self.new_funcs["_verify_iptv"][0]
+        new_verify = self.new_source_methods["_verify_iptv"]
         self.assertNotIn("validated-ts-data", new_verify)
         self.assertIn("IPTV_TS_PENDING", new_verify)
         self.assertIn("FIRST_VIDEO", new_verify)
@@ -73,7 +76,7 @@ class MonitorR803CandidateTests(unittest.TestCase):
         self.assertIn("self.current_candidate_started_at", new_verify)
 
     def test_no_repeat_audio_retry_after_two_players(self):
-        guard = self.new_funcs["_audio_guard_tick"][0]
+        guard = self.new_source_methods["_audio_guard_tick"]
         self.assertIn("AUDIO_GUARD_EXHAUSTED", guard)
         self.assertIn("self.fallback_attempt", guard)
         self.assertIn("_schedule_next_candidate", guard)
