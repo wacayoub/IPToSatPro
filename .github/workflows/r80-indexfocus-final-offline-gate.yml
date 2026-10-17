@@ -39,7 +39,7 @@ jobs:
           PY
       - name: Validate unpublished final delivery bundle
         run: |
-          python -m py_compile scripts/prepare_r80_release_bundle_offline.py scripts/test_r80_release_bundle_offline.py
+          python -m py_compile scripts/prepare_r80_release_bundle_offline.py scripts/test_r80_release_bundle_offline.py scripts/install_r80_final_guarded.py
           python -m unittest discover -s scripts -p test_r80_release_bundle_offline.py -v
       - name: Require production manifest unchanged
         run: |
