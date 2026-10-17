@@ -39,6 +39,23 @@ validated Index Focus build. Do not promote the old R80.1 beta payload, whose
 core differs, to stable. Do not update production `main/update.json` until
 the distributable, reproducible final IPK has been verified.
 
+## Offline final packaging progress (17 October)
+
+- Offline final packager: `scripts/prepare_r80_final_offline.py`.
+- Proposed final package metadata version: `1.0.46-r80.2-final`. This is
+  intentionally higher than installed `1.0.46-r80.1-indexfocus-hotpath-rc1`,
+  to avoid an inadvertent opkg downgrade classification.
+- Final updater points to the **R80-only**, not-yet-published manifest:
+  `release/r80-indexfocus-final-20261017/staging/r80-final.update.json`.
+  `main/update.json` remains R70; never use it as the R80 final update
+  target while production has not changed.
+- Eight offline synthetic package regression tests passed locally. GitHub
+  Actions runs on Python 3.11 and 3.14 are configured; their outcomes must
+  not be described as passing without actual logs.
+- Final binary is **NOT built or distributed**, pending the exact pinned IPK
+  intake. No more receiver tests needed for the existing hardware-validated
+  functional paths. No R80 stable update is live.
+
 ## Final sign-off scope
 
 Validated: installation, config preservation, Preview functionality,
