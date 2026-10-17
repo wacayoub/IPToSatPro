@@ -50,13 +50,25 @@ class PackagingSafetyTests(unittest.TestCase):
 
     def test_no_packaged_config_or_install_scripts(self):
         datafiles = [stage.normalized_name(m.name) for m in self.members if m.isfile()]
-        self.assertEqual(len(datafiles),87)
-        self.assertTrue(all(x.startswith(stage.PFX) for x in datafiles))
+        plugin = [x for x in datafiles if x.startswith(stage.PFX)]
+        external = set(datafiles) - set(plugin)
+        self.assertEqual(len(plugin), 87)
+        self.assertEqual(external, stage.ALLOWED_EXTERNAL)
+        self.assertEqual(len(external), 1)
+        self.assertFalse(any(".." in Path(x).parts for x in datafiles))
         controlfiles = {stage.normalized_name(m.name) for m in self.controls if m.isfile()}
         self.assertNotIn("preinst",controlfiles)
         self.assertNotIn("prerm",controlfiles)
         self.assertNotIn("postrm",controlfiles)
         self.assertIn("postinst",controlfiles)
+
+    def test_outside_plugin_entry_is_inherited_unchanged(self):
+        external = list(stage.ALLOWED_EXTERNAL)[0]
+        original_key = next(m.name for m in self.members
+                            if stage.normalized_name(m.name) == external)
+        self.assertEqual(external, "etc/init.d/iptosat-tsbridge")
+        self.assertTrue(self.body[original_key].startswith(b"#!/bin/sh"))
+        self.assertGreater(len(self.body[original_key]), 0)
 
     def test_version_rewrite_changes_only_single_assignment(self):
         before = ('PLUGIN_VERSION = "'+stage.OLD+'"\n').encode("utf8")
