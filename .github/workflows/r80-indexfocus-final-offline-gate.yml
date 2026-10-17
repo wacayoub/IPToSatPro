@@ -27,6 +27,16 @@ jobs:
         run: python -m py_compile scripts/prepare_r80_final_offline.py scripts/test_r80_final_offline.py
       - name: Test FINAL metadata-only build with synthetic packages
         run: python -m unittest discover -s scripts -p test_r80_final_offline.py -v
+      - name: Prevent opkg downgrade from RC1
+        run: |
+          dpkg --compare-versions '1.0.46-r80.2-final' gt '1.0.46-r80.1-indexfocus-hotpath-rc1'
+          python - <<'PY'
+          from pathlib import Path
+          source=Path('scripts/prepare_r80_final_offline.py').read_text()
+          assert 'release/r80-indexfocus-final-20261017/staging/r80-final.update.json' in source
+          assert "FINAL = '1.0.46-r80.2-final'" in source
+          print('FINAL_VERSION_ORDER_OK_R70_MAIN_MANIFEST_NOT_TARGETED')
+          PY
       - name: Require production manifest unchanged
         run: |
           python - <<'PY'
