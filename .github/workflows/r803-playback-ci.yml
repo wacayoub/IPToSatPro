@@ -1,0 +1,51 @@
+name: R80.3 playback candidate checks
+on:
+  push:
+    branches:
+      - fix/r803-playback-verification-20261017
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Validate candidate source and isolated builder syntax
+        run: |
+          python -m py_compile staging/r803/monitor_rc2_candidate.py scripts/build_r803_playback_rc1_offline.py
+          python -m unittest discover -s scripts -p 'test_r803_monitor_candidate.py' -v
+          python -m unittest discover -s scripts -p 'test_r803_player_audit.py' -v
+      - name: Fetch checksum-pinned UNMAP RC2 input only (no install)
+        run: |
+          curl --fail --location --silent --show-error --max-time 90 \
+            https://raw.githubusercontent.com/wacayoub/IPToSatPro/fix/r80-unmap-stale-candidate-20261017/payload/r80-unmap-rc2.b64 \
+            --output /tmp/r80-unmap-rc2.b64
+      - name: Run full offline IPK build and package change whitelist (dry-run)
+        run: |
+          python scripts/build_r803_playback_rc1_offline.py \
+            --source-b64 /tmp/r80-unmap-rc2.b64
+      - name: Build isolated beta IPK and assert deterministic checksum
+        if: matrix.python-version == '3.14'
+        run: |
+          python scripts/build_r803_playback_rc1_offline.py \
+            --source-b64 /tmp/r80-unmap-rc2.b64 \
+            --build --output /tmp/iptosatpro-r803-playback-rc1.ipk
+          echo 'd7227f985fb9babcbb9f25c8ee9ab07b969107ccf44275cf3bd1d90054ed31d7  /tmp/iptosatpro-r803-playback-rc1.ipk' | sha256sum --check -
+      - uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.14'
+        with:
+          name: r803-playback-rc1-UNTESTED-DO-NOT-INSTALL
+          path: /tmp/iptosatpro-r803-playback-rc1.ipk
+          retention-days: 14
